@@ -53,6 +53,20 @@ class AuthService {
       message: USERS_MESSAGES.LOGOUT_SUCCESS
     }
   }
+
+  async refreshToken({ account_id, refresh_token, exp }: { account_id: string; refresh_token: string; exp: number }) {
+    const [access_token, new_refresh_token] = await Promise.all([
+      this.signAccessToken(account_id),
+      this.signRefreshToken(account_id, exp),
+      databaseService.refreshTokens.deleteOne({ token: refresh_token })
+    ])
+    const { iat, exp: new_exp } = await this.decodeRefreshToken(new_refresh_token)
+    await databaseService.refreshTokens.deleteOne({ token: refresh_token })
+    await databaseService.refreshTokens.insertOne(
+      new RefreshToken({ account_id: new ObjectId(account_id), token: new_refresh_token, iat: iat, exp: new_exp })
+    )
+    return { access_token, refresh_token: new_refresh_token }
+  }
 }
 
 const authService = new AuthService()

@@ -8,3 +8,13 @@ declare module 'express' {
     decoded_refresh_token?: TokenPayload
   }
 }
+
+interface ApiResponse<T = unknown> {
+  message: string
+  result?: T
+}
+
+interface Pagination {
+  limit: string
+  page: string
+}

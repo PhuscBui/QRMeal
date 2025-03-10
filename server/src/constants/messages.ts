@@ -32,15 +32,24 @@ export const USERS_MESSAGES = {
 
   USER_LOGIN_SUCCESS: 'User login success',
   LOGOUT_SUCCESS: 'Logout success',
+  USER_NOT_FOUND: 'User not found',
 
   ACCESS_TOKEN_IS_REQUIRED: 'Access token is required',
   REFRESH_TOKEN_IS_REQUIRED: 'Refresh token is required',
   REFRESH_TOKEN_IS_MUST_BE_A_STRING: 'Refresh token must be a string',
-  USED_REFRESH_TOKEN_OR_NOT_EXISTS: 'Used refresh token or not exists'
+  USED_REFRESH_TOKEN_OR_NOT_EXISTS: 'Used refresh token or not exists',
+  REFRESH_TOKEN_SUCCESS: 'Refresh token success',
+  UNAUTHORIZED: 'Unauthorized',
+  ACCOUNTS_FETCHED: 'Accounts fetched',
+
+  GET_EMPLOYEE_SUCCESS: 'Get employee success',
+  DELETE_EMPLOYEE_SUCCESS: 'Delete employee success'
 } as const
 
 export const COMMON_MESSAGES = {
   LIMIT_MUST_BE_LESS_THAN_100: 'Limit must be less than 100',
   LIMIT_MUST_E_GREATER_THAN_0: 'Limit must be greater than 0',
-  PAGE_MUST_E_GREATER_THAN_0: 'Page must be greater than 0'
+  PAGE_MUST_E_GREATER_THAN_0: 'Page must be greater than 0',
+  IMAGE_URL_MUST_BE_A_STRING: 'Image URL must be a string',
+  IMAGE_URL_LENGTH_MUST_BE_FROM_1_TO_400: 'Image URL length must be from 1 to 400'
 } as const

@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { loginController, logoutController } from '~/controllers/auth.controller'
+import { loginController, logoutController, refreshTokenController } from '~/controllers/auth.controller'
 import { accessTokenValidator, loginValidator, refreshTokenValidator } from '~/middlewares/auth.middlewares'
 import { wrapRequestHandler } from '~/utils/handlers'
 
@@ -20,5 +20,14 @@ authRouter.post('/login', loginValidator, wrapRequestHandler(loginController))
  * Request: { refresh_token: string }
  */
 authRouter.post('/logout', accessTokenValidator, refreshTokenValidator, wrapRequestHandler(logoutController))
+
+/**
+ * Description. Refresh token route
+ * Path:  /auth/refresh-token
+ * Method: POST
+ * Request: { refresh_token: string }
+ * Response: { access_token: string, refresh_token: string }
+ */
+authRouter.post('/refresh-token', refreshTokenValidator, wrapRequestHandler(refreshTokenController))
 
 export default authRouter

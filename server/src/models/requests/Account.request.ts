@@ -1,4 +1,5 @@
 import { JwtPayload } from 'jsonwebtoken'
+import { ParamsDictionary } from 'express-serve-static-core'
 
 export interface CreateEmployeeReqBody {
   name: string
@@ -8,6 +9,27 @@ export interface CreateEmployeeReqBody {
   password: string
   confirm_password: string
   date_of_birth: string
+}
+
+export interface GetEmployeeParam extends ParamsDictionary {
+  id: string
+}
+export interface UpdateEmployeeParam extends ParamsDictionary {
+  id: string
+}
+
+export interface DeleteEmployeeParam extends ParamsDictionary {
+  id: string
+}
+
+export interface UpdateEmployeeReqBody {
+  name?: string
+  email?: string
+  avatar?: string
+  date_of_birth?: string
+  password?: string
+  confirm_password?: string
+  change_password?: boolean
 }
 
 export interface TokenPayload extends JwtPayload {

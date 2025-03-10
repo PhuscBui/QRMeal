@@ -1,4 +1,5 @@
-import { CreateEmployeeReqBody } from '~/models/requests/Account.request'
+import { ObjectId } from 'mongodb'
+import { CreateEmployeeReqBody, UpdateEmployeeReqBody } from '~/models/requests/Account.request'
 import Account from '~/models/schemas/Account.schema'
 import databaseService from '~/services/databases.service'
 import { hashPassword } from '~/utils/crypto'
@@ -27,7 +28,102 @@ class AccountsService {
       })
     )
     const user_id = result.insertedId.toString()
-    return { user_id }
+    const user = await databaseService.accounts.findOne(
+      { _id: new ObjectId(user_id) },
+      {
+        projection: {
+          password: 0
+        }
+      }
+    )
+    return user
+  }
+
+  async getAccounts() {
+    const owner_id = await this.getOwnerId()
+    const accounts = await databaseService.accounts
+      .find(
+        { owner_id: new ObjectId(owner_id) },
+        {
+          projection: {
+            password: 0
+          }
+        }
+      )
+      .toArray()
+    return accounts
+  }
+
+  async getAccountById(id: string) {
+    return await databaseService.accounts.findOne(
+      { _id: new ObjectId(id) },
+      {
+        projection: {
+          password: 0
+        }
+      }
+    )
+  }
+
+  async updateAccount(id: string, payload: UpdateEmployeeReqBody) {
+    const _payload = payload.date_of_birth ? { ...payload, date_of_birth: new Date(payload.date_of_birth) } : payload
+    if (_payload.change_password) {
+      _payload.password = hashPassword(_payload.password as string)
+      const result = await databaseService.accounts.findOneAndUpdate(
+        {
+          _id: new ObjectId(id)
+        },
+        {
+          $set: {
+            name: _payload.name,
+            email: _payload.email,
+            avatar: _payload.avatar || '',
+            date_of_birth: _payload.date_of_birth as Date,
+            password: _payload.password
+          },
+          $currentDate: { updated_at: true }
+        },
+        {
+          returnDocument: 'after',
+          projection: {
+            password: 0
+          }
+        }
+      )
+      return result
+    }
+    const result = await databaseService.accounts.findOneAndUpdate(
+      {
+        _id: new ObjectId(id)
+      },
+      {
+        $set: {
+          name: _payload.name,
+          email: _payload.email,
+          avatar: _payload.avatar || '',
+          date_of_birth: _payload.date_of_birth as Date
+        },
+        $currentDate: { updated_at: true }
+      },
+      {
+        returnDocument: 'after',
+        projection: {
+          password: 0
+        }
+      }
+    )
+    return result
+  }
+
+  async deleteAccount(id: string) {
+    return await databaseService.accounts.findOneAndDelete(
+      { _id: new ObjectId(id) },
+      {
+        projection: {
+          password: 0
+        }
+      }
+    )
   }
 }
 

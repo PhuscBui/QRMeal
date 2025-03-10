@@ -1,7 +1,12 @@
+import { NextFunction, Request, Response } from 'express'
 import { checkSchema, ParamSchema } from 'express-validator'
-import { USERS_MESSAGES } from '~/constants/messages'
+import { ObjectId } from 'mongodb'
+import HTTP_STATUS from '~/constants/httpStatus'
+import { COMMON_MESSAGES, USERS_MESSAGES } from '~/constants/messages'
+import { Role } from '~/constants/type'
+import { TokenPayload } from '~/models/requests/Account.request'
 import accountsService from '~/services/accounts.service'
-import { hashPassword } from '~/utils/crypto'
+import databaseService from '~/services/databases.service'
 import { validate } from '~/utils/validation'
 
 const passwordSchema: ParamSchema = {
@@ -68,6 +73,18 @@ const nameSchema: ParamSchema = {
   trim: true
 }
 
+const imageSchema: ParamSchema = {
+  optional: true,
+  isString: {
+    errorMessage: COMMON_MESSAGES.IMAGE_URL_MUST_BE_A_STRING
+  },
+  trim: true,
+  isLength: {
+    options: { min: 1, max: 400 },
+    errorMessage: COMMON_MESSAGES.IMAGE_URL_LENGTH_MUST_BE_FROM_1_TO_400
+  }
+}
+
 const dateOfBirthSchema: ParamSchema = {
   isISO8601: {
     options: { strict: true, strictSeparator: true },
@@ -105,3 +122,53 @@ export const createEmployeeValidator = validate(
     ['body']
   )
 )
+
+export const updateEmployeeValidator = validate(
+  checkSchema(
+    {
+      name: nameSchema,
+      email: {
+        isEmail: {
+          errorMessage: USERS_MESSAGES.EMAIL_IS_VALID
+        },
+        notEmpty: {
+          errorMessage: USERS_MESSAGES.EMAIL_IS_REQUIRED
+        },
+        trim: true,
+        custom: {
+          options: async (value, { req }) => {
+            const result = await databaseService.accounts.findOne({ email: value })
+            if (result && req.params && result._id.toString() !== req.params.id) {
+              return Promise.reject(new Error(USERS_MESSAGES.EMAIL_ALREADY_EXISTS))
+            }
+            return Promise.resolve()
+          }
+        }
+      },
+      avatar: imageSchema,
+      password: {
+        optional: true,
+        ...passwordSchema
+      },
+      confirm_password: {
+        optional: true,
+        ...confirmPasswordSchema
+      },
+      date_of_birth: dateOfBirthSchema
+    },
+    ['body', 'params']
+  )
+)
+
+export const isAdminValidator = async (req: Request, res: Response, next: NextFunction) => {
+  const { account_id } = req.decoded_authorization as TokenPayload
+  const user = await databaseService.accounts.findOne({ _id: new ObjectId(account_id) })
+  if (!user || user.role !== Role.Owner) {
+    res.status(HTTP_STATUS.FORBIDDEN).json({
+      message: USERS_MESSAGES.UNAUTHORIZED
+    })
+    return
+  }
+
+  next()
+}

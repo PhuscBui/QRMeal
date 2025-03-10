@@ -3,9 +3,21 @@ import { envConfig } from '~/config'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { USERS_MESSAGES } from '~/constants/messages'
 import { Role } from '~/constants/type'
-import { CreateEmployeeReqBody } from '~/models/requests/Account.request'
+import {
+  CreateEmployeeReqBody,
+  DeleteEmployeeParam,
+  GetEmployeeParam,
+  UpdateEmployeeParam
+} from '~/models/requests/Account.request'
 import accountsService from '~/services/accounts.service'
 import { ParamsDictionary } from 'express-serve-static-core'
+import {
+  CreateEmployeeResponse,
+  DeleteEmployeeResponse,
+  GetEmployeeResponse,
+  GetEmployeesResponse,
+  UpdateEmployeeResponse
+} from '~/models/response/Account.response'
 
 export const initOwnerAccount = async () => {
   if ((await accountsService.getAccountCount()) === 0) {
@@ -23,7 +35,7 @@ export const initOwnerAccount = async () => {
 }
 
 export const createEmployeeController = async (
-  req: Request<ParamsDictionary, any, CreateEmployeeReqBody>,
+  req: Request<ParamsDictionary, CreateEmployeeResponse, CreateEmployeeReqBody>,
   res: Response,
   next: NextFunction
 ) => {
@@ -41,5 +53,71 @@ export const createEmployeeController = async (
   res.status(HTTP_STATUS.CREATED).json({
     message: USERS_MESSAGES.ACCOUNT_CREATED,
     result
+  })
+}
+
+export const getAccountsController = async (req: Request<ParamsDictionary, GetEmployeesResponse>, res: Response) => {
+  const accounts = await accountsService.getAccounts()
+  res.status(HTTP_STATUS.OK).json({
+    message: USERS_MESSAGES.ACCOUNTS_FETCHED,
+    result: accounts
+  })
+}
+
+export const getEmployeeAccountController = async (
+  req: Request<GetEmployeeParam, GetEmployeeResponse>,
+  res: Response
+) => {
+  const account = await accountsService.getAccountById(req.params.id)
+
+  if (!account) {
+    res.status(HTTP_STATUS.NOT_FOUND).json({
+      message: USERS_MESSAGES.USER_NOT_FOUND
+    })
+    return
+  }
+  res.status(HTTP_STATUS.OK).json({
+    message: USERS_MESSAGES.GET_EMPLOYEE_SUCCESS,
+    result: account
+  })
+}
+
+export const updateEmployeeController = async (
+  req: Request<UpdateEmployeeParam, UpdateEmployeeResponse, CreateEmployeeReqBody>,
+  res: Response
+) => {
+  const account = await accountsService.getAccountById(req.params.id)
+
+  if (!account) {
+    res.status(HTTP_STATUS.NOT_FOUND).json({
+      message: USERS_MESSAGES.USER_NOT_FOUND
+    })
+    return
+  }
+
+  const result = await accountsService.updateAccount(req.params.id, req.body)
+  res.status(HTTP_STATUS.OK).json({
+    message: USERS_MESSAGES.GET_EMPLOYEE_SUCCESS,
+    result
+  })
+}
+
+export const deleteEmployeeController = async (
+  req: Request<DeleteEmployeeParam, DeleteEmployeeResponse>,
+  res: Response
+) => {
+  const account = await accountsService.getAccountById(req.params.id)
+
+  if (!account) {
+    res.status(HTTP_STATUS.NOT_FOUND).json({
+      message: USERS_MESSAGES.USER_NOT_FOUND
+    })
+    return
+  }
+
+  await accountsService.deleteAccount(req.params.id)
+
+  res.status(HTTP_STATUS.OK).json({
+    message: USERS_MESSAGES.DELETE_EMPLOYEE_SUCCESS
   })
 }
