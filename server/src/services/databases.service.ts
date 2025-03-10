@@ -1,6 +1,7 @@
 import { Collection, Db, MongoClient } from 'mongodb'
 import { envConfig } from '~/config'
 import Account from '~/models/schemas/Account.schema'
+import RefreshToken from '~/models/schemas/RefreshToken.schema'
 
 const uri = `mongodb+srv://${envConfig.dbUsername}:${envConfig.dbPassword}@qrmealcluster.hnxr3.mongodb.net/?retryWrites=true&w=majority&appName=QRMealCluster`
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -27,6 +28,10 @@ class DatabaseService {
 
   get accounts(): Collection<Account> {
     return this.db.collection(envConfig.dbAccountsCollection)
+  }
+
+  get refreshTokens(): Collection<RefreshToken> {
+    return this.db.collection(envConfig.dbRefreshTokensCollection)
   }
 }
 

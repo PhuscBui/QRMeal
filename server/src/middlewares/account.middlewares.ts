@@ -1,5 +1,6 @@
 import { checkSchema, ParamSchema } from 'express-validator'
 import { USERS_MESSAGES } from '~/constants/messages'
+import accountsService from '~/services/accounts.service'
 import { hashPassword } from '~/utils/crypto'
 import { validate } from '~/utils/validation'
 
@@ -74,7 +75,7 @@ const dateOfBirthSchema: ParamSchema = {
   }
 }
 
-export const createAccountValidator = validate(
+export const createEmployeeValidator = validate(
   checkSchema(
     {
       name: nameSchema,
@@ -85,23 +86,19 @@ export const createAccountValidator = validate(
         notEmpty: {
           errorMessage: USERS_MESSAGES.EMAIL_IS_REQUIRED
         },
-        trim: true
+        trim: true,
+        custom: {
+          options: async (value) => {
+            const result = await accountsService.checkEmailExist(value)
+            if (result) {
+              return Promise.reject(new Error(USERS_MESSAGES.EMAIL_ALREADY_EXISTS))
+            }
+            return Promise.resolve()
+          }
+        }
       },
       password: passwordSchema,
       confirm_password: confirmPasswordSchema,
-      role: {
-        notEmpty: {
-          errorMessage: USERS_MESSAGES.ROLE_IS_REQUIRED
-        },
-        isString: {
-          errorMessage: USERS_MESSAGES.ROLE_MUST_BE_A_STRING
-        },
-        isLength: {
-          options: { min: 3, max: 100 },
-          errorMessage: USERS_MESSAGES.ROLE_LENGTH_MUST_BE_FROM_3_TO_100
-        },
-        trim: true
-      },
       date_of_birth: dateOfBirthSchema
     },
 

@@ -1,5 +1,6 @@
 import express from 'express'
 import { envConfig } from '~/config'
+import { initOwnerAccount } from '~/controllers/accounts.controller'
 import { defaultErrorHandler } from '~/middlewares/error.middlewares'
 import accountsRouter from '~/routes/accounts.routes'
 import authRouter from '~/routes/auth.routes'
@@ -9,6 +10,12 @@ databaseService.connect()
 
 const app = express()
 const port = envConfig.port
+
+const start = async () => {
+  await initOwnerAccount()
+}
+
+start()
 
 app.get('/', (req, res) => {
   res.send('Hello World!')

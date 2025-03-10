@@ -7,6 +7,9 @@ export const USERS_MESSAGES = {
 
   EMAIL_IS_VALID: 'Email is not valid',
   EMAIL_IS_REQUIRED: 'Email is required',
+  EMAIL_ALREADY_EXISTS: 'Email already exists',
+
+  EMAIL_OR_PASSWORD_IS_INCORRECT: 'Email or password is incorrect',
 
   PASSWORD_IS_REQUIRED: 'Password is required',
   PASSWORD_IS_MUST_BE_A_STRING: 'Password must be a string',
@@ -24,5 +27,20 @@ export const USERS_MESSAGES = {
 
   DATE_OF_BIRTH_MUST_BE_ISO8601: 'Date of birth must be ISO8601',
 
-  ACCOUNT_CREATED: 'Account created'
+  ACCOUNT_CREATED: 'Account created',
+  OWNER_NOT_FOUND: 'Owner not found',
+
+  USER_LOGIN_SUCCESS: 'User login success',
+  LOGOUT_SUCCESS: 'Logout success',
+
+  ACCESS_TOKEN_IS_REQUIRED: 'Access token is required',
+  REFRESH_TOKEN_IS_REQUIRED: 'Refresh token is required',
+  REFRESH_TOKEN_IS_MUST_BE_A_STRING: 'Refresh token must be a string',
+  USED_REFRESH_TOKEN_OR_NOT_EXISTS: 'Used refresh token or not exists'
+} as const
+
+export const COMMON_MESSAGES = {
+  LIMIT_MUST_BE_LESS_THAN_100: 'Limit must be less than 100',
+  LIMIT_MUST_E_GREATER_THAN_0: 'Limit must be greater than 0',
+  PAGE_MUST_E_GREATER_THAN_0: 'Page must be greater than 0'
 } as const

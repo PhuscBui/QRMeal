@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { createAccountController } from '~/controllers/accounts.controller'
-import { createAccountValidator } from '~/middlewares/account.middlewares'
+import { createEmployeeController } from '~/controllers/accounts.controller'
+import { createEmployeeValidator } from '~/middlewares/account.middlewares'
 import { wrapRequestHandler } from '~/utils/handlers'
 
 const accountsRouter = Router()
@@ -11,6 +11,14 @@ const accountsRouter = Router()
  * Method: POST
  * Request: Body : Account
  */
-accountsRouter.post('/', createAccountValidator, wrapRequestHandler(createAccountController))
+accountsRouter.post('/', createEmployeeValidator, wrapRequestHandler(createEmployeeController))
+
+/**
+ * Description. Get all accounts
+ * Path:  /
+ * Method: GET
+ * Request: Query : page, limit
+ */
+// accountsRouter.get('/', wrapRequestHandler(getAccountsController))
 
 export default accountsRouter
