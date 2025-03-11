@@ -1,6 +1,6 @@
 import { ApiResponse } from '~/type'
 
-export interface Employee {
+export interface AccountResponseResult {
   _id: string
   name: string
   email: string
@@ -12,8 +12,11 @@ export interface Employee {
   updated_at: string
 }
 
-export type CreateEmployeeResponse = ApiResponse<Employee>
-export type GetEmployeeResponse = ApiResponse<Employee>
-export type GetEmployeesResponse = ApiResponse<Employee[]>
-export type UpdateEmployeeResponse = ApiResponse<Employee>
+export type CreateEmployeeResponse = ApiResponse<AccountResponseResult>
+export type GetEmployeeResponse = ApiResponse<AccountResponseResult>
+export type GetEmployeesResponse = ApiResponse<AccountResponseResult[]>
+export type UpdateEmployeeResponse = ApiResponse<AccountResponseResult>
 export type DeleteEmployeeResponse = ApiResponse
+export type GetMeResponse = ApiResponse<AccountResponseResult>
+export type UpdateMeResponse = ApiResponse<AccountResponseResult>
+export type ChangePasswordResponse = ApiResponse

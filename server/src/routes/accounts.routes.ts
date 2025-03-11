@@ -1,13 +1,24 @@
 import { Router } from 'express'
 import {
+  changePasswordController,
   createEmployeeController,
   deleteEmployeeController,
   getAccountsController,
   getEmployeeAccountController,
-  updateEmployeeController
+  getMeController,
+  updateEmployeeController,
+  updateMeController
 } from '~/controllers/accounts.controller'
-import { createEmployeeValidator, isAdminValidator, updateEmployeeValidator } from '~/middlewares/account.middlewares'
+import {
+  changePasswordValidator,
+  createEmployeeValidator,
+  isAdminValidator,
+  updateEmployeeValidator,
+  updateMeValidator
+} from '~/middlewares/account.middlewares'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
+import { filterMiddleware } from '~/middlewares/common.middlewares'
+import { UpdateMeReqBody } from '~/models/requests/Account.request'
 import { wrapRequestHandler } from '~/utils/handlers'
 
 const accountsRouter = Router()
@@ -67,6 +78,43 @@ accountsRouter.delete(
   accessTokenValidator,
   isAdminValidator,
   wrapRequestHandler(deleteEmployeeController)
+)
+
+/**
+ * Description. Get me
+ * Path:  /me
+ * Method: GET
+ * Request: Headers : Authorization
+ */
+accountsRouter.get('/me', accessTokenValidator, wrapRequestHandler(getMeController))
+
+/**
+ * Description. Update me
+ * Path:  /me
+ * Method: PATCH
+ * Request: Headers : Authorization
+ * Request: Body : Account
+ */
+accountsRouter.patch(
+  '/me',
+  accessTokenValidator,
+  updateMeValidator,
+  filterMiddleware<UpdateMeReqBody>(['name', 'avatar', 'date_of_birth']),
+  wrapRequestHandler(updateMeController)
+)
+
+/**
+ * Description. Change password
+ * Path:  /me/change-password
+ * Method: PATCH
+ * Request: Headers : Authorization
+ * Request: Body : Account
+ */
+accountsRouter.patch(
+  '/me/change-password',
+  accessTokenValidator,
+  changePasswordValidator,
+  wrapRequestHandler(changePasswordController)
 )
 
 export default accountsRouter

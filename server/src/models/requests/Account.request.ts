@@ -38,3 +38,15 @@ export interface TokenPayload extends JwtPayload {
   exp: number
   iat: number
 }
+
+export interface UpdateMeReqBody {
+  name?: string
+  avatar?: string
+  date_of_birth?: string
+}
+
+export interface ChangePasswordReqBody {
+  old_password: string
+  password: string
+  confirm_password: string
+}

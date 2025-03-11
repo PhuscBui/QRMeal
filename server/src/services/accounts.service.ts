@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb'
-import { CreateEmployeeReqBody, UpdateEmployeeReqBody } from '~/models/requests/Account.request'
+import { USERS_MESSAGES } from '~/constants/messages'
+import { CreateEmployeeReqBody, UpdateEmployeeReqBody, UpdateMeReqBody } from '~/models/requests/Account.request'
 import Account from '~/models/schemas/Account.schema'
 import databaseService from '~/services/databases.service'
 import { hashPassword } from '~/utils/crypto'
@@ -124,6 +125,43 @@ class AccountsService {
         }
       }
     )
+  }
+
+  async updateMe(id: string, payload: UpdateMeReqBody) {
+    const _payload = payload.date_of_birth ? { ...payload, date_of_birth: new Date(payload.date_of_birth) } : payload
+    const result = await databaseService.accounts.findOneAndUpdate(
+      {
+        _id: new ObjectId(id)
+      },
+      {
+        $set: {
+          ...(_payload as UpdateMeReqBody & { date_of_birth?: Date })
+        },
+        $currentDate: { updated_at: true }
+      },
+      {
+        returnDocument: 'after',
+        projection: {
+          password: 0
+        }
+      }
+    )
+    return result
+  }
+
+  async changePassword(user_id: string, password: string) {
+    await databaseService.accounts.updateOne(
+      { _id: new ObjectId(user_id) },
+      {
+        $set: {
+          password: hashPassword(password)
+        },
+        $currentDate: { updated_at: true }
+      }
+    )
+    return {
+      message: USERS_MESSAGES.CHANGE_PASSWORD_SUCCESS
+    }
   }
 }
 

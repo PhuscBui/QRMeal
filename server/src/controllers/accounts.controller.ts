@@ -4,19 +4,24 @@ import HTTP_STATUS from '~/constants/httpStatus'
 import { USERS_MESSAGES } from '~/constants/messages'
 import { Role } from '~/constants/type'
 import {
+  ChangePasswordReqBody,
   CreateEmployeeReqBody,
   DeleteEmployeeParam,
   GetEmployeeParam,
-  UpdateEmployeeParam
+  TokenPayload,
+  UpdateEmployeeParam,
+  UpdateMeReqBody
 } from '~/models/requests/Account.request'
 import accountsService from '~/services/accounts.service'
 import { ParamsDictionary } from 'express-serve-static-core'
 import {
+  ChangePasswordResponse,
   CreateEmployeeResponse,
   DeleteEmployeeResponse,
   GetEmployeeResponse,
   GetEmployeesResponse,
-  UpdateEmployeeResponse
+  UpdateEmployeeResponse,
+  UpdateMeResponse
 } from '~/models/response/Account.response'
 
 export const initOwnerAccount = async () => {
@@ -120,4 +125,43 @@ export const deleteEmployeeController = async (
   res.status(HTTP_STATUS.OK).json({
     message: USERS_MESSAGES.DELETE_EMPLOYEE_SUCCESS
   })
+}
+
+export const getMeController = async (req: Request, res: Response) => {
+  const { account_id } = req.decoded_authorization as TokenPayload
+  const account = await accountsService.getAccountById(account_id)
+  if (!account) {
+    res.status(HTTP_STATUS.NOT_FOUND).json({
+      message: USERS_MESSAGES.USER_NOT_FOUND
+    })
+    return
+  }
+  res.status(HTTP_STATUS.OK).json({
+    message: USERS_MESSAGES.GET_ME_SUCCESS,
+    result: account
+  })
+}
+
+export const updateMeController = async (
+  req: Request<ParamsDictionary, UpdateMeResponse, UpdateMeReqBody>,
+  res: Response
+) => {
+  const { account_id } = req.decoded_authorization as TokenPayload
+  const body = req.body
+  console.log('body', body)
+  const result = await accountsService.updateMe(account_id, body)
+  res.json({
+    message: USERS_MESSAGES.UPDATE_ME_SUCCESS,
+    result: result
+  })
+}
+
+export const changePasswordController = async (
+  req: Request<ParamsDictionary, ChangePasswordResponse, ChangePasswordReqBody>,
+  res: Response
+) => {
+  const { account_id } = req.decoded_authorization as TokenPayload
+  const password = req.body.password
+  const result = await accountsService.changePassword(account_id, password)
+  res.json(result)
 }

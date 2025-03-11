@@ -43,7 +43,11 @@ export const USERS_MESSAGES = {
   ACCOUNTS_FETCHED: 'Accounts fetched',
 
   GET_EMPLOYEE_SUCCESS: 'Get employee success',
-  DELETE_EMPLOYEE_SUCCESS: 'Delete employee success'
+  DELETE_EMPLOYEE_SUCCESS: 'Delete employee success',
+  GET_ME_SUCCESS: 'Get me success',
+  UPDATE_ME_SUCCESS: 'Update me success',
+  CHANGE_PASSWORD_SUCCESS: 'Change password success',
+  PASSWORD_IS_INCORRECT: 'Password is incorrect'
 } as const
 
 export const COMMON_MESSAGES = {

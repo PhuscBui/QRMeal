@@ -4,9 +4,11 @@ import { ObjectId } from 'mongodb'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { COMMON_MESSAGES, USERS_MESSAGES } from '~/constants/messages'
 import { Role } from '~/constants/type'
+import { ErrorWithStatus } from '~/models/Error'
 import { TokenPayload } from '~/models/requests/Account.request'
 import accountsService from '~/services/accounts.service'
 import databaseService from '~/services/databases.service'
+import { hashPassword } from '~/utils/crypto'
 import { validate } from '~/utils/validation'
 
 const passwordSchema: ParamSchema = {
@@ -80,7 +82,7 @@ const imageSchema: ParamSchema = {
   },
   trim: true,
   isLength: {
-    options: { min: 1, max: 400 },
+    options: { min: 0, max: 400 },
     errorMessage: COMMON_MESSAGES.IMAGE_URL_LENGTH_MUST_BE_FROM_1_TO_400
   }
 }
@@ -172,3 +174,53 @@ export const isAdminValidator = async (req: Request, res: Response, next: NextFu
 
   next()
 }
+
+export const updateMeValidator = validate(
+  checkSchema(
+    {
+      name: {
+        ...nameSchema,
+        optional: true,
+        notEmpty: undefined
+      },
+      date_of_birth: {
+        ...dateOfBirthSchema,
+        optional: true
+      },
+      avatar: imageSchema
+    },
+    ['body']
+  )
+)
+
+export const changePasswordValidator = validate(
+  checkSchema(
+    {
+      old_password: {
+        ...passwordSchema,
+        custom: {
+          options: async (value, { req }) => {
+            const { account_id } = req.decoded_authorization as TokenPayload
+            const user = await databaseService.accounts.findOne({ _id: new ObjectId(account_id) })
+            if (!user) {
+              throw new ErrorWithStatus({
+                message: USERS_MESSAGES.USER_NOT_FOUND,
+                status: HTTP_STATUS.NOT_FOUND
+              })
+            }
+            const isPasswordMatch = hashPassword(value) === user.password
+            if (!isPasswordMatch) {
+              throw new ErrorWithStatus({
+                message: USERS_MESSAGES.PASSWORD_IS_INCORRECT,
+                status: HTTP_STATUS.UNAUTHORIZED
+              })
+            }
+          }
+        }
+      },
+      password: passwordSchema,
+      confirm_password: confirmPasswordSchema
+    },
+    ['body']
+  )
+)
