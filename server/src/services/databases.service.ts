@@ -1,6 +1,7 @@
 import { Collection, Db, MongoClient } from 'mongodb'
 import { envConfig } from '~/config'
 import Account from '~/models/schemas/Account.schema'
+import Dish from '~/models/schemas/Dish.schema'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 
 const uri = `mongodb+srv://${envConfig.dbUsername}:${envConfig.dbPassword}@qrmealcluster.hnxr3.mongodb.net/?retryWrites=true&w=majority&appName=QRMealCluster`
@@ -32,6 +33,10 @@ class DatabaseService {
 
   get refreshTokens(): Collection<RefreshToken> {
     return this.db.collection(envConfig.dbRefreshTokensCollection)
+  }
+
+  get dishes(): Collection<Dish> {
+    return this.db.collection(envConfig.dbDishesCollection)
   }
 }
 

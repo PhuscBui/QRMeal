@@ -63,14 +63,14 @@ const confirmPasswordSchema: ParamSchema = {
 
 const nameSchema: ParamSchema = {
   notEmpty: {
-    errorMessage: USERS_MESSAGES.NAME_IS_REQUIRED
+    errorMessage: COMMON_MESSAGES.NAME_IS_REQUIRED
   },
   isString: {
-    errorMessage: USERS_MESSAGES.NAME_MUST_BE_A_STRING
+    errorMessage: COMMON_MESSAGES.NAME_MUST_BE_A_STRING
   },
   isLength: {
     options: { min: 3, max: 100 },
-    errorMessage: USERS_MESSAGES.NAME_LENGTH_MUST_BE_FROM_3_TO_100
+    errorMessage: COMMON_MESSAGES.NAME_LENGTH_MUST_BE_FROM_3_TO_100
   },
   trim: true
 }

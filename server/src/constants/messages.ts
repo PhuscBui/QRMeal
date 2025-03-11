@@ -1,10 +1,6 @@
 export const USERS_MESSAGES = {
   VALIDATION_ERROR: 'Validation error',
 
-  NAME_IS_REQUIRED: 'Name is required',
-  NAME_MUST_BE_A_STRING: 'Name must be a string',
-  NAME_LENGTH_MUST_BE_FROM_3_TO_100: 'Name length must be from 3 to 100',
-
   EMAIL_IS_VALID: 'Email is not valid',
   EMAIL_IS_REQUIRED: 'Email is required',
   EMAIL_ALREADY_EXISTS: 'Email already exists',
@@ -50,7 +46,34 @@ export const USERS_MESSAGES = {
   PASSWORD_IS_INCORRECT: 'Password is incorrect'
 } as const
 
+export const DISHES_MESSAGE = {
+  DISH_NOT_FOUND: 'Dish not found',
+  DISH_CREATED: 'Dish created',
+  DISH_UPDATED: 'Dish updated',
+  DISH_DELETED: 'Dish deleted',
+  DISH_FETCHED: 'Dish fetched',
+  DISHES_FETCHED: 'Dishes fetched',
+  DISH_ID_IS_REQUIRED: 'Dish ID is required',
+  DISH_ID_MUST_BE_A_STRING: 'Dish ID must be a string',
+  DISH_ID_IS_INVALID: 'Dish ID is invalid',
+
+  PRICE_MUST_BE_A_NUMBER: 'Price must be a number',
+  PRICE_MUST_BE_A_FLOAT: 'Price must be a float',
+  PRICE_LENGTH_MUST_BE_GREATER_THAN_0: 'Price length must be greater than 0',
+  DESCRIPTION_IS_REQUIRED: 'Description is required',
+  DESCRIPTION_MUST_BE_A_STRING: 'Description must be a string',
+  DESCRIPTION_LENGTH_MUST_BE_GREATER_THAN_0: 'Description length must be greater than 0',
+  STATUS_IS_REQUIRED: 'Status is required',
+  STATUS_MUST_BE_A_STRING: 'Status must be a string',
+  STATUS_LENGTH_MUST_BE_GREATER_THAN_0: 'Status length must be greater than 0',
+  STATUS_MUST_BE_AVAILABLE_OR_UNAVAILABLE_OR_HIDDEN: 'Status must be available, unavailable or hidden'
+} as const
+
 export const COMMON_MESSAGES = {
+  NAME_IS_REQUIRED: 'Name is required',
+  NAME_MUST_BE_A_STRING: 'Name must be a string',
+  NAME_LENGTH_MUST_BE_FROM_3_TO_100: 'Name length must be from 3 to 100',
+
   LIMIT_MUST_BE_LESS_THAN_100: 'Limit must be less than 100',
   LIMIT_MUST_E_GREATER_THAN_0: 'Limit must be greater than 0',
   PAGE_MUST_E_GREATER_THAN_0: 'Page must be greater than 0',

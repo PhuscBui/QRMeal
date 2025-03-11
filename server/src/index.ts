@@ -4,6 +4,7 @@ import { initOwnerAccount } from '~/controllers/accounts.controller'
 import { defaultErrorHandler } from '~/middlewares/error.middlewares'
 import accountsRouter from '~/routes/accounts.routes'
 import authRouter from '~/routes/auth.routes'
+import dishesRouter from '~/routes/dishes.routes'
 import databaseService from '~/services/databases.service'
 
 databaseService.connect()
@@ -23,6 +24,7 @@ app.get('/', (req, res) => {
 app.use(express.json())
 app.use('/auth', authRouter)
 app.use('/accounts', accountsRouter)
+app.use('/dishes', dishesRouter)
 
 app.use(defaultErrorHandler)
 

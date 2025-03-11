@@ -8,6 +8,7 @@ export const envConfig = {
   dbPassword: process.env.MONGODB_PASSWORD as string,
   dbAccountsCollection: process.env.MONGODB_ACCOUNTS_COLLECTION as string,
   dbRefreshTokensCollection: process.env.MONGODB_REFRESH_TOKENS_COLLECTION as string,
+  dbDishesCollection: process.env.MONGODB_DISHES_COLLECTION as string,
 
   initialEmailOwner: process.env.INITIAL_EMAIL_OWNER as string,
   initialPasswordOwner: process.env.INITIAL_PASSWORD_OWNER as string,
