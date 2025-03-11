@@ -77,6 +77,8 @@ export const COMMON_MESSAGES = {
   LIMIT_MUST_BE_LESS_THAN_100: 'Limit must be less than 100',
   LIMIT_MUST_E_GREATER_THAN_0: 'Limit must be greater than 0',
   PAGE_MUST_E_GREATER_THAN_0: 'Page must be greater than 0',
+  UPLOAD_IMAGE_SUCCESS: 'Upload image success',
+  IMAGE_NOT_FOUND: 'Image not found',
   IMAGE_URL_MUST_BE_A_STRING: 'Image URL must be a string',
   IMAGE_URL_LENGTH_MUST_BE_FROM_1_TO_400: 'Image URL length must be from 1 to 400'
 } as const

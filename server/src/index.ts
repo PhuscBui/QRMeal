@@ -5,7 +5,12 @@ import { defaultErrorHandler } from '~/middlewares/error.middlewares'
 import accountsRouter from '~/routes/accounts.routes'
 import authRouter from '~/routes/auth.routes'
 import dishesRouter from '~/routes/dishes.routes'
+import mediasRouter from '~/routes/medias.routes'
+import staticRouter from '~/routes/static.routes'
 import databaseService from '~/services/databases.service'
+import { initFolder } from '~/utils/file'
+
+initFolder()
 
 databaseService.connect()
 
@@ -25,6 +30,8 @@ app.use(express.json())
 app.use('/auth', authRouter)
 app.use('/accounts', accountsRouter)
 app.use('/dishes', dishesRouter)
+app.use('/medias', mediasRouter)
+app.use('/static', staticRouter)
 
 app.use(defaultErrorHandler)
 
