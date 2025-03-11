@@ -2,6 +2,7 @@ import { Request } from 'express'
 import { checkSchema, ParamSchema } from 'express-validator'
 import { JsonWebTokenError } from 'jsonwebtoken'
 import { capitalize } from 'lodash'
+import { envConfig } from '~/config'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { USERS_MESSAGES } from '~/constants/messages'
 import { ErrorWithStatus } from '~/models/Error'
@@ -98,7 +99,7 @@ export const refreshTokenValidator = validate(
           options: async (value, { req }) => {
             try {
               const [decoded_refresh_token, refresh_token] = await Promise.all([
-                verifyToken({ token: value }),
+                verifyToken({ token: value, secretOrPublicKey: envConfig.refreshTokenSecret }),
                 databaseService.refreshTokens.findOne({ token: value })
               ])
               if (!refresh_token) {

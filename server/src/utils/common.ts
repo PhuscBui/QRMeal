@@ -1,6 +1,7 @@
 import { Request } from 'express'
 import { JsonWebTokenError } from 'jsonwebtoken'
 import { capitalize } from 'lodash'
+import { envConfig } from '~/config'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { USERS_MESSAGES } from '~/constants/messages'
 import { ErrorWithStatus } from '~/models/Error'
@@ -20,7 +21,10 @@ export const verifyAccessToken = async (access_token: string, req?: Request) => 
     )
   }
   try {
-    const decoded_authorization = await verifyToken({ token: access_token })
+    const decoded_authorization = await verifyToken({
+      token: access_token,
+      secretOrPublicKey: envConfig.accessTokenSecret
+    })
     if (req) {
       ;(req as Request).decoded_authorization = decoded_authorization
       return true

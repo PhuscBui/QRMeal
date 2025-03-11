@@ -11,6 +11,7 @@ class AuthService {
   private signAccessToken(account_id: string) {
     return signToken({
       payload: { account_id, token_type: TokenType.AccessToken },
+      privateKey: envConfig.accessTokenSecret,
       options: { expiresIn: envConfig.accessTokenExpiresIn as ms.StringValue }
     })
   }
@@ -18,11 +19,13 @@ class AuthService {
   private signRefreshToken(account_id: string, exp?: number) {
     if (exp) {
       return signToken({
-        payload: { account_id, token_type: TokenType.RefreshToken, exp }
+        payload: { account_id, token_type: TokenType.RefreshToken, exp },
+        privateKey: envConfig.refreshTokenSecret
       })
     }
     return signToken({
       payload: { account_id, token_type: TokenType.RefreshToken },
+      privateKey: envConfig.refreshTokenSecret,
       options: { expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN as ms.StringValue }
     })
   }
@@ -34,7 +37,7 @@ class AuthService {
   private decodeRefreshToken(refresh_token: string) {
     return verifyToken({
       token: refresh_token,
-      secretOrPublicKey: envConfig.jwtSecret
+      secretOrPublicKey: envConfig.refreshTokenSecret
     })
   }
 
