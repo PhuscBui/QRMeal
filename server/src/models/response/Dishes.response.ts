@@ -1,18 +1,8 @@
+import Dish from '~/models/schemas/Dish.schema'
 import { ApiResponse } from '~/type'
 
-export interface DishResponseResult {
-  _id: string
-  name: string
-  price: number
-  description: string
-  image: string
-  status: string
-  created_at: string
-  updated_at: string
-}
-
-export type GetDishesResponse = ApiResponse<DishResponseResult[]>
-export type GetDishResponse = ApiResponse<DishResponseResult>
-export type CreateDishResponse = ApiResponse<DishResponseResult>
-export type UpdateDishResponse = ApiResponse<DishResponseResult>
+export type GetDishesResponse = ApiResponse<Dish[]>
+export type GetDishResponse = ApiResponse<Dish>
+export type CreateDishResponse = ApiResponse<Dish>
+export type UpdateDishResponse = ApiResponse<Dish>
 export type DeleteDishResponse = ApiResponse

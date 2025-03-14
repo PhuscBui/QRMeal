@@ -6,10 +6,13 @@ import HTTP_STATUS from '~/constants/httpStatus'
 import { USERS_MESSAGES } from '~/constants/messages'
 import { ErrorWithStatus } from '~/models/Error'
 import { verifyToken } from '~/utils/jwt'
+import crypto from 'crypto'
 
 export const numberEnumToArray = (numberEnum: { [key: string]: number | string }) => {
   return Object.values(numberEnum).filter((value) => typeof value === 'number')
 }
+
+export const randomId = () => crypto.randomUUID().replace(/-/g, '')
 
 export const verifyAccessToken = async (access_token: string, req?: Request) => {
   if (!access_token) {

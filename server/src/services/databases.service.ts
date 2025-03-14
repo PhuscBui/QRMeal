@@ -3,6 +3,7 @@ import { envConfig } from '~/config'
 import Account from '~/models/schemas/Account.schema'
 import Dish from '~/models/schemas/Dish.schema'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
+import { Table } from '~/models/schemas/Table.schema'
 
 const uri = `mongodb+srv://${envConfig.dbUsername}:${envConfig.dbPassword}@qrmealcluster.hnxr3.mongodb.net/?retryWrites=true&w=majority&appName=QRMealCluster`
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -37,6 +38,14 @@ class DatabaseService {
 
   get dishes(): Collection<Dish> {
     return this.db.collection(envConfig.dbDishesCollection)
+  }
+
+  // get orders(): Collection<Dish> {
+  //   return this.db.collection(envConfig.dbOrdersCollection)
+  // }
+
+  get tables(): Collection<Table> {
+    return this.db.collection(envConfig.dbTablesCollection)
   }
 }
 

@@ -7,6 +7,7 @@ import authRouter from '~/routes/auth.routes'
 import dishesRouter from '~/routes/dishes.routes'
 import mediasRouter from '~/routes/medias.routes'
 import staticRouter from '~/routes/static.routes'
+import tablesRouter from '~/routes/tables.routes'
 import databaseService from '~/services/databases.service'
 import { initFolder } from '~/utils/file'
 
@@ -32,6 +33,7 @@ app.use('/accounts', accountsRouter)
 app.use('/dishes', dishesRouter)
 app.use('/medias', mediasRouter)
 app.use('/static', staticRouter)
+app.use('/tables', tablesRouter)
 
 app.use(defaultErrorHandler)
 

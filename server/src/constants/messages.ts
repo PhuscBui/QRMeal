@@ -69,6 +69,28 @@ export const DISHES_MESSAGE = {
   STATUS_MUST_BE_AVAILABLE_OR_UNAVAILABLE_OR_HIDDEN: 'Status must be available, unavailable or hidden'
 } as const
 
+export const TABLES_MESSAGES = {
+  TABLE_NOT_FOUND: 'Table not found',
+  TABLE_CREATED: 'Table created',
+  TABLE_UPDATED: 'Table updated',
+  TABLE_DELETED: 'Table deleted',
+  TABLE_FETCHED: 'Table fetched',
+  TABLES_FETCHED: 'Tables fetched',
+  TABLE_NUMBER_IS_REQUIRED: 'Table number is required',
+  TABLE_NUMBER_MUST_BE_A_NUMBER: 'Table number must be a number',
+  TABLE_NUMBER_MUST_BE_GREATER_THAN_0: 'Table number must be greater than 0',
+  TABLE_NUMBER_IS_INVALID: 'Table number is invalid',
+  TABLE_CAPACITY_IS_REQUIRED: 'Table capacity is required',
+  TABLE_CAPACITY_MUST_BE_A_NUMBER: 'Table capacity must be a number',
+  TABLE_CAPACITY_MUST_BE_GREATER_THAN_0: 'Table capacity must be greater than 0',
+  TABLE_STATUS_IS_REQUIRED: 'Table status is required',
+  TABLE_STATUS_MUST_BE_A_STRING: 'Table status must be a string',
+  TABLE_STATUS_LENGTH_MUST_BE_GREATER_THAN_0: 'Table status length must be greater than 0',
+  TABLE_STATUS_MUST_BE_AVAILABLE_OR_HIDDEN_OR_RESERVED: 'Table status must be available, hidden or reserved',
+  TABLE_NUMBER_IS_EXISTS: 'Table number is exists',
+  CHANGE_TOKEN_MUST_BE_A_BOOLEAN: 'Change token must be a boolean'
+} as const
+
 export const COMMON_MESSAGES = {
   NAME_IS_REQUIRED: 'Name is required',
   NAME_MUST_BE_A_STRING: 'Name must be a string',
