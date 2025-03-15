@@ -1,7 +1,14 @@
 import { ObjectId } from 'mongodb'
 import { USERS_MESSAGES } from '~/constants/messages'
-import { CreateEmployeeReqBody, UpdateEmployeeReqBody, UpdateMeReqBody } from '~/models/requests/Account.request'
+import { Role } from '~/constants/type'
+import {
+  CreateEmployeeReqBody,
+  CreateGuestReqBody,
+  UpdateEmployeeReqBody,
+  UpdateMeReqBody
+} from '~/models/requests/Account.request'
 import Account from '~/models/schemas/Account.schema'
+import Guest from '~/models/schemas/Guest.schema'
 import databaseService from '~/services/databases.service'
 import { hashPassword } from '~/utils/crypto'
 
@@ -162,6 +169,38 @@ class AccountsService {
     return {
       message: USERS_MESSAGES.CHANGE_PASSWORD_SUCCESS
     }
+  }
+
+  async createGuest(payload: CreateGuestReqBody) {
+    const result = await databaseService.guests.insertOne(
+      new Guest({
+        ...payload,
+        role: Role.Guest
+      })
+    )
+    return await databaseService.guests.findOne(
+      { _id: result.insertedId },
+      {
+        projection: {
+          refresh_token: 0,
+          refresh_token_exp: 0
+        }
+      }
+    )
+  }
+
+  async getGuests() {
+    return await databaseService.guests
+      .find(
+        {},
+        {
+          projection: {
+            refresh_token: 0,
+            refresh_token_exp: 0
+          }
+        }
+      )
+      .toArray()
   }
 }
 

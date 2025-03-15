@@ -11,6 +11,7 @@ export const envConfig = {
   dbDishesCollection: process.env.MONGODB_DISHES_COLLECTION as string,
   dbOrdersCollection: process.env.MONGODB_ORDERS_COLLECTION as string,
   dbTablesCollection: process.env.MONGODB_TABLES_COLLECTION as string,
+  dbGuestsCollection: process.env.MONGODB_GUESTS_COLLECTION as string,
 
   initialEmailOwner: process.env.INITIAL_EMAIL_OWNER as string,
   initialPasswordOwner: process.env.INITIAL_PASSWORD_OWNER as string,
@@ -21,5 +22,7 @@ export const envConfig = {
   accessTokenSecret: process.env.ACCESS_TOKEN_SECRET as string,
   refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET as string,
   accessTokenExpiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN as string,
-  refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN as string
+  refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN as string,
+  guestAccessTokenExpiresIn: process.env.GUEST_ACCESS_TOKEN_EXPIRES_IN as string,
+  guestRefreshTokenExpiresIn: process.env.GUEST_REFRESH_TOKEN_EXPIRES_IN as string
 }

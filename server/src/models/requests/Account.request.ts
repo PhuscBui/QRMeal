@@ -34,6 +34,7 @@ export interface UpdateEmployeeReqBody {
 
 export interface TokenPayload extends JwtPayload {
   account_id: string
+  role: string
   token_type: string
   exp: number
   iat: number
@@ -49,4 +50,9 @@ export interface ChangePasswordReqBody {
   old_password: string
   password: string
   confirm_password: string
+}
+
+export interface CreateGuestReqBody {
+  name: string
+  table_number: number
 }

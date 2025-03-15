@@ -2,6 +2,7 @@ import { Collection, Db, MongoClient } from 'mongodb'
 import { envConfig } from '~/config'
 import Account from '~/models/schemas/Account.schema'
 import Dish from '~/models/schemas/Dish.schema'
+import Guest from '~/models/schemas/Guest.schema'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import { Table } from '~/models/schemas/Table.schema'
 
@@ -46,6 +47,10 @@ class DatabaseService {
 
   get tables(): Collection<Table> {
     return this.db.collection(envConfig.dbTablesCollection)
+  }
+
+  get guests(): Collection<Guest> {
+    return this.db.collection(envConfig.dbGuestsCollection)
   }
 }
 

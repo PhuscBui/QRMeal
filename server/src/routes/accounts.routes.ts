@@ -2,9 +2,11 @@ import { Router } from 'express'
 import {
   changePasswordController,
   createEmployeeController,
+  createGuestController,
   deleteEmployeeController,
   getAccountsController,
   getEmployeeAccountController,
+  getGuestsController,
   getMeController,
   updateEmployeeController,
   updateMeController
@@ -116,5 +118,20 @@ accountsRouter.patch(
   changePasswordValidator,
   wrapRequestHandler(changePasswordController)
 )
+
+/**
+ * Description. Create guest account
+ * Path:  /guest
+ * Method: POST
+ * Request: Body : GuestBody
+ */
+accountsRouter.post('/guests', accessTokenValidator, isAdminValidator, wrapRequestHandler(createGuestController))
+
+/**
+ * Description. Get all guest accounts
+ * Path:  /guests
+ * Method: GET
+ */
+accountsRouter.get('/guests', accessTokenValidator, isAdminValidator, wrapRequestHandler(getGuestsController))
 
 export default accountsRouter

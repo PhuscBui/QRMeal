@@ -11,7 +11,7 @@ import { AuthResponse, LogoutResponse } from '~/models/response/Auth.response'
 export const loginController = async (req: Request<ParamsDictionary, AuthResponse, LoginReqBody>, res: Response) => {
   const user = req.user as Account
   const user_id = user._id as ObjectId
-  const result = await authService.login(user_id.toString())
+  const result = await authService.login(user_id.toString(), user.role)
   res.json({
     message: USERS_MESSAGES.USER_LOGIN_SUCCESS,
     result
@@ -32,8 +32,8 @@ export const refreshTokenController = async (
   res: Response
 ) => {
   const { refresh_token } = req.body
-  const { account_id, exp } = req.decoded_refresh_token as TokenPayload
-  const result = await authService.refreshToken({ account_id, refresh_token, exp })
+  const { account_id, role, exp } = req.decoded_refresh_token as TokenPayload
+  const result = await authService.refreshToken({ account_id, refresh_token, role, exp })
   res.json({
     message: USERS_MESSAGES.REFRESH_TOKEN_SUCCESS,
     result

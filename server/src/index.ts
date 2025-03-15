@@ -5,6 +5,7 @@ import { defaultErrorHandler } from '~/middlewares/error.middlewares'
 import accountsRouter from '~/routes/accounts.routes'
 import authRouter from '~/routes/auth.routes'
 import dishesRouter from '~/routes/dishes.routes'
+import guestsRouter from '~/routes/guests.routes'
 import mediasRouter from '~/routes/medias.routes'
 import staticRouter from '~/routes/static.routes'
 import tablesRouter from '~/routes/tables.routes'
@@ -34,6 +35,7 @@ app.use('/dishes', dishesRouter)
 app.use('/medias', mediasRouter)
 app.use('/static', staticRouter)
 app.use('/tables', tablesRouter)
+app.use('/guests', guestsRouter)
 
 app.use(defaultErrorHandler)
 

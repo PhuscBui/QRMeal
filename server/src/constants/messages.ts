@@ -43,7 +43,9 @@ export const USERS_MESSAGES = {
   GET_ME_SUCCESS: 'Get me success',
   UPDATE_ME_SUCCESS: 'Update me success',
   CHANGE_PASSWORD_SUCCESS: 'Change password success',
-  PASSWORD_IS_INCORRECT: 'Password is incorrect'
+  PASSWORD_IS_INCORRECT: 'Password is incorrect',
+  USER_LOGIN_FAILED: 'User login failed',
+  USER_LOGOUT_SUCCESS: 'User logout success'
 } as const
 
 export const DISHES_MESSAGE = {
@@ -88,7 +90,9 @@ export const TABLES_MESSAGES = {
   TABLE_STATUS_LENGTH_MUST_BE_GREATER_THAN_0: 'Table status length must be greater than 0',
   TABLE_STATUS_MUST_BE_AVAILABLE_OR_HIDDEN_OR_RESERVED: 'Table status must be available, hidden or reserved',
   TABLE_NUMBER_IS_EXISTS: 'Table number is exists',
-  CHANGE_TOKEN_MUST_BE_A_BOOLEAN: 'Change token must be a boolean'
+  CHANGE_TOKEN_MUST_BE_A_BOOLEAN: 'Change token must be a boolean',
+  TABLE_IS_HIDDEN_PLEASE_CHOOSE_ANOTHER_TABLE: 'Table is hidden, please choose another table',
+  TABLE_IS_RESERVED_PLEASE_CHOOSE_ANOTHER_TABLE: 'Table is reserved, please choose another table'
 } as const
 
 export const COMMON_MESSAGES = {

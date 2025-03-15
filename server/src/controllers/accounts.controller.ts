@@ -1,11 +1,12 @@
 import { NextFunction, Request, Response } from 'express'
 import { envConfig } from '~/config'
 import HTTP_STATUS from '~/constants/httpStatus'
-import { USERS_MESSAGES } from '~/constants/messages'
-import { Role } from '~/constants/type'
+import { TABLES_MESSAGES, USERS_MESSAGES } from '~/constants/messages'
+import { Role, TableStatus } from '~/constants/type'
 import {
   ChangePasswordReqBody,
   CreateEmployeeReqBody,
+  CreateGuestReqBody,
   DeleteEmployeeParam,
   GetEmployeeParam,
   TokenPayload,
@@ -18,12 +19,15 @@ import { ParamsDictionary } from 'express-serve-static-core'
 import {
   ChangePasswordResponse,
   CreateEmployeeResponse,
+  CreateGuestResponse,
   DeleteEmployeeResponse,
   GetEmployeeResponse,
   GetEmployeesResponse,
+  GetGuestResponse,
   UpdateEmployeeResponse,
   UpdateMeResponse
 } from '~/models/response/Account.response'
+import databaseService from '~/services/databases.service'
 
 export const initOwnerAccount = async () => {
   if ((await accountsService.getAccountCount()) === 0) {
@@ -165,4 +169,46 @@ export const changePasswordController = async (
   const password = req.body.password
   const result = await accountsService.changePassword(account_id, password)
   res.json(result)
+}
+
+export const createGuestController = async (
+  req: Request<ParamsDictionary, CreateGuestResponse, CreateGuestReqBody>,
+  res: Response
+) => {
+  const tableNumber = req.body.table_number
+  const table = await databaseService.tables.findOne({ number: tableNumber })
+  if (!table) {
+    res.status(HTTP_STATUS.NOT_FOUND).json({
+      message: TABLES_MESSAGES.TABLE_NOT_FOUND
+    })
+    return
+  }
+
+  if (table.status === TableStatus.Hidden) {
+    res.status(HTTP_STATUS.BAD_REQUEST).json({
+      message: TABLES_MESSAGES.TABLE_IS_HIDDEN_PLEASE_CHOOSE_ANOTHER_TABLE
+    })
+    return
+  }
+
+  if (table.status === TableStatus.Reserved) {
+    res.status(HTTP_STATUS.BAD_REQUEST).json({
+      message: TABLES_MESSAGES.TABLE_IS_RESERVED_PLEASE_CHOOSE_ANOTHER_TABLE
+    })
+    return
+  }
+
+  const result = await accountsService.createGuest(req.body)
+  res.status(HTTP_STATUS.CREATED).json({
+    message: USERS_MESSAGES.ACCOUNT_CREATED,
+    result
+  })
+}
+
+export const getGuestsController = async (req: Request<ParamsDictionary, GetGuestResponse>, res: Response) => {
+  const guests = await accountsService.getGuests()
+  res.status(HTTP_STATUS.OK).json({
+    message: USERS_MESSAGES.ACCOUNTS_FETCHED,
+    result: guests
+  })
 }
