@@ -21,11 +21,11 @@ export interface DeleteDishParam extends ParamsDictionary {
 }
 
 export interface UpdateDishReqBody {
-  name?: string
-  price?: number
-  description?: string
+  name: string
+  price: number
+  description: string
   image?: string
-  status?: string
+  status: string
 }
 
 // name: z.string().min(1).max(256),

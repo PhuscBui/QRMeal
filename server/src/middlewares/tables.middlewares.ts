@@ -70,14 +70,8 @@ export const createTableValidator = validate(
 export const updateTableValidator = validate(
   checkSchema(
     {
-      capacity: {
-        optional: true,
-        ...capacitySchema
-      },
-      status: {
-        optional: true,
-        ...statusSchema
-      },
+      capacity: capacitySchema,
+      status: statusSchema,
       changeToken: {
         optional: true,
         isBoolean: {

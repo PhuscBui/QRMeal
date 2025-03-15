@@ -8,9 +8,9 @@ export interface CreateTableReqBody {
 }
 
 export interface UpdateTableReqBody {
+  capacity: number
+  status: string
   changeToken?: boolean
-  capacity?: number
-  status?: string
 }
 
 export interface TableParams extends ParamsDictionary {

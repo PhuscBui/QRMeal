@@ -39,7 +39,8 @@ class TablesService {
         },
         {
           $set: {
-            payload,
+            capacity: payload.capacity,
+            status: payload.status,
             token
           },
           $currentDate: { updated_at: true }
@@ -53,7 +54,8 @@ class TablesService {
       },
       {
         $set: {
-          payload
+          capacity: payload.capacity,
+          status: payload.status
         },
         $currentDate: { updated_at: true }
       },

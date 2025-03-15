@@ -10,6 +10,7 @@ import {
   GetEmployeeParam,
   TokenPayload,
   UpdateEmployeeParam,
+  UpdateEmployeeReqBody,
   UpdateMeReqBody
 } from '~/models/requests/Account.request'
 import accountsService from '~/services/accounts.service'
@@ -88,7 +89,7 @@ export const getEmployeeAccountController = async (
 }
 
 export const updateEmployeeController = async (
-  req: Request<UpdateEmployeeParam, UpdateEmployeeResponse, CreateEmployeeReqBody>,
+  req: Request<UpdateEmployeeParam, UpdateEmployeeResponse, UpdateEmployeeReqBody>,
   res: Response
 ) => {
   const account = await accountsService.getAccountById(req.params.id)
