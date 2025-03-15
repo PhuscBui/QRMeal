@@ -23,8 +23,8 @@ export interface DeleteEmployeeParam extends ParamsDictionary {
 }
 
 export interface UpdateEmployeeReqBody {
-  name?: string
-  email?: string
+  name: string
+  email: string
   avatar?: string
   date_of_birth?: string
   password?: string

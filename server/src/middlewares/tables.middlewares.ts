@@ -1,8 +1,7 @@
 import { checkSchema, ParamSchema } from 'express-validator'
-import { ObjectId } from 'mongodb'
-import HTTP_STATUS from '~/constants/httpStatus'
+
 import { TABLES_MESSAGES } from '~/constants/messages'
-import { TableStatus, TableStatusValues } from '~/constants/type'
+import { TableStatusValues } from '~/constants/type'
 import tablesService from '~/services/tables.service'
 import { validate } from '~/utils/validation'
 

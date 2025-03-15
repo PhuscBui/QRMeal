@@ -27,9 +27,3 @@ export interface UpdateDishReqBody {
   image?: string
   status: string
 }
-
-// name: z.string().min(1).max(256),
-// price: z.coerce.number().positive(),
-// description: z.string().max(10000),
-// image: z.string().url(),
-// status: z.enum(DishStatusValues).optional()
