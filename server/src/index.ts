@@ -1,4 +1,5 @@
 import express from 'express'
+import { createServer } from 'http'
 import { envConfig } from '~/config'
 import { initOwnerAccount } from '~/controllers/accounts.controller'
 import { defaultErrorHandler } from '~/middlewares/error.middlewares'
@@ -7,16 +8,19 @@ import authRouter from '~/routes/auth.routes'
 import dishesRouter from '~/routes/dishes.routes'
 import guestsRouter from '~/routes/guests.routes'
 import mediasRouter from '~/routes/medias.routes'
+import ordersRouter from '~/routes/orders.routes'
 import staticRouter from '~/routes/static.routes'
 import tablesRouter from '~/routes/tables.routes'
 import databaseService from '~/services/databases.service'
 import { initFolder } from '~/utils/file'
+import initSocket from '~/utils/socket'
 
 initFolder()
 
 databaseService.connect()
 
 const app = express()
+const httpServer = createServer(app)
 const port = envConfig.port
 
 const start = async () => {
@@ -36,9 +40,12 @@ app.use('/medias', mediasRouter)
 app.use('/static', staticRouter)
 app.use('/tables', tablesRouter)
 app.use('/guests', guestsRouter)
+app.use('/orders', ordersRouter)
 
 app.use(defaultErrorHandler)
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
+initSocket(httpServer)
+
+httpServer.listen(port, () => {
+  console.log(`Example app listening at http://localhost:${port}`)
 })
