@@ -3,6 +3,7 @@ config()
 
 export const envConfig = {
   port: (process.env.PORT as string) || 4000,
+  clientUrl: process.env.CLIENT_URL as string,
   dbName: process.env.MONGODB_DATABASE as string,
   dbUsername: process.env.MONGODB_USERNAME as string,
   dbPassword: process.env.MONGODB_PASSWORD as string,

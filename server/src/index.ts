@@ -13,7 +13,8 @@ import staticRouter from '~/routes/static.routes'
 import tablesRouter from '~/routes/tables.routes'
 import databaseService from '~/services/databases.service'
 import { initFolder } from '~/utils/file'
-import initSocket from '~/utils/socket'
+import socketService from '~/utils/socket'
+import cors from 'cors'
 
 initFolder()
 
@@ -28,6 +29,12 @@ const start = async () => {
 }
 
 start()
+app.use(
+  cors({
+    origin: 'http://localhost:3000', // Cho phép frontend truy cập
+    credentials: true // Cho phép gửi cookie nếu cần
+  })
+)
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
@@ -44,7 +51,7 @@ app.use('/orders', ordersRouter)
 
 app.use(defaultErrorHandler)
 
-initSocket(httpServer)
+socketService.initialize(httpServer)
 
 httpServer.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)

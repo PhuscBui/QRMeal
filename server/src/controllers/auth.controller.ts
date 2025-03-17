@@ -14,7 +14,15 @@ export const loginController = async (req: Request<ParamsDictionary, AuthRespons
   const result = await authService.login(user_id.toString(), user.role)
   res.json({
     message: USERS_MESSAGES.USER_LOGIN_SUCCESS,
-    result
+    result: {
+      ...result,
+      account: {
+        id: user_id.toString(),
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    }
   })
 }
 
