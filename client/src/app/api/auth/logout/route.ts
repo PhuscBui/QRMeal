@@ -2,11 +2,11 @@ import authApiRequest from "@/apiRequests/auth";
 import { cookies } from "next/headers";
 
 export async function POST() {
-  const cookieStore = cookies();
-  const accessToken = (await cookieStore).get("access_token")?.value;
-  const refreshToken = (await cookieStore).get("refresh_token")?.value;
-  (await cookieStore).delete("access_token");
-  (await cookieStore).delete("refresh_token");
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("access_token")?.value;
+  const refreshToken = cookieStore.get("refresh_token")?.value;
+  cookieStore.delete("access_token");
+  cookieStore.delete("refresh_token");
 
   if (!accessToken || !refreshToken) {
     return Response.json(
@@ -26,6 +26,7 @@ export async function POST() {
     });
     return Response.json(result.payload);
   } catch (error) {
+    console.error(error);
     return Response.json(
       {
         message: "Internal server error",

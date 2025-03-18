@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// import { toast } from "@/components/ui/use-toast";
 import { EntityError } from "@/lib/http";
 import { type ClassValue, clsx } from "clsx";
 import { UseFormSetError } from "react-hook-form";
@@ -135,7 +134,6 @@ export const checkAndRefreshToken = async (param?: {
       if (param?.onSuccess) {
         param.onSuccess();
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       if (param?.onError) {
         param.onError();

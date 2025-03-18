@@ -17,11 +17,13 @@ import { useAccountMe, useUpdateMeMutation } from "@/queries/useAccount";
 import { useUploadMediaMutation } from "@/queries/useMedia";
 import { toast } from "sonner";
 import { handleErrorApi } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 export default function UpdateProfileForm() {
   const [file, setFile] = useState<File | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { data, refetch } = useAccountMe();
+  console.log(data);
   const updateMeMutation = useUpdateMeMutation();
   const uploadMediaMutation = useUploadMediaMutation();
   const form = useForm<UpdateMeBodyType>({
@@ -29,6 +31,7 @@ export default function UpdateProfileForm() {
     defaultValues: {
       name: "",
       avatar: undefined,
+      date_of_birth: undefined,
     },
   });
 
@@ -36,15 +39,17 @@ export default function UpdateProfileForm() {
   const name = form.watch("name");
   useEffect(() => {
     if (data) {
-      const { name, avatar } = data.payload.result;
+      const { name, avatar, date_of_birth } = data.payload.result;
       form.reset({
         name,
         avatar: avatar ?? undefined,
+        date_of_birth: date_of_birth ?? undefined,
       });
     }
   }, [form, data]);
 
   const previewAvatar = file ? URL.createObjectURL(file) : avatar;
+
   // const previewAvatar = useMemo(() => {
   //   if (file) {
   //     return URL.createObjectURL(file);
@@ -62,22 +67,27 @@ export default function UpdateProfileForm() {
       let body = values;
       if (file) {
         const formData = new FormData();
-        formData.append("file", file);
+        console.log(file);
+        formData.append("image", file);
         const uploadImageResult = await uploadMediaMutation.mutateAsync(
           formData
         );
         const imageUrl = uploadImageResult.payload.result;
+        console.log("url", imageUrl);
         body = {
           ...values,
           avatar: imageUrl,
         };
       }
+      console.log(body);
       const result = await updateMeMutation.mutateAsync(body);
+
       toast("Success", {
         description: result.payload.message,
       });
       refetch();
     } catch (error) {
+      console.log(error);
       handleErrorApi({
         error,
         setError: form.setError,
@@ -96,8 +106,16 @@ export default function UpdateProfileForm() {
       >
         <Card x-chunk="dashboard-07-chunk-0">
           <CardHeader>
-            <CardTitle>Thông tin cá nhân</CardTitle>
+            <CardTitle className="text-center text-2xl">
+              Personal Information
+            </CardTitle>
+            <div className="flex w-full justify-center items-center gap-4">
+              <Badge variant="outline" className="mt-2">
+                {data?.payload.result.role}
+              </Badge>
+            </div>
           </CardHeader>
+
           <CardContent>
             <div className="grid gap-6">
               <FormField
@@ -105,8 +123,8 @@ export default function UpdateProfileForm() {
                 name="avatar"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="flex gap-2 items-start justify-start">
-                      <Avatar className="aspect-square w-[100px] h-[100px] rounded-md object-cover">
+                    <div className="flex gap-2 items-start justify-center items-center pb-1">
+                      <Avatar className="aspect-square w-[120px] h-[120px] rounded-md object-cover">
                         <AvatarImage src={previewAvatar} />
                         <AvatarFallback className="rounded-none">
                           {name}
@@ -128,7 +146,7 @@ export default function UpdateProfileForm() {
                         }}
                       />
                       <button
-                        className="flex aspect-square w-[100px] items-center justify-center rounded-md border border-dashed"
+                        className="flex aspect-square w-[120px] items-center justify-center rounded-md border border-dashed hover:cursor-pointer"
                         type="button"
                         onClick={() => avatarInputRef.current?.click()}
                       >
@@ -140,31 +158,72 @@ export default function UpdateProfileForm() {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="grid gap-3">
-                      <Label htmlFor="name">Tên</Label>
-                      <Input
-                        id="name"
-                        type="text"
-                        className="w-full"
-                        {...field}
-                      />
-                      <FormMessage />
-                    </div>
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem className="w-full">
+                      <div className="grid gap-2">
+                        <Label htmlFor="name" className="text-sm font-bold">
+                          Name
+                        </Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                          placeholder="Enter your name"
+                          {...field}
+                        />
+                        <FormMessage className="text-xs text-red-500" />
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="date_of_birth"
+                  render={({ field }) => (
+                    <FormItem className="w-full">
+                      <div className="grid gap-2">
+                        <Label
+                          htmlFor="date_of_birth"
+                          className="text-sm font-bold"
+                        >
+                          Date Of Birth
+                        </Label>
+                        <Input
+                          id="date_of_birth"
+                          type="date"
+                          className="w-full"
+                          value={
+                            field.value
+                              ? new Date(field.value)
+                                  .toISOString()
+                                  .split("T")[0]
+                              : ""
+                          }
+                          onChange={(e) =>
+                            field.onChange(new Date(e.target.value))
+                          }
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                        />
+                        <FormMessage className="text-xs text-red-500" />
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <div className=" items-center gap-2 md:ml-auto flex">
                 <Button variant="outline" size="sm" type="reset">
-                  Hủy
+                  Reset
                 </Button>
                 <Button size="sm" type="submit">
-                  Lưu thông tin
+                  Save
                 </Button>
               </div>
             </div>

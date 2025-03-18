@@ -93,11 +93,11 @@ accountsRouter.get('/me', accessTokenValidator, wrapRequestHandler(getMeControll
 /**
  * Description. Update me
  * Path:  /me
- * Method: PATCH
+ * Method: PUT
  * Request: Headers : Authorization
  * Request: Body : Account
  */
-accountsRouter.patch(
+accountsRouter.put(
   '/me',
   accessTokenValidator,
   updateMeValidator,
@@ -108,11 +108,11 @@ accountsRouter.patch(
 /**
  * Description. Change password
  * Path:  /me/change-password
- * Method: PATCH
+ * Method: PUT
  * Request: Headers : Authorization
  * Request: Body : Account
  */
-accountsRouter.patch(
+accountsRouter.put(
   '/me/change-password',
   accessTokenValidator,
   changePasswordValidator,

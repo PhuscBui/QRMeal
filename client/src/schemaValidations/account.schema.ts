@@ -7,6 +7,7 @@ export const AccountSchema = z.object({
   email: z.string(),
   role: z.string(),
   avatar: z.string().nullable(),
+  date_of_birth: z.date().nullable(),
 });
 
 export type AccountType = z.TypeOf<typeof AccountSchema>;
@@ -86,6 +87,7 @@ export const UpdateMeBody = z
   .object({
     name: z.string().trim().min(2).max(256),
     avatar: z.string().url().optional(),
+    date_of_birth: z.date().optional(),
   })
   .strict();
 

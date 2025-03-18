@@ -1,9 +1,10 @@
 import accountApiRequest from "@/apiRequests/account";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { cookies } from "next/headers";
 
 export default async function Dashboard() {
-  const cookieStore = cookies();
-  const accessToken = (await cookieStore).get("access_token")?.value;
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("access_token")?.value;
   if (!accessToken) {
     throw new Error("Access token is missing");
   }
@@ -11,8 +12,8 @@ export default async function Dashboard() {
   try {
     const result = await accountApiRequest.sMe(accessToken);
     name = result.payload.result.name;
-  } catch (error: any) {
-    if (error.digest?.includes("NEXT_REDIRECT")) {
+  } catch (error) {
+    if (isRedirectError(error)) {
       throw error;
     }
   }

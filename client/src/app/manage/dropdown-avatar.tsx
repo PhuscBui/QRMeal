@@ -22,7 +22,6 @@ export default function DropdownAvatar() {
   const { data } = useAccountMe();
   const { setRole } = useAppContext();
   const account = data?.payload.result;
-  console.log(account);
   const logout = async () => {
     if (logoutMutation.isPending) return;
     try {

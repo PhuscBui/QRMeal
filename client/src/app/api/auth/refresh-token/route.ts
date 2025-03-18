@@ -3,8 +3,8 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 
 export async function POST() {
-  const cookieStore = cookies();
-  const refreshToken = (await cookieStore).get("refresh_token")?.value;
+  const cookieStore = await cookies();
+  const refreshToken = cookieStore.get("refresh_token")?.value;
   if (!refreshToken) {
     return Response.json(
       {
@@ -26,14 +26,14 @@ export async function POST() {
     const decodedRefreshToken = jwt.decode(payload.result.refresh_token) as {
       exp: number;
     };
-    (await cookieStore).set("accessToken", payload.result.access_token, {
+    cookieStore.set("access_token", payload.result.access_token, {
       path: "/",
       httpOnly: true,
       sameSite: "lax",
       secure: true,
       expires: decodedAccessToken.exp * 1000,
     });
-    (await cookieStore).set("refreshToken", payload.result.refresh_token, {
+    cookieStore.set("refresh_token", payload.result.refresh_token, {
       path: "/",
       httpOnly: true,
       sameSite: "lax",

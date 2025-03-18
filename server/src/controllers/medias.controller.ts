@@ -9,7 +9,7 @@ export const uploadImageController = async (req: Request, res: Response) => {
   const url = await mediasService.uploadImage(req)
   res.json({
     message: COMMON_MESSAGES.UPLOAD_IMAGE_SUCCESS,
-    result: url
+    result: url[0].url
   })
 }
 

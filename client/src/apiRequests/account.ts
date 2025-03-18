@@ -25,7 +25,7 @@ const accountApiRequest = {
   updateMe: (body: UpdateMeBodyType) =>
     http.put<AccountResType>(`${prefix}/me`, body),
   changePassword: (body: ChangePasswordBodyType) =>
-    http.put<AccountResType>(`${prefix}/change-password`, body),
+    http.put<AccountResType>(`${prefix}/me/change-password`, body),
   list: () => http.get<AccountListResType>(`${prefix}`),
   addEmployee: (body: CreateEmployeeAccountBodyType) =>
     http.post<AccountResType>(prefix, body),
