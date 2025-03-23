@@ -149,16 +149,16 @@ export const formatCurrency = (number: number) => {
   }).format(number);
 };
 
-export const getVietnameseDishStatus = (
+export const getDishStatus = (
   status: (typeof DishStatus)[keyof typeof DishStatus]
 ) => {
   switch (status) {
     case DishStatus.Available:
-      return "Có sẵn";
+      return "Available";
     case DishStatus.Unavailable:
-      return "Không có sẵn";
+      return "Unavailable";
     default:
-      return "Ẩn";
+      return "Hidden";
   }
 };
 

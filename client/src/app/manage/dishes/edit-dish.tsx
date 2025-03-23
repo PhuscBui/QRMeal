@@ -7,60 +7,91 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  CreateEmployeeAccountBody,
-  CreateEmployeeAccountBodyType,
-} from "@/schemaValidations/account.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PlusCircle, Upload } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { Upload } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAddAccountMutation } from "@/queries/useAccount";
+import { getDishStatus, handleErrorApi } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  UpdateDishBody,
+  UpdateDishBodyType,
+} from "@/schemaValidations/dish.schema";
+import { DishStatus, DishStatusValues } from "@/constants/type";
+import { Textarea } from "@/components/ui/textarea";
 import { useUploadMediaMutation } from "@/queries/useMedia";
+import { useGetDishQuery, useUpdateDishMutation } from "@/queries/useDish";
 import { toast } from "sonner";
-import { handleErrorApi } from "@/lib/utils";
+import revalidateApiRequest from "@/apiRequests/revalidate";
 
-export default function AddEmployee() {
+export default function EditDish({
+  id,
+  setId,
+  onSubmitSuccess,
+}: {
+  id?: string | undefined;
+  setId: (value: string | undefined) => void;
+  onSubmitSuccess?: () => void;
+}) {
   const [file, setFile] = useState<File | null>(null);
-  const [open, setOpen] = useState(false);
-  const addAccountMutation = useAddAccountMutation();
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
   const uploadMediaMutation = useUploadMediaMutation();
-
-  const avatarInputRef = useRef<HTMLInputElement | null>(null);
-  const form = useForm<CreateEmployeeAccountBodyType>({
-    resolver: zodResolver(CreateEmployeeAccountBody),
+  const updateDishMutation = useUpdateDishMutation();
+  const { data } = useGetDishQuery({ enabled: Boolean(id), id: id as string });
+  const form = useForm<UpdateDishBodyType>({
+    resolver: zodResolver(UpdateDishBody),
     defaultValues: {
       name: "",
-      email: "",
-      avatar: undefined,
-      date_of_birth: new Date(),
-      password: "",
-      confirm_password: "",
+      description: "",
+      price: 0,
+      image: undefined,
+      status: DishStatus.Unavailable,
     },
   });
-  const avatar = form.watch("avatar");
+  const image = form.watch("image");
   const name = form.watch("name");
-  const previewAvatarFromFile = useMemo(() => {
-    if (file) {
-      return URL.createObjectURL(file);
-    }
-    return avatar;
-  }, [file, avatar]);
 
-  const reset = () => {
-    form.reset();
-    setFile(null);
-  };
-  const onSubmit = async (values: CreateEmployeeAccountBodyType) => {
-    if (addAccountMutation.isPending) return;
+  const previewAvatarFromFile = file
+    ? URL.createObjectURL(file)
+    : image || undefined;
+
+  useEffect(() => {
+    if (data) {
+      const { name, image, description, price, status } = data.payload.result;
+      form.reset({
+        name,
+        image: image || undefined,
+        description,
+        price,
+        status,
+      });
+    }
+  }, [data, form]);
+
+  const onSubmit = async (values: UpdateDishBodyType) => {
+    if (updateDishMutation.isPending) return;
     try {
-      let body = values;
+      let body: UpdateDishBodyType & { id: string } = {
+        id: id as string,
+        ...values,
+      };
       if (file) {
         const formData = new FormData();
         formData.append("image", file);
@@ -69,16 +100,19 @@ export default function AddEmployee() {
         );
         const imageUrl = uploadImageResult.payload.result;
         body = {
-          ...values,
-          avatar: imageUrl,
+          ...body,
+          image: imageUrl,
         };
       }
-      const result = await addAccountMutation.mutateAsync(body);
-      toast("", {
+      const result = await updateDishMutation.mutateAsync(body);
+      await revalidateApiRequest("dishes");
+      toast("Success", {
         description: result.payload.message,
       });
       reset();
-      setOpen(false);
+      if (onSubmitSuccess) {
+        onSubmitSuccess();
+      }
     } catch (error) {
       handleErrorApi({
         error,
@@ -86,40 +120,42 @@ export default function AddEmployee() {
       });
     }
   };
+
+  const reset = () => {
+    setId(undefined);
+    setFile(null);
+  };
+
   return (
-    <Dialog onOpenChange={setOpen} open={open}>
-      <DialogTrigger asChild>
-        <Button size="lg" className="gap-2">
-          <PlusCircle className="h-3.5 w-3.5" />
-          <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-            Add Employee
-          </span>
-        </Button>
-      </DialogTrigger>
+    <Dialog
+      open={Boolean(id)}
+      onOpenChange={(value) => {
+        if (!value) {
+          reset();
+        }
+      }}
+    >
       <DialogContent className="sm:max-w-[600px] max-h-screen overflow-auto">
         <DialogHeader>
-          <DialogTitle>Create Account</DialogTitle>
+          <DialogTitle>Update dish</DialogTitle>
           <DialogDescription>
-            Create a new account for an employee.
+            Update dish information and submit to save
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form
             noValidate
             className="grid auto-rows-max items-start gap-4 md:gap-8"
-            id="add-employee-form"
-            onSubmit={form.handleSubmit(onSubmit, (e) => {
-              console.log(e);
-            })}
-            onReset={reset}
+            id="edit-dish-form"
+            onSubmit={form.handleSubmit(onSubmit, console.log)}
           >
             <div className="grid gap-4 py-4">
               <FormField
                 control={form.control}
-                name="avatar"
+                name="image"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="flex gap-2 items-start justify-center">
+                    <div className="flex gap-2 items-start justify-start">
                       <Avatar className="aspect-square w-[100px] h-[100px] rounded-md object-cover">
                         <AvatarImage src={previewAvatarFromFile} />
                         <AvatarFallback className="rounded-none">
@@ -129,7 +165,7 @@ export default function AddEmployee() {
                       <input
                         type="file"
                         accept="image/*"
-                        ref={avatarInputRef}
+                        ref={imageInputRef}
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
@@ -144,7 +180,7 @@ export default function AddEmployee() {
                       <button
                         className="flex aspect-square w-[100px] items-center justify-center rounded-md border border-dashed"
                         type="button"
-                        onClick={() => avatarInputRef.current?.click()}
+                        onClick={() => imageInputRef.current?.click()}
                       >
                         <Upload className="h-4 w-4 text-muted-foreground" />
                         <span className="sr-only">Upload</span>
@@ -171,57 +207,22 @@ export default function AddEmployee() {
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
-                name="date_of_birth"
-                render={({ field }) => (
-                  <FormItem className="w-full">
-                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label
-                        htmlFor="date_of_birth"
-                        className="text-sm font-bold"
-                      >
-                        Date Of Birth
-                      </Label>
-                      <div className="col-span-3 w-full space-y-2">
-                        <Input
-                          id="date_of_birth"
-                          type="date"
-                          className="w-fit"
-                          value={
-                            field.value &&
-                            !isNaN(new Date(field.value).getTime())
-                              ? new Date(field.value)
-                                  .toISOString()
-                                  .split("T")[0]
-                              : ""
-                          }
-                          onChange={(e) =>
-                            field.onChange(new Date(e.target.value))
-                          }
-                          onBlur={field.onBlur}
-                          name={field.name}
-                          ref={field.ref}
-                        />
-                      </div>
-                      <FormMessage className="text-xs text-red-500" />
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="email"
+                name="price"
                 render={({ field }) => (
                   <FormItem>
                     <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="email" className="text-sm font-bold">
-                        Email
+                      <Label htmlFor="price" className="text-sm font-bold">
+                        Price
                       </Label>
                       <div className="col-span-3 w-full space-y-2">
-                        <Input id="email" className="w-full" {...field} />
+                        <Input
+                          id="price"
+                          className="w-full"
+                          {...field}
+                          type="number"
+                        />
                         <FormMessage />
                       </div>
                     </div>
@@ -230,18 +231,20 @@ export default function AddEmployee() {
               />
               <FormField
                 control={form.control}
-                name="password"
+                name="description"
                 render={({ field }) => (
                   <FormItem>
                     <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="password" className="text-sm font-bold">
-                        Password
+                      <Label
+                        htmlFor="description"
+                        className="text-sm font-bold"
+                      >
+                        Description
                       </Label>
                       <div className="col-span-3 w-full space-y-2">
-                        <Input
-                          id="password"
+                        <Textarea
+                          id="description"
                           className="w-full"
-                          type="password"
                           {...field}
                         />
                         <FormMessage />
@@ -252,25 +255,38 @@ export default function AddEmployee() {
               />
               <FormField
                 control={form.control}
-                name="confirm_password"
+                name="status"
                 render={({ field }) => (
                   <FormItem>
                     <div className="grid grid-cols-4 items-center justify-items-start gap-4">
                       <Label
-                        htmlFor="confirmPassword"
+                        htmlFor="description"
                         className="text-sm font-bold"
                       >
-                        Confirm Password
+                        Status
                       </Label>
                       <div className="col-span-3 w-full space-y-2">
-                        <Input
-                          id="confirmPassword"
-                          className="w-full"
-                          type="password"
-                          {...field}
-                        />
-                        <FormMessage />
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Chọn trạng thái" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {DishStatusValues.map((status) => (
+                              <SelectItem key={status} value={status}>
+                                {getDishStatus(status)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
+
+                      <FormMessage />
                     </div>
                   </FormItem>
                 )}
@@ -279,8 +295,8 @@ export default function AddEmployee() {
           </form>
         </Form>
         <DialogFooter>
-          <Button type="submit" form="add-employee-form">
-            Add Employee
+          <Button type="submit" form="edit-dish-form">
+            Update
           </Button>
         </DialogFooter>
       </DialogContent>

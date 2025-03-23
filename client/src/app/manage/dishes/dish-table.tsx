@@ -1,6 +1,5 @@
 "use client";
 
-import { CaretSortIcon } from "@radix-ui/react-icons";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -13,9 +12,8 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-
 import { Button } from "@/components/ui/button";
-
+import DOMPurify from "dompurify";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -25,13 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  AccountListResType,
-  AccountType,
-} from "@/schemaValidations/account.schema";
-import AddEmployee from "@/app/manage/accounts/add-employee";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import EditEmployee from "@/app/manage/accounts/edit-employee";
 import { createContext, useContext, useEffect, useState } from "react";
 import {
   AlertDialog,
@@ -43,34 +35,56 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { formatCurrency, getDishStatus, handleErrorApi } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import AutoPagination from "@/components/auto-pagination";
-import {
-  useDeleteAccountMutation,
-  useGetAccountList,
-} from "@/queries/useAccount";
+import { DishListResType } from "@/schemaValidations/dish.schema";
+import EditDish from "@/app/manage/dishes/edit-dish";
+import AddDish from "@/app/manage/dishes/add-dish";
+import { useDeleteDishMutation, useDishListQuery } from "@/queries/useDish";
 import { toast } from "sonner";
-import { handleErrorApi } from "@/lib/utils";
 import { Pen, Trash } from "lucide-react";
 
-type AccountItem = AccountListResType["result"][0];
+type DishItem = DishListResType["result"][0];
 
-const AccountTableContext = createContext<{
-  setEmployeeIdEdit: (value: string) => void;
-  employeeIdEdit: string | undefined;
-  employeeDelete: AccountItem | null;
-  setEmployeeDelete: (value: AccountItem | null) => void;
+const statusBage = (status: string) => {
+  if (status === "Available") {
+    return (
+      <span className="bg-green-100 text-green-800 rounded-full px-2 py-1 text-xs font-bold">
+        Available
+      </span>
+    );
+  }
+  if (status === "Unavailable") {
+    return (
+      <span className="bg-red-100 text-red-800 rounded-full px-2 py-1 text-xs font-bold">
+        Unavailable
+      </span>
+    );
+  }
+  return (
+    <span className="bg-yellow-100 text-yellow-800 rounded-full px-2 py-1 text-xs font-bold">
+      Hidden
+    </span>
+  );
+};
+
+const DishTableContext = createContext<{
+  setDishIdEdit: (value: string) => void;
+  dishIdEdit: string | undefined;
+  dishDelete: DishItem | null;
+  setDishDelete: (value: DishItem | null) => void;
 }>({
-  setEmployeeIdEdit: (value: string | undefined) => {},
-  employeeIdEdit: undefined,
-  employeeDelete: null,
-  setEmployeeDelete: (value: AccountItem | null) => {},
+  setDishIdEdit: (value: string | undefined) => {},
+  dishIdEdit: undefined,
+  dishDelete: null,
+  setDishDelete: (value: DishItem | null) => {},
 });
 
-export const columns: ColumnDef<AccountType>[] = [
+export const columns: ColumnDef<DishItem>[] = [
   {
     accessorKey: "index",
-    header: "STT",
+    header: "No.",
     cell: ({ row }) => <div>{row.index + 1}</div>,
   },
   {
@@ -78,17 +92,14 @@ export const columns: ColumnDef<AccountType>[] = [
     header: "ID",
   },
   {
-    accessorKey: "avatar",
-    header: "Avatar",
+    accessorKey: "image",
+    header: "Image",
     cell: ({ row }) => (
       <div>
         <Avatar className="aspect-square w-[100px] h-[100px] rounded-md object-cover">
-          <AvatarImage src={row.getValue("avatar")} />
+          <AvatarImage src={row.getValue("image")} />
           <AvatarFallback className="rounded-none">
-            {row.original.name
-              .split(" ")
-              .map((name) => name[0])
-              .join("")}
+            {row.original.name}
           </AvatarFallback>
         </Avatar>
       </div>
@@ -100,47 +111,42 @@ export const columns: ColumnDef<AccountType>[] = [
     cell: ({ row }) => <div className="capitalize">{row.getValue("name")}</div>,
   },
   {
-    accessorKey: "email",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Email
-          <CaretSortIcon className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
+    accessorKey: "price",
+    header: "Price",
+    cell: ({ row }) => (
+      <div className="capitalize">{formatCurrency(row.getValue("price"))}</div>
+    ),
   },
   {
-    accessorKey: "date_of_birth",
-    header: "Date of Birth",
-    cell: ({ row }) => {
-      const rawDate = row.getValue("date_of_birth");
-      const formattedDate = new Date(rawDate as string).toLocaleDateString(
-        "vi-VN",
-        {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        }
-      );
-      return <div>{formattedDate}</div>;
-    },
+    accessorKey: "description",
+    header: "Description",
+    cell: ({ row }) => (
+      <div
+        dangerouslySetInnerHTML={{
+          __html: DOMPurify.sanitize(row.getValue("description")),
+        }}
+        className="whitespace-pre-line"
+      />
+    ),
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => (
+      <div>{statusBage(getDishStatus(row.getValue("status")))}</div>
+    ),
   },
   {
     id: "actions",
     enableHiding: false,
     cell: function Actions({ row }) {
-      const { setEmployeeIdEdit, setEmployeeDelete } =
-        useContext(AccountTableContext);
-      const openEditEmployee = () => {
-        setEmployeeIdEdit(row.original._id);
+      const { setDishIdEdit, setDishDelete } = useContext(DishTableContext);
+      const openEditDish = () => {
+        setDishIdEdit(row.original._id);
       };
 
-      const openDeleteEmployee = () => {
-        setEmployeeDelete(row.original);
+      const openDeleteDish = () => {
+        setDishDelete(row.original);
       };
       return (
         // <DropdownMenu>
@@ -153,24 +159,22 @@ export const columns: ColumnDef<AccountType>[] = [
         //   <DropdownMenuContent align="end">
         //     <DropdownMenuLabel>Actions</DropdownMenuLabel>
         //     <DropdownMenuSeparator />
-        //     <DropdownMenuItem onClick={openEditEmployee}>Edit</DropdownMenuItem>
-        //     <DropdownMenuItem onClick={openDeleteEmployee}>
-        //       Delete
-        //     </DropdownMenuItem>
+        //     <DropdownMenuItem onClick={openEditDish}>Edit</DropdownMenuItem>
+        //     <DropdownMenuItem onClick={openDeleteDish}>Delete</DropdownMenuItem>
         //   </DropdownMenuContent>
         // </DropdownMenu>
         <div className="flex gap-2">
           <Button
             variant="default"
             className="h-8 w-8 p-0"
-            onClick={openEditEmployee}
+            onClick={openEditDish}
           >
             <Pen className="h-4 w-4" />
           </Button>
           <Button
             variant="destructive"
             className="h-8 w-8 p-0"
-            onClick={openDeleteEmployee}
+            onClick={openDeleteDish}
           >
             <Trash className="h-4 w-4" />
           </Button>
@@ -180,19 +184,19 @@ export const columns: ColumnDef<AccountType>[] = [
   },
 ];
 
-function AlertDialogDeleteAccount({
-  employeeDelete,
-  setEmployeeDelete,
+function AlertDialogDeleteDish({
+  dishDelete,
+  setDishDelete,
 }: {
-  employeeDelete: AccountItem | null;
-  setEmployeeDelete: (value: AccountItem | null) => void;
+  dishDelete: DishItem | null;
+  setDishDelete: (value: DishItem | null) => void;
 }) {
-  const { mutateAsync } = useDeleteAccountMutation();
-  const deleteAccount = async () => {
-    if (employeeDelete) {
+  const { mutateAsync } = useDeleteDishMutation();
+  const deleteDish = async () => {
+    if (dishDelete) {
       try {
-        const result = await mutateAsync(employeeDelete._id);
-        setEmployeeDelete(null);
+        const result = await mutateAsync(dishDelete._id);
+        setDishDelete(null);
         toast("Success", {
           description: result.payload.message,
         });
@@ -205,29 +209,26 @@ function AlertDialogDeleteAccount({
   };
   return (
     <AlertDialog
-      open={Boolean(employeeDelete)}
+      open={Boolean(dishDelete)}
       onOpenChange={(value) => {
         if (!value) {
-          setEmployeeDelete(null);
+          setDishDelete(null);
         }
       }}
     >
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Employee</AlertDialogTitle>
+          <AlertDialogTitle>Delete dish</AlertDialogTitle>
           <AlertDialogDescription>
-            Account{" "}
             <span className="bg-foreground text-primary-foreground rounded p-1">
-              {employeeDelete?.name}
+              {dishDelete?.name}
             </span>{" "}
             will be deleted. You can&apos;t undo this action.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={deleteAccount}>
-            Continue
-          </AlertDialogAction>
+          <AlertDialogAction onClick={deleteDish}>Continue</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -235,17 +236,14 @@ function AlertDialogDeleteAccount({
 }
 // Số lượng item trên 1 trang
 const PAGE_SIZE = 10;
-export default function AccountTable() {
+export default function DishTable() {
   const searchParam = useSearchParams();
   const page = searchParam.get("page") ? Number(searchParam.get("page")) : 1;
   const pageIndex = page - 1;
-  // const params = Object.fromEntries(searchParam.entries())
-  const [employeeIdEdit, setEmployeeIdEdit] = useState<string | undefined>();
-  const [employeeDelete, setEmployeeDelete] = useState<AccountItem | null>(
-    null
-  );
-  const accountListQuery = useGetAccountList();
-  const data = accountListQuery.data?.payload.result ?? [];
+  const [dishIdEdit, setDishIdEdit] = useState<string | undefined>();
+  const [dishDelete, setDishDelete] = useState<DishItem | null>(null);
+  const dishListQuery = useDishListQuery();
+  const data = dishListQuery.data?.payload.result ?? [];
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -285,35 +283,26 @@ export default function AccountTable() {
   }, [table, pageIndex]);
 
   return (
-    <AccountTableContext.Provider
-      value={{
-        employeeIdEdit,
-        setEmployeeIdEdit,
-        employeeDelete,
-        setEmployeeDelete,
-      }}
+    <DishTableContext.Provider
+      value={{ dishIdEdit, setDishIdEdit, dishDelete, setDishDelete }}
     >
       <div className="w-full">
-        <EditEmployee
-          id={employeeIdEdit}
-          setId={setEmployeeIdEdit}
-          onSubmitSuccess={() => {}}
-        />
-        <AlertDialogDeleteAccount
-          employeeDelete={employeeDelete}
-          setEmployeeDelete={setEmployeeDelete}
+        <EditDish id={dishIdEdit} setId={setDishIdEdit} />
+        <AlertDialogDeleteDish
+          dishDelete={dishDelete}
+          setDishDelete={setDishDelete}
         />
         <div className="flex items-center py-4">
           <Input
-            placeholder="Filter emails..."
-            value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
+            placeholder="Filter by name"
+            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
-              table.getColumn("email")?.setFilterValue(event.target.value)
+              table.getColumn("name")?.setFilterValue(event.target.value)
             }
             className="max-w-sm"
           />
           <div className="ml-auto flex items-center gap-2">
-            <AddEmployee />
+            <AddDish />
           </div>
         </div>
         <div className="rounded-md border">
@@ -369,17 +358,17 @@ export default function AccountTable() {
         <div className="flex items-center justify-end space-x-2 py-4">
           <div className="text-xs text-muted-foreground py-4 flex-1 ">
             Display <strong>{table.getPaginationRowModel().rows.length}</strong>{" "}
-            of <strong>{data.length}</strong> items
+            of <strong>{data.length}</strong> results
           </div>
           <div>
             <AutoPagination
               page={table.getState().pagination.pageIndex + 1}
               pageSize={table.getPageCount()}
-              pathname="/manage/accounts"
+              pathname="/manage/dishes"
             />
           </div>
         </div>
       </div>
-    </AccountTableContext.Provider>
+    </DishTableContext.Provider>
   );
 }
