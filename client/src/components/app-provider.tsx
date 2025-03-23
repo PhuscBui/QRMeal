@@ -53,6 +53,7 @@ export default function AppProvider({
   //     removeTokensFromLocalStorage();
   //   }
   // }, []);
+
   const setRole = (role?: RoleType | undefined) => {
     setRoleState(role);
     if (!role) {

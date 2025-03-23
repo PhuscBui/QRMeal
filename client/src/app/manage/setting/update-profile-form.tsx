@@ -43,7 +43,7 @@ export default function UpdateProfileForm() {
       form.reset({
         name,
         avatar: avatar ?? undefined,
-        date_of_birth: date_of_birth ?? undefined,
+        date_of_birth: date_of_birth ? new Date(date_of_birth) : undefined,
       });
     }
   }, [form, data]);
@@ -67,13 +67,11 @@ export default function UpdateProfileForm() {
       let body = values;
       if (file) {
         const formData = new FormData();
-        console.log(file);
         formData.append("image", file);
         const uploadImageResult = await uploadMediaMutation.mutateAsync(
           formData
         );
         const imageUrl = uploadImageResult.payload.result;
-        console.log("url", imageUrl);
         body = {
           ...values,
           avatar: imageUrl,
@@ -123,7 +121,7 @@ export default function UpdateProfileForm() {
                 name="avatar"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="flex gap-2 items-start justify-center items-center pb-1">
+                    <div className="flex gap-2  justify-center items-center pb-1">
                       <Avatar className="aspect-square w-[120px] h-[120px] rounded-md object-cover">
                         <AvatarImage src={previewAvatar} />
                         <AvatarFallback className="rounded-none">

@@ -2,7 +2,7 @@ import { RoleValues } from "@/constants/type";
 import z from "zod";
 
 export const AccountSchema = z.object({
-  id: z.number(),
+  _id: z.string(),
   name: z.string(),
   email: z.string(),
   role: z.string(),
@@ -33,16 +33,17 @@ export const CreateEmployeeAccountBody = z
     name: z.string().trim().min(2).max(256),
     email: z.string().email(),
     avatar: z.string().url().optional(),
+    date_of_birth: z.date(),
     password: z.string().min(6).max(100),
-    confirmPassword: z.string().min(6).max(100),
+    confirm_password: z.string().min(6).max(100),
   })
   .strict()
-  .superRefine(({ confirmPassword, password }, ctx) => {
-    if (confirmPassword !== password) {
+  .superRefine(({ confirm_password, password }, ctx) => {
+    if (confirm_password !== password) {
       ctx.addIssue({
         code: "custom",
         message: "Mật khẩu không khớp",
-        path: ["confirmPassword"],
+        path: ["confirm_password"],
       });
     }
   });
@@ -56,24 +57,25 @@ export const UpdateEmployeeAccountBody = z
     name: z.string().trim().min(2).max(256),
     email: z.string().email(),
     avatar: z.string().url().optional(),
-    changePassword: z.boolean().optional(),
+    date_of_birth: z.date().optional(),
+    change_password: z.boolean().optional(),
     password: z.string().min(6).max(100).optional(),
-    confirmPassword: z.string().min(6).max(100).optional(),
+    confirm_password: z.string().min(6).max(100).optional(),
   })
   .strict()
-  .superRefine(({ confirmPassword, password, changePassword }, ctx) => {
-    if (changePassword) {
-      if (!password || !confirmPassword) {
+  .superRefine(({ confirm_password, password, change_password }, ctx) => {
+    if (change_password) {
+      if (!password || !confirm_password) {
         ctx.addIssue({
           code: "custom",
           message: "Hãy nhập mật khẩu mới và xác nhận mật khẩu mới",
-          path: ["changePassword"],
+          path: ["change_password"],
         });
-      } else if (confirmPassword !== password) {
+      } else if (confirm_password !== password) {
         ctx.addIssue({
           code: "custom",
           message: "Mật khẩu không khớp",
-          path: ["confirmPassword"],
+          path: ["confirm_password"],
         });
       }
     }

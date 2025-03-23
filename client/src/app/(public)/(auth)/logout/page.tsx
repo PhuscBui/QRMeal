@@ -1,22 +1,33 @@
-'use client'
+"use client";
 
-import { useAppContext } from '@/components/app-provider'
+import { useAppContext } from "@/components/app-provider";
 import {
   getAccessTokenFromLocalStorage,
-  getRefreshTokenFromLocalStorage
-} from '@/lib/utils'
-import { useLogoutMutation } from '@/queries/useAuth'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useEffect, useRef } from 'react'
+  getRefreshTokenFromLocalStorage,
+} from "@/lib/utils";
+import { useLogoutMutation } from "@/queries/useAuth";
+import { UseMutateAsyncFunction } from "@tanstack/react-query";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef } from "react";
 
 function Logout() {
-  const { mutateAsync } = useLogoutMutation()
-  const router = useRouter()
-  const { setRole } = useAppContext()
-  const searchParams = useSearchParams()
-  const refreshTokenFromUrl = searchParams.get('refreshToken')
-  const accessTokenFromUrl = searchParams.get('accessToken')
-  const ref = useRef<any>(null)
+  const { mutateAsync } = useLogoutMutation();
+  const router = useRouter();
+  const { setRole } = useAppContext();
+  const searchParams = useSearchParams();
+  const refreshTokenFromUrl = searchParams.get("refreshToken");
+  const accessTokenFromUrl = searchParams.get("accessToken");
+  const ref = useRef<
+    UseMutateAsyncFunction<
+      {
+        status: number;
+        payload: unknown;
+      },
+      Error,
+      void,
+      unknown
+    >
+  >(null);
   useEffect(() => {
     if (
       !ref.current &&
@@ -25,24 +36,24 @@ function Logout() {
         (accessTokenFromUrl &&
           accessTokenFromUrl === getAccessTokenFromLocalStorage()))
     ) {
-      ref.current = mutateAsync
-      mutateAsync().then((res) => {
+      ref.current = mutateAsync;
+      mutateAsync().then(() => {
         setTimeout(() => {
-          ref.current = null
-        }, 1000)
-        setRole()
-        router.push('/login')
-      })
+          ref.current = null;
+        }, 1000);
+        setRole();
+        router.push("/login");
+      });
     } else {
-      router.push('/')
+      router.push("/");
     }
-  }, [mutateAsync, router, refreshTokenFromUrl, accessTokenFromUrl, setRole])
-  return <div>Log out....</div>
+  }, [mutateAsync, router, refreshTokenFromUrl, accessTokenFromUrl, setRole]);
+  return <div>Log out....</div>;
 }
 export default function LogoutPage() {
   return (
     <Suspense>
       <Logout />
     </Suspense>
-  )
+  );
 }

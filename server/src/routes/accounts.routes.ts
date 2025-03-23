@@ -31,7 +31,13 @@ const accountsRouter = Router()
  * Method: POST
  * Request: Body : Account
  */
-accountsRouter.post('/', createEmployeeValidator, isAdminValidator, wrapRequestHandler(createEmployeeController))
+accountsRouter.post(
+  '/',
+  accessTokenValidator,
+  createEmployeeValidator,
+  isAdminValidator,
+  wrapRequestHandler(createEmployeeController)
+)
 
 /**
  * Description. Get all accounts

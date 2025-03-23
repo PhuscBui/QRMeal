@@ -29,11 +29,11 @@ const accountApiRequest = {
   list: () => http.get<AccountListResType>(`${prefix}`),
   addEmployee: (body: CreateEmployeeAccountBodyType) =>
     http.post<AccountResType>(prefix, body),
-  updateEmployee: (id: number, body: UpdateEmployeeAccountBodyType) =>
+  updateEmployee: (id: string, body: UpdateEmployeeAccountBodyType) =>
     http.put<AccountResType>(`${prefix}/detail/${id}`, body),
-  getEmployee: (id: number) =>
+  getEmployee: (id: string) =>
     http.get<AccountResType>(`${prefix}/detail/${id}`),
-  deleteEmployee: (id: number) =>
+  deleteEmployee: (id: string) =>
     http.delete<AccountResType>(`${prefix}/detail/${id}`),
   guestList: (queryParams: GetGuestListQueryParamsType) =>
     http.get<GetListGuestsResType>(

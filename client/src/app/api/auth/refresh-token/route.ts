@@ -8,7 +8,7 @@ export async function POST() {
   if (!refreshToken) {
     return Response.json(
       {
-        message: "Không tìm thấy refreshToken",
+        message: "RefreshToken not found",
       },
       {
         status: 401,
@@ -45,7 +45,7 @@ export async function POST() {
     console.log(error);
     return Response.json(
       {
-        message: error.message ?? "Có lỗi xảy ra",
+        message: error.message ?? "Error",
       },
       {
         status: 401,

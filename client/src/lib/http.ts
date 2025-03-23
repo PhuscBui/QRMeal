@@ -17,12 +17,19 @@ type CustomOptions = Omit<RequestInit, "method"> & {
 const ENTITY_ERROR_STATUS = 422;
 const AUTHENTICATION_ERROR_STATUS = 401;
 
+type ValidationErrorItem = {
+  type: string;
+  value: string;
+  msg: string;
+  path: string;
+  location: string;
+};
+
 type EntityErrorPayload = {
   message: string;
   errors: {
-    field: string;
-    message: string;
-  }[];
+    [key: string]: ValidationErrorItem;
+  };
 };
 
 export class HttpError extends Error {
@@ -59,6 +66,18 @@ export class EntityError extends HttpError {
     super({ status, payload, message: "Entity error" });
     this.status = status;
     this.payload = payload;
+  }
+
+  getFormErrors() {
+    const formattedErrors: Record<string, string> = {};
+
+    if (this.payload.errors) {
+      Object.entries(this.payload.errors).forEach(([field, error]) => {
+        formattedErrors[field] = error.msg;
+      });
+    }
+
+    return formattedErrors;
   }
 }
 
@@ -151,7 +170,7 @@ const request = async <Response>(
         const access_token = (options?.headers as any)?.Authorization.split(
           "Bearer "
         )[1];
-        redirect(`/logout?access_token=${access_token}`);
+        redirect(`/logout?accessToken=${access_token}`);
       }
     } else {
       throw new HttpError(data);
