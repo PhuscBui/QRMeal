@@ -179,16 +179,16 @@ export const getVietnameseOrderStatus = (
   }
 };
 
-export const getVietnameseTableStatus = (
+export const getTableStatus = (
   status: (typeof TableStatus)[keyof typeof TableStatus]
 ) => {
   switch (status) {
     case TableStatus.Available:
-      return "Có sẵn";
+      return "Available";
     case TableStatus.Reserved:
-      return "Đã đặt";
+      return "Reserved";
     default:
-      return "Ẩn";
+      return "Hidden";
   }
 };
 

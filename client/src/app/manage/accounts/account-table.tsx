@@ -61,16 +61,16 @@ const AccountTableContext = createContext<{
   employeeDelete: AccountItem | null;
   setEmployeeDelete: (value: AccountItem | null) => void;
 }>({
-  setEmployeeIdEdit: (value: string | undefined) => {},
+  setEmployeeIdEdit: () => {},
   employeeIdEdit: undefined,
   employeeDelete: null,
-  setEmployeeDelete: (value: AccountItem | null) => {},
+  setEmployeeDelete: () => {},
 });
 
 export const columns: ColumnDef<AccountType>[] = [
   {
     accessorKey: "index",
-    header: "STT",
+    header: "No.",
     cell: ({ row }) => <div>{row.index + 1}</div>,
   },
   {
@@ -106,6 +106,7 @@ export const columns: ColumnDef<AccountType>[] = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="font-bold"
         >
           Email
           <CaretSortIcon className="ml-2 h-4 w-4" />

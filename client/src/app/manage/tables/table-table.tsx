@@ -13,7 +13,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import DOMPurify from "dompurify";
+
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -23,7 +23,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createContext, useContext, useEffect, useState } from "react";
 import {
   AlertDialog,
@@ -35,17 +34,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { formatCurrency, getDishStatus, handleErrorApi } from "@/lib/utils";
+import { getTableStatus, handleErrorApi } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import AutoPagination from "@/components/auto-pagination";
-import { DishListResType } from "@/schemaValidations/dish.schema";
-import EditDish from "@/app/manage/dishes/edit-dish";
-import AddDish from "@/app/manage/dishes/add-dish";
-import { useDeleteDishMutation, useDishListQuery } from "@/queries/useDish";
+import { TableListResType } from "@/schemaValidations/table.schema";
+import EditTable from "@/app/manage/tables/edit-table";
+import AddTable from "@/app/manage/tables/add-table";
+import { useDeleteTableMutation, useTableListQuery } from "@/queries/useTable";
+import QRCodeTable, { DownloadQRCodeTable } from "@/components/qrcode-table";
 import { toast } from "sonner";
 import { Pen, Trash } from "lucide-react";
 
-type DishItem = DishListResType["result"][0];
+type TableItem = TableListResType["result"][0];
 
 const statusBadge = (status: string) => {
   if (status === "Available") {
@@ -55,10 +55,10 @@ const statusBadge = (status: string) => {
       </span>
     );
   }
-  if (status === "Unavailable") {
+  if (status === "Reserved") {
     return (
-      <span className="bg-red-100 text-red-800 rounded-full px-2 py-1 text-xs font-bold">
-        Unavailable
+      <span className="bg-blue-100 text-blue-800 rounded-full px-2 py-1 text-xs font-bold">
+        Reserved
       </span>
     );
   }
@@ -69,98 +69,90 @@ const statusBadge = (status: string) => {
   );
 };
 
-const DishTableContext = createContext<{
-  setDishIdEdit: (value: string) => void;
-  dishIdEdit: string | undefined;
-  dishDelete: DishItem | null;
-  setDishDelete: (value: DishItem | null) => void;
+const TableTableContext = createContext<{
+  setTableIdEdit: (value: number) => void;
+  tableIdEdit: number | undefined;
+  tableDelete: TableItem | null;
+  setTableDelete: (value: TableItem | null) => void;
 }>({
-  setDishIdEdit: () => {},
-  dishIdEdit: undefined,
-  dishDelete: null,
-  setDishDelete: () => {},
+  setTableIdEdit: () => {},
+  tableIdEdit: undefined,
+  tableDelete: null,
+  setTableDelete: () => {},
 });
 
-export const columns: ColumnDef<DishItem>[] = [
+export const columns: ColumnDef<TableItem>[] = [
   {
     accessorKey: "index",
     header: "No.",
     cell: ({ row }) => <div>{row.index + 1}</div>,
   },
   {
-    accessorKey: "_id",
-    header: "ID",
-  },
-  {
-    accessorKey: "image",
-    header: "Image",
+    accessorKey: "number",
+    header: "Table Number",
     cell: ({ row }) => (
-      <div>
-        <Avatar className="aspect-square w-[100px] h-[100px] rounded-md object-cover">
-          <AvatarImage src={row.getValue("image")} />
-          <AvatarFallback className="rounded-none">
-            {row.original.name}
-          </AvatarFallback>
-        </Avatar>
-      </div>
+      <div className="capitalize">{row.getValue("number")}</div>
     ),
+    filterFn: (rows, columnId, filterValue) => {
+      if (!filterValue) return true;
+      return String(filterValue) === String(rows.getValue("number"));
+    },
   },
   {
-    accessorKey: "name",
-    header: "Name",
-    cell: ({ row }) => <div className="capitalize">{row.getValue("name")}</div>,
-  },
-  {
-    accessorKey: "price",
-    header: "Price",
+    accessorKey: "capacity",
+    header: "Capacity",
     cell: ({ row }) => (
-      <div className="capitalize">{formatCurrency(row.getValue("price"))}</div>
-    ),
-  },
-  {
-    accessorKey: "description",
-    header: "Description",
-    cell: ({ row }) => (
-      <div
-        dangerouslySetInnerHTML={{
-          __html: DOMPurify.sanitize(row.getValue("description")),
-        }}
-        className="whitespace-pre-line"
-      />
+      <div className="capitalize">{row.getValue("capacity")}</div>
     ),
   },
   {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => (
-      <div>{statusBadge(getDishStatus(row.getValue("status")))}</div>
+      <div>{statusBadge(getTableStatus(row.getValue("status")))}</div>
+    ),
+  },
+  {
+    accessorKey: "token",
+    header: "QR Code",
+    cell: ({ row }) => (
+      <div>
+        <QRCodeTable
+          token={row.getValue("token")}
+          tableNumber={row.getValue("number")}
+        />
+      </div>
     ),
   },
   {
     id: "actions",
     enableHiding: false,
     cell: function Actions({ row }) {
-      const { setDishIdEdit, setDishDelete } = useContext(DishTableContext);
-      const openEditDish = () => {
-        setDishIdEdit(row.original._id);
+      const { setTableIdEdit, setTableDelete } = useContext(TableTableContext);
+      const openEditTable = () => {
+        setTableIdEdit(row.original.number);
       };
 
-      const openDeleteDish = () => {
-        setDishDelete(row.original);
+      const openDeleteTable = () => {
+        setTableDelete(row.original);
       };
       return (
         <div className="flex gap-2">
+          <DownloadQRCodeTable
+            token={row.getValue("token")}
+            tableNumber={row.getValue("number")}
+          />
           <Button
             variant="default"
             className="h-8 w-8 p-0"
-            onClick={openEditDish}
+            onClick={openEditTable}
           >
             <Pen className="h-4 w-4" />
           </Button>
           <Button
             variant="destructive"
             className="h-8 w-8 p-0"
-            onClick={openDeleteDish}
+            onClick={openDeleteTable}
           >
             <Trash className="h-4 w-4" />
           </Button>
@@ -170,19 +162,19 @@ export const columns: ColumnDef<DishItem>[] = [
   },
 ];
 
-function AlertDialogDeleteDish({
-  dishDelete,
-  setDishDelete,
+function AlertDialogDeleteTable({
+  tableDelete,
+  setTableDelete,
 }: {
-  dishDelete: DishItem | null;
-  setDishDelete: (value: DishItem | null) => void;
+  tableDelete: TableItem | null;
+  setTableDelete: (value: TableItem | null) => void;
 }) {
-  const { mutateAsync } = useDeleteDishMutation();
-  const deleteDish = async () => {
-    if (dishDelete) {
+  const { mutateAsync } = useDeleteTableMutation();
+  const deleteTable = async () => {
+    if (tableDelete) {
       try {
-        const result = await mutateAsync(dishDelete._id);
-        setDishDelete(null);
+        const result = await mutateAsync(tableDelete.number);
+        setTableDelete(null);
         toast("Success", {
           description: result.payload.message,
         });
@@ -195,26 +187,27 @@ function AlertDialogDeleteDish({
   };
   return (
     <AlertDialog
-      open={Boolean(dishDelete)}
+      open={Boolean(tableDelete)}
       onOpenChange={(value) => {
         if (!value) {
-          setDishDelete(null);
+          setTableDelete(null);
         }
       }}
     >
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete dish</AlertDialogTitle>
+          <AlertDialogTitle>Delete table?</AlertDialogTitle>
           <AlertDialogDescription>
+            Table{" "}
             <span className="bg-foreground text-primary-foreground rounded p-1">
-              {dishDelete?.name}
+              {tableDelete?.number}
             </span>{" "}
-            will be deleted. You can&apos;t undo this action.
+            will be deleted permanently
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={deleteDish}>Continue</AlertDialogAction>
+          <AlertDialogAction onClick={deleteTable}>Continue</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -222,14 +215,15 @@ function AlertDialogDeleteDish({
 }
 // Số lượng item trên 1 trang
 const PAGE_SIZE = 10;
-export default function DishTable() {
+export default function TableTable() {
   const searchParam = useSearchParams();
   const page = searchParam.get("page") ? Number(searchParam.get("page")) : 1;
   const pageIndex = page - 1;
-  const [dishIdEdit, setDishIdEdit] = useState<string | undefined>();
-  const [dishDelete, setDishDelete] = useState<DishItem | null>(null);
-  const dishListQuery = useDishListQuery();
-  const data = dishListQuery.data?.payload.result ?? [];
+  // const params = Object.fromEntries(searchParam.entries())
+  const [tableIdEdit, setTableIdEdit] = useState<number | undefined>();
+  const [tableDelete, setTableDelete] = useState<TableItem | null>(null);
+  const tableListQuery = useTableListQuery();
+  const data = tableListQuery.data?.payload.result ?? [];
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -269,26 +263,28 @@ export default function DishTable() {
   }, [table, pageIndex]);
 
   return (
-    <DishTableContext.Provider
-      value={{ dishIdEdit, setDishIdEdit, dishDelete, setDishDelete }}
+    <TableTableContext.Provider
+      value={{ tableIdEdit, setTableIdEdit, tableDelete, setTableDelete }}
     >
       <div className="w-full">
-        <EditDish id={dishIdEdit} setId={setDishIdEdit} />
-        <AlertDialogDeleteDish
-          dishDelete={dishDelete}
-          setDishDelete={setDishDelete}
+        <EditTable id={tableIdEdit} setId={setTableIdEdit} />
+        <AlertDialogDeleteTable
+          tableDelete={tableDelete}
+          setTableDelete={setTableDelete}
         />
         <div className="flex items-center py-4">
           <Input
-            placeholder="Filter by name"
-            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("name")?.setFilterValue(event.target.value)
+            placeholder="Filter by number"
+            value={
+              (table.getColumn("number")?.getFilterValue() as string) ?? ""
             }
+            onChange={(event) => {
+              table.getColumn("number")?.setFilterValue(event.target.value);
+            }}
             className="max-w-sm"
           />
           <div className="ml-auto flex items-center gap-2">
-            <AddDish />
+            <AddTable />
           </div>
         </div>
         <div className="rounded-md border">
@@ -344,17 +340,17 @@ export default function DishTable() {
         <div className="flex items-center justify-end space-x-2 py-4">
           <div className="text-xs text-muted-foreground py-4 flex-1 ">
             Display <strong>{table.getPaginationRowModel().rows.length}</strong>{" "}
-            of <strong>{data.length}</strong> results
+            of <strong>{data.length}</strong> items
           </div>
           <div>
             <AutoPagination
               page={table.getState().pagination.pageIndex + 1}
               pageSize={table.getPageCount()}
-              pathname="/manage/dishes"
+              pathname="/manage/tables"
             />
           </div>
         </div>
       </div>
-    </DishTableContext.Provider>
+    </TableTableContext.Provider>
   );
 }
