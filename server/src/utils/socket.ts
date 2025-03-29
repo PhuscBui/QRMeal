@@ -1,23 +1,8 @@
-// import { Server as ServerHttp } from 'http'
-// import { Server } from 'socket.io'
-
-// const initSocket = (httpServer: ServerHttp) => {
-//   const io = new Server(httpServer, {
-//     cors: {
-//       origin: 'http://localhost:3000'
-//     }
-//   })
-
-//   io.on('connection', (socket) => {
-//     console.log(socket.id)
-//   })
-// }
-// export default initSocket
-
-// src/services/socket.service.ts
 import { Server as ServerHttp } from 'http'
+import { ObjectId } from 'mongodb'
 import { Server, Socket } from 'socket.io'
 import { envConfig } from '~/config'
+import databaseService from '~/services/databases.service'
 
 class SocketService {
   private static instance: SocketService
@@ -52,8 +37,35 @@ class SocketService {
   private handleConnection(socket: Socket): void {
     console.log('Client connected:', socket.id)
 
-    socket.on('disconnect', () => {
+    // Store socket connections for guests
+    socket.on('register-guest', async (guest_id: string) => {
+      if (guest_id) {
+        try {
+          await databaseService.sockets.findOneAndUpdate(
+            { guest_id: new ObjectId(guest_id) },
+            { $set: { socketId: socket.id, updated_at: new Date() } },
+            { upsert: true }
+          )
+
+          // Join manager room if needed
+          // socket.join(ManagerRoom);  // Uncomment if needed
+
+          console.log(`Socket ${socket.id} registered for guest ${guest_id}`)
+        } catch (error) {
+          console.error('Error registering socket:', error)
+        }
+      }
+    })
+
+    socket.on('disconnect', async () => {
       console.log('Client disconnected:', socket.id)
+
+      // Remove socket from database
+      try {
+        await databaseService.sockets.deleteOne({ socketId: socket.id })
+      } catch (error) {
+        console.error('Error removing socket:', error)
+      }
     })
   }
 
@@ -70,4 +82,5 @@ class SocketService {
   }
 }
 
-export default SocketService.getInstance()
+const socketService = SocketService.getInstance()
+export default socketService

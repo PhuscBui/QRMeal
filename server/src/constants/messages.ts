@@ -45,7 +45,9 @@ export const USERS_MESSAGES = {
   CHANGE_PASSWORD_SUCCESS: 'Change password success',
   PASSWORD_IS_INCORRECT: 'Password is incorrect',
   USER_LOGIN_FAILED: 'User login failed',
-  USER_LOGOUT_SUCCESS: 'User logout success'
+  USER_LOGOUT_SUCCESS: 'User logout success',
+
+  ORDER_CREATE_SUCCESS: 'Order create success'
 } as const
 
 export const DISHES_MESSAGE = {
@@ -68,10 +70,13 @@ export const DISHES_MESSAGE = {
   STATUS_IS_REQUIRED: 'Status is required',
   STATUS_MUST_BE_A_STRING: 'Status must be a string',
   STATUS_LENGTH_MUST_BE_GREATER_THAN_0: 'Status length must be greater than 0',
-  STATUS_MUST_BE_AVAILABLE_OR_UNAVAILABLE_OR_HIDDEN: 'Status must be available, unavailable or hidden'
+  STATUS_MUST_BE_AVAILABLE_OR_UNAVAILABLE_OR_HIDDEN: 'Status must be available, unavailable or hidden',
+  DISH_IS_HIDDEN_PLEASE_CHOOSE_ANOTHER_DISH: 'Dish is hidden, please choose another dish',
+  DISH_IS_UNAVAILABLE_PLEASE_CHOOSE_ANOTHER_DISH: 'Dish is unavailable, please choose another dish'
 } as const
 
 export const TABLES_MESSAGES = {
+  TABLE_NOT_ASSIGNED: 'Table not assigned',
   TABLE_NOT_FOUND: 'Table not found',
   TABLE_CREATED: 'Table created',
   TABLE_UPDATED: 'Table updated',
@@ -107,4 +112,12 @@ export const COMMON_MESSAGES = {
   IMAGE_NOT_FOUND: 'Image not found',
   IMAGE_URL_MUST_BE_A_STRING: 'Image URL must be a string',
   IMAGE_URL_LENGTH_MUST_BE_FROM_1_TO_400: 'Image URL length must be from 1 to 400'
+} as const
+
+export const ORDERS_MESSAGE = {
+  ORDER_CREATE_SUCCESS: 'Order create success',
+  ORDER_NOT_FOUND: 'Order not found',
+  ORDER_GET_SUCCESS: 'Order get success',
+  NO_ORDERS_TO_PAY: 'No orders to pay',
+  ORDER_PAY_SUCCESS: 'Order pay success'
 } as const

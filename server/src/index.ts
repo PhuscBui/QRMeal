@@ -46,7 +46,7 @@ app.use('/dishes', dishesRouter)
 app.use('/medias', mediasRouter)
 app.use('/static', staticRouter)
 app.use('/tables', tablesRouter)
-app.use('/guests', guestsRouter)
+app.use('/guest', guestsRouter)
 app.use('/orders', ordersRouter)
 
 app.use(defaultErrorHandler)

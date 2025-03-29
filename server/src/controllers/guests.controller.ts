@@ -1,11 +1,11 @@
 import { Request, Response } from 'express'
 import { ParamsDictionary } from 'express-serve-static-core'
 import HTTP_STATUS from '~/constants/httpStatus'
-import { TABLES_MESSAGES, USERS_MESSAGES } from '~/constants/messages'
+import { ORDERS_MESSAGE, TABLES_MESSAGES, USERS_MESSAGES } from '~/constants/messages'
 import { Role, TableStatus } from '~/constants/type'
 import { TokenPayload } from '~/models/requests/Account.request'
-import { GuestLoginReqBody, GuestLogoutReqBody } from '~/models/requests/Guest.request'
-import { GuestLoginResponse, GuestLogoutResponse } from '~/models/response/Guest.response'
+import { GuestCreateOrdersReqBody, GuestLoginReqBody, GuestLogoutReqBody } from '~/models/requests/Guest.request'
+import { GuestCreateOrdersResponse, GuestLoginResponse, GuestLogoutResponse } from '~/models/response/Guest.response'
 import Guest from '~/models/schemas/Guest.schema'
 import databaseService from '~/services/databases.service'
 import guestsService from '~/services/guests.service'
@@ -66,6 +66,27 @@ export const refreshTokenGuestController = async (req: Request, res: Response) =
   const result = await guestsService.refreshToken({ account_id, refresh_token, role, exp })
   res.json({
     message: USERS_MESSAGES.REFRESH_TOKEN_SUCCESS,
+    result
+  })
+}
+
+export const guestCreateOrderController = async (
+  req: Request<ParamsDictionary, GuestCreateOrdersResponse, GuestCreateOrdersReqBody>,
+  res: Response
+) => {
+  const { account_id } = req.decoded_authorization as TokenPayload
+  const result = await guestsService.createOrder({ account_id, orders: req.body })
+  res.json({
+    message: ORDERS_MESSAGE.ORDER_CREATE_SUCCESS,
+    result
+  })
+}
+
+export const guestGetOrdersController = async (req: Request, res: Response) => {
+  const { account_id } = req.decoded_authorization as TokenPayload
+  const result = await guestsService.getOrders(account_id)
+  res.json({
+    message: ORDERS_MESSAGE.ORDER_GET_SUCCESS,
     result
   })
 }

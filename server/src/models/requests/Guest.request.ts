@@ -7,3 +7,10 @@ export interface GuestLoginReqBody {
 export interface GuestLogoutReqBody {
   refresh_token: string
 }
+
+export interface GuestCreateOrderReqBody {
+  dish_id: string
+  quantity: number
+}
+
+export type GuestCreateOrdersReqBody = GuestCreateOrderReqBody[]

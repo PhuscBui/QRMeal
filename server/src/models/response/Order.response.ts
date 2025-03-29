@@ -1,9 +1,10 @@
 import { ApiResponse } from '~/type'
 
-interface OrderResponseResult {
+export interface OrderResponseResult {
   _id: string
   guest_id: string
   guest: {
+    _id: string
     name: string
     table_number: number
     created_at: string
@@ -12,6 +13,7 @@ interface OrderResponseResult {
   table_number: number
   dish_snapshot_id: string
   dish_snapshot: {
+    _id: string
     name: string
     price: number
     image: string
@@ -22,8 +24,9 @@ interface OrderResponseResult {
     updated_at: string
   }
   quantity: number
-  order_handler_id: string
-  order_handler: {
+  order_handler_id?: string
+  order_handler?: {
+    _id: string
     name: string
     email: string
     avatar: string
@@ -39,4 +42,5 @@ export type CreateOrderResponse = ApiResponse<OrderResponseResult>
 export type GetOrdersResponse = ApiResponse<OrderResponseResult[]>
 export type GetOrderResponse = ApiResponse<OrderResponseResult>
 export type UpdateOrderResponse = ApiResponse<OrderResponseResult>
+export type PayGuestOrdersResponse = ApiResponse<OrderResponseResult[]>
 export type DeleteOrderResponse = ApiResponse

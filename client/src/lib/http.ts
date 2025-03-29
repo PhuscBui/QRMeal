@@ -145,15 +145,15 @@ const request = async <Response>(
         if (!clientLogoutRequest) {
           clientLogoutRequest = fetch("/api/auth/logout", {
             method: "POST",
-            body: null, // Logout mình sẽ cho phép luôn luôn thành công
+            body: null, // Logout sẽ cho phép luôn luôn thành công
             headers: {
               ...baseHeaders,
             } as any,
           });
           try {
             await clientLogoutRequest;
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
           } catch (error) {
+            console.error("Error when logging out", error);
           } finally {
             removeTokensFromLocalStorage();
             clientLogoutRequest = null;
@@ -165,8 +165,8 @@ const request = async <Response>(
           }
         }
       } else {
-        // Đây là trường hợp khi mà chúng ta vẫn còn access token (còn hạn)
-        // Và chúng ta gọi API ở Next.js Server (Route Handler , Server Component) đến Server Backend
+        // Đây là trường hợp khi mà vẫn còn access token (còn hạn)
+        // Và gọi API ở Next.js Server (Route Handler , Server Component) đến Server Backend
         const access_token = (options?.headers as any)?.Authorization.split(
           "Bearer "
         )[1];

@@ -1,5 +1,7 @@
 import { Router } from 'express'
 import {
+  guestCreateOrderController,
+  guestGetOrdersController,
   loginGuestController,
   logoutGuestController,
   refreshTokenGuestController
@@ -40,7 +42,20 @@ guestsRouter.post(
 guestsRouter.post('/auth/refresh-token', refreshTokenValidator, wrapRequestHandler(refreshTokenGuestController))
 
 /**
- *
+ * Description. Create order
+ * Path:  /orders
+ * Method: POST
+ * Request: Body : GuestCreateOrdersBody
  */
+guestsRouter.post('/orders', accessTokenValidator, wrapRequestHandler(guestCreateOrderController))
+
+/**
+ * Description. Get orders
+ * Path:  /orders
+ * Method: GET
+ * Request: Headers : Authorization
+ * Response: Body : GuestGetOrdersRes
+ */
+guestsRouter.get('/orders', accessTokenValidator, wrapRequestHandler(guestGetOrdersController))
 
 export default guestsRouter

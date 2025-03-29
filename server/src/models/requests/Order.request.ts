@@ -2,7 +2,7 @@ import { ObjectId } from 'mongodb'
 import { ParamsDictionary } from 'express-serve-static-core'
 
 export interface CreateOrdersReqBody {
-  guestId: ObjectId
+  guest_id: ObjectId
   orders: {
     dish_id: ObjectId
     quantity: number
@@ -15,7 +15,7 @@ export interface GetOrdersQueryParams {
 }
 
 export interface OrderParam extends ParamsDictionary {
-  orderId: string
+  order_id: string
 }
 
 export interface UpdateOrderReqBody {
@@ -25,5 +25,5 @@ export interface UpdateOrderReqBody {
 }
 
 export interface PayGuestOrdersReqBody {
-  guest_id: ObjectId
+  guest_id: string
 }

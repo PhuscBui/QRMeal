@@ -1,51 +1,19 @@
-// import dishApiRequest from "@/apiRequests/dish";
+import dishApiRequest from "@/apiRequests/dish";
 import { formatCurrency } from "@/lib/utils";
-// import { DishListResType } from "@/schemaValidations/dish.schema";
+import { DishListResType } from "@/schemaValidations/dish.schema";
 import Image from "next/image";
 
 export default async function Home() {
-  const dishList = [
-    {
-      id: "1",
-      name: "Bún bò Huế",
-      price: 50000,
-      description: "Bún bò Huế ngon",
-      image: "https://placehold.co/150",
-      status: "Available",
-      created_at: new Date(),
-      updated_at: new Date(),
-    },
-    {
-      id: "2",
-      name: "Bún riêu",
-      price: 40000,
-      description: "Bún riêu ngon",
-      image: "https://placehold.co/150",
-      status: "Available",
-      created_at: new Date(),
-      updated_at: new Date(),
-    },
-    {
-      id: "3",
-      name: "Bún mắm",
-      price: 60000,
-      description: "Bún mắm ngon",
-      image: "https://placehold.co/150",
-      status: "Available",
-      created_at: new Date(),
-      updated_at: new Date(),
-    },
-  ];
-  // let dishList: DishListResType["data"] = []
-  // try {
-  //   const result = await dishApiRequest.list()
-  //   const {
-  //     payload: { data }
-  //   } = result
-  //   dishList = data
-  // } catch (error) {
-  //   return <div>Something went wrong</div>
-  // }
+  let dishList: DishListResType["result"] = [];
+  try {
+    const data = await dishApiRequest.list();
+    const {
+      payload: { result },
+    } = data;
+    dishList = result;
+  } catch (error) {
+    return <div>Something went wrong</div>;
+  }
   return (
     <div className="w-full space-y-4">
       <section className="relative z-10">
@@ -71,10 +39,10 @@ export default async function Home() {
         <h2 className="text-center text-2xl font-bold">Our Delicious Dishes</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
           {dishList.map((dish) => (
-            <div className="flex gap-4 w" key={dish.id}>
+            <div className="flex gap-4 w" key={dish._id}>
               <div className="flex-shrink-0">
                 <Image
-                  src={dish.image}
+                  src={dish.image || "https://placehold.co/150x150"}
                   width={150}
                   height={150}
                   quality={100}
