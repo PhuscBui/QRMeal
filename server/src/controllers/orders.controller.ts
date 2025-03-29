@@ -72,6 +72,7 @@ export const updateOrderController = async (
   if (socketId) {
     socketService.getIO().to(ManagerRoom).to(socketId).emit('update-order', order)
   } else {
+    console.log('emit to room')
     socketService.emitToRoom(ManagerRoom, 'update-order', order)
   }
 

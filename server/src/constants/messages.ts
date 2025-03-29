@@ -119,5 +119,6 @@ export const ORDERS_MESSAGE = {
   ORDER_NOT_FOUND: 'Order not found',
   ORDER_GET_SUCCESS: 'Order get success',
   NO_ORDERS_TO_PAY: 'No orders to pay',
-  ORDER_PAY_SUCCESS: 'Order pay success'
+  ORDER_PAY_SUCCESS: 'Order pay success',
+  GUEST_NOT_FOUND: 'Guest not found'
 } as const

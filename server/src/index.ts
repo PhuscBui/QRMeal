@@ -15,6 +15,7 @@ import databaseService from '~/services/databases.service'
 import { initFolder } from '~/utils/file'
 import socketService from '~/utils/socket'
 import cors from 'cors'
+import helmet from 'helmet'
 
 initFolder()
 
@@ -35,6 +36,7 @@ app.use(
     credentials: true // Cho phép gửi cookie nếu cần
   })
 )
+app.use(helmet())
 
 app.get('/', (req, res) => {
   res.send('Hello World!')

@@ -6,7 +6,6 @@ import databaseService from '~/services/databases.service'
 class DishesService {
   async getDishes() {
     const result = await databaseService.dishes.find().toArray()
-    console.log(result)
     return result
   }
 

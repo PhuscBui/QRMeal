@@ -12,7 +12,10 @@ class OrdersService {
     // Find guest
     const guest = await databaseService.guests.findOne({ _id: new ObjectId(guest_id) })
     if (!guest) {
-      throw new Error('Guest not found')
+      throw new ErrorWithStatus({
+        message: ORDERS_MESSAGE.GUEST_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
     }
 
     if (guest.table_number === null) {

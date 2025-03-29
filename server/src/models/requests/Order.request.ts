@@ -20,7 +20,7 @@ export interface OrderParam extends ParamsDictionary {
 
 export interface UpdateOrderReqBody {
   status: 'Pending' | 'Processing' | 'Rejected' | 'Delivered' | 'Paid'
-  dish_id: ObjectId
+  dish_id: string
   quantity: number
 }
 

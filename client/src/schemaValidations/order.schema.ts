@@ -53,7 +53,7 @@ export type OrderParamType = z.TypeOf<typeof OrderParam>;
 
 export const UpdateOrderRes = z.object({
   message: z.string(),
-  data: OrderSchema,
+  result: OrderSchema,
 });
 
 export type UpdateOrderResType = z.TypeOf<typeof UpdateOrderRes>;
@@ -67,14 +67,14 @@ export type GetOrdersQueryParamsType = z.TypeOf<typeof GetOrdersQueryParams>;
 
 export const GetOrdersRes = z.object({
   message: z.string(),
-  data: z.array(OrderSchema),
+  result: z.array(OrderSchema),
 });
 
 export type GetOrdersResType = z.TypeOf<typeof GetOrdersRes>;
 
 export const GetOrderDetailRes = z.object({
   message: z.string(),
-  data: OrderSchema.extend({
+  result: OrderSchema.extend({
     table: TableSchema,
   }),
 });
@@ -107,7 +107,7 @@ export type CreateOrdersBodyType = z.TypeOf<typeof CreateOrdersBody>;
 
 export const CreateOrdersRes = z.object({
   message: z.string(),
-  data: z.array(OrderSchema),
+  result: z.array(OrderSchema),
 });
 
 export type CreateOrdersResType = z.TypeOf<typeof CreateOrdersRes>;
