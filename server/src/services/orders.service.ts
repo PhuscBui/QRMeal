@@ -26,7 +26,7 @@ class OrdersService {
     }
 
     // Check if table is available
-    const table = await databaseService.tables.findOne({ table_number: guest.table_number })
+    const table = await databaseService.tables.findOne({ number: guest.table_number })
     if (!table) {
       throw new ErrorWithStatus({
         message: TABLES_MESSAGES.TABLE_NOT_FOUND,
@@ -41,7 +41,7 @@ class OrdersService {
       })
     }
 
-    const session = await databaseService.clientInstance.startSession()
+    const session = databaseService.clientInstance.startSession()
 
     try {
       session.startTransaction()
@@ -100,39 +100,49 @@ class OrdersService {
           },
           { session }
         )
-
         // Fetch the complete order with related data
         const completeOrder = await databaseService.orders
-          .aggregate([
-            { $match: { _id: orderRecord.insertedId } },
-            {
-              $lookup: {
-                from: 'dish_snapshots',
-                localField: 'dish_snapshot_id',
-                foreignField: '_id',
-                as: 'dish_snapshot'
+          .aggregate(
+            [
+              { $match: { _id: orderRecord.insertedId } },
+              {
+                $lookup: {
+                  from: 'dish_snapshots',
+                  localField: 'dish_snapshot_id',
+                  foreignField: '_id',
+                  as: 'dish_snapshot'
+                }
+              },
+              { $unwind: '$dish_snapshot' },
+              {
+                $lookup: {
+                  from: 'accounts',
+                  localField: 'order_handler_id',
+                  foreignField: '_id',
+                  as: 'order_handler'
+                }
+              },
+              { $unwind: { path: '$order_handler', preserveNullAndEmptyArrays: true } },
+              {
+                $lookup: {
+                  from: 'guests',
+                  localField: 'guest_id',
+                  foreignField: '_id',
+                  as: 'guest'
+                }
+              },
+              { $unwind: '$guest' },
+              {
+                $project: {
+                  guest: {
+                    refresh_token: 0,
+                    refresh_token_exp: 0
+                  }
+                }
               }
-            },
-            { $unwind: '$dish_snapshot' },
-            {
-              $lookup: {
-                from: 'accounts',
-                localField: 'order_handler_id',
-                foreignField: '_id',
-                as: 'order_handler'
-              }
-            },
-            { $unwind: '$order_handler' },
-            {
-              $lookup: {
-                from: 'guests',
-                localField: 'guest_id',
-                foreignField: '_id',
-                as: 'guest'
-              }
-            },
-            { $unwind: '$guest' }
-          ])
+            ],
+            { session }
+          )
           .toArray()
 
         ordersRecord.push(completeOrder[0])
@@ -169,7 +179,9 @@ class OrdersService {
     }
     const orders = await databaseService.orders
       .aggregate([
-        { $match: matchCondition },
+        {
+          $match: matchCondition
+        },
         {
           $lookup: {
             from: 'dish_snapshots',
@@ -187,7 +199,7 @@ class OrdersService {
             as: 'order_handler'
           }
         },
-        { $unwind: '$order_handler' },
+        { $unwind: { path: '$order_handler', preserveNullAndEmptyArrays: true } },
         {
           $lookup: {
             from: 'guests',
@@ -197,7 +209,15 @@ class OrdersService {
           }
         },
         { $unwind: '$guest' },
-        { $sort: { createdAt: -1 } }
+        {
+          $project: {
+            guest: {
+              refresh_token: 0,
+              refresh_token_exp: 0
+            }
+          }
+        },
+        { $sort: { created_at: -1 } }
       ])
       .toArray()
 
@@ -208,11 +228,10 @@ class OrdersService {
     // Find orders that need to be paid
     const orders = await databaseService.orders
       .find({
-        guestId: new ObjectId(guestId),
+        guest_id: new ObjectId(guestId),
         status: { $in: [OrderStatus.Pending, OrderStatus.Processing, OrderStatus.Delivered] }
       })
       .toArray()
-
     if (orders.length === 0) {
       throw new ErrorWithStatus({
         message: ORDERS_MESSAGE.NO_ORDERS_TO_PAY,
@@ -255,7 +274,7 @@ class OrdersService {
             as: 'order_handler'
           }
         },
-        { $unwind: '$order_handler' },
+        { $unwind: { path: '$order_handler', preserveNullAndEmptyArrays: true } },
         {
           $lookup: {
             from: 'guests',
@@ -265,6 +284,14 @@ class OrdersService {
           }
         },
         { $unwind: '$guest' },
+        {
+          $project: {
+            guest: {
+              refresh_token: 0,
+              refresh_token_exp: 0
+            }
+          }
+        },
         { $sort: { createdAt: -1 } }
       ])
       .toArray()
@@ -298,7 +325,7 @@ class OrdersService {
             as: 'order_handler'
           }
         },
-        { $unwind: '$order_handler' },
+        { $unwind: { path: '$order_handler', preserveNullAndEmptyArrays: true } },
         {
           $lookup: {
             from: 'guests',
@@ -308,6 +335,14 @@ class OrdersService {
           }
         },
         { $unwind: '$guest' },
+        {
+          $project: {
+            guest: {
+              refresh_token: 0,
+              refresh_token_exp: 0
+            }
+          }
+        },
         {
           $lookup: {
             from: 'tables',
@@ -407,7 +442,7 @@ class OrdersService {
             as: 'order_handler'
           }
         },
-        { $unwind: '$order_handler' },
+        { $unwind: { path: '$order_handler', preserveNullAndEmptyArrays: true } },
         {
           $lookup: {
             from: 'guests',
@@ -416,7 +451,15 @@ class OrdersService {
             as: 'guest'
           }
         },
-        { $unwind: '$guest' }
+        { $unwind: '$guest' },
+        {
+          $project: {
+            guest: {
+              refresh_token: 0,
+              refresh_token_exp: 0
+            }
+          }
+        }
       ])
       .toArray()
 

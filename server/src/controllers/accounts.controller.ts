@@ -9,6 +9,7 @@ import {
   CreateGuestReqBody,
   DeleteEmployeeParam,
   GetEmployeeParam,
+  GetGuestParam,
   TokenPayload,
   UpdateEmployeeParam,
   UpdateEmployeeReqBody,
@@ -205,8 +206,11 @@ export const createGuestController = async (
   })
 }
 
-export const getGuestsController = async (req: Request<ParamsDictionary, GetGuestResponse>, res: Response) => {
-  const guests = await accountsService.getGuests()
+export const getGuestsController = async (req: Request<GetGuestParam, GetGuestResponse>, res: Response) => {
+  const guests = await accountsService.getGuests(
+    req.query.fromDate as string | undefined,
+    req.query.toDate as string | undefined
+  )
   res.status(HTTP_STATUS.OK).json({
     message: USERS_MESSAGES.ACCOUNTS_FETCHED,
     result: guests

@@ -33,20 +33,32 @@ class TablesService {
   async updateTable(number: number, payload: UpdateTableReqBody) {
     if (payload.changeToken) {
       const token = randomId()
-      return await databaseService.tables.findOneAndUpdate(
-        {
-          number
-        },
-        {
-          $set: {
-            capacity: payload.capacity,
-            status: payload.status,
-            token
+      const [table] = await Promise.all([
+        databaseService.tables.findOneAndUpdate(
+          {
+            number
           },
-          $currentDate: { updated_at: true }
-        },
-        { returnDocument: 'after' }
-      )
+          {
+            $set: {
+              capacity: payload.capacity,
+              status: payload.status,
+              token
+            },
+            $currentDate: { updated_at: true }
+          },
+          { returnDocument: 'after' }
+        ),
+        databaseService.guests.updateMany(
+          { table_number: number },
+          {
+            $set: {
+              refresh_token: null,
+              refresh_token_exp: null
+            }
+          }
+        )
+      ])
+      return table
     }
     return await databaseService.tables.findOneAndUpdate(
       {

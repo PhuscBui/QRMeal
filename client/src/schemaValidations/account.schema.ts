@@ -115,7 +115,7 @@ export const ChangePasswordBody = z
 export type ChangePasswordBodyType = z.TypeOf<typeof ChangePasswordBody>;
 
 export const AccountIdParam = z.object({
-  id: z.coerce.number(),
+  _id: z.string(),
 });
 
 export type AccountIdParamType = z.TypeOf<typeof AccountIdParam>;
@@ -123,11 +123,11 @@ export type AccountIdParamType = z.TypeOf<typeof AccountIdParam>;
 export const GetListGuestsRes = z.object({
   result: z.array(
     z.object({
-      id: z.number(),
+      _id: z.string(),
       name: z.string(),
-      tableNumber: z.number().nullable(),
-      createdAt: z.date(),
-      updatedAt: z.date(),
+      table_number: z.number().nullable(),
+      created_at: z.date(),
+      updated_at: z.date(),
     })
   ),
   message: z.string(),
@@ -147,7 +147,7 @@ export type GetGuestListQueryParamsType = z.TypeOf<
 export const CreateGuestBody = z
   .object({
     name: z.string().trim().min(2).max(256),
-    tableNumber: z.number(),
+    table_number: z.number(),
   })
   .strict();
 
@@ -156,12 +156,12 @@ export type CreateGuestBodyType = z.TypeOf<typeof CreateGuestBody>;
 export const CreateGuestRes = z.object({
   message: z.string(),
   result: z.object({
-    id: z.number(),
+    _id: z.string(),
     name: z.string(),
     role: z.enum(RoleValues),
-    tableNumber: z.number().nullable(),
-    createdAt: z.date(),
-    updatedAt: z.date(),
+    table_number: z.number().nullable(),
+    created_at: z.date(),
+    updated_at: z.date(),
   }),
 });
 

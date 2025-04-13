@@ -56,3 +56,8 @@ export interface CreateGuestReqBody {
   name: string
   table_number: number
 }
+
+export interface GetGuestParam {
+  fromDate?: string | undefined
+  toDate?: string | undefined
+}

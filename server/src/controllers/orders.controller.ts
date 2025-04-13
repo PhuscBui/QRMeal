@@ -33,7 +33,6 @@ export const createOrdersController = async (
   } else {
     socketService.emitToRoom(ManagerRoom, 'new-order', orders)
   }
-
   res.status(HTTP_STATUS.CREATED).json({
     message: ORDERS_MESSAGE.ORDER_CREATE_SUCCESS,
     result: orders
@@ -87,7 +86,7 @@ export const payOrdersController = async (
   res: Response
 ) => {
   const { account_id } = req.decoded_authorization as TokenPayload
-  const { socketId, orders } = await ordersService.payOrders(req.body.guest_id, account_id)
+  const { socketId, orders } = await ordersService.payOrders(req.body.guestId, account_id)
 
   if (socketId) {
     socketService.getIO().to(socketId).to(ManagerRoom).emit('payment', orders)

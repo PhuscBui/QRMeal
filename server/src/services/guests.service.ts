@@ -216,11 +216,50 @@ class GuestsService {
           })
         )
 
-        return await databaseService.orders.findOne({ _id: order.insertedId })
+        return await databaseService.orders
+          .aggregate([
+            { $match: { _id: order.insertedId } },
+            {
+              $lookup: {
+                from: 'dish_snapshots',
+                localField: 'dish_snapshot_id',
+                foreignField: '_id',
+                as: 'dish_snapshot'
+              }
+            },
+            { $unwind: '$dish_snapshot' },
+            {
+              $lookup: {
+                from: 'accounts',
+                localField: 'order_handler_id',
+                foreignField: '_id',
+                as: 'order_handler'
+              }
+            },
+            { $unwind: { path: '$order_handler', preserveNullAndEmptyArrays: true } },
+            {
+              $lookup: {
+                from: 'guests',
+                localField: 'guest_id',
+                foreignField: '_id',
+                as: 'guest'
+              }
+            },
+            { $unwind: '$guest' },
+            {
+              $project: {
+                guest: {
+                  refresh_token: 0,
+                  refresh_token_exp: 0
+                }
+              }
+            }
+          ])
+          .toArray()
       })
     )
 
-    return ordersResult
+    return ordersResult.flat()
   }
 
   async getOrders(account_id: string) {
@@ -255,6 +294,14 @@ class GuestsService {
         {
           $unwind: {
             path: '$dish_snapshot'
+          }
+        },
+        {
+          $project: {
+            guest: {
+              refresh_token: 0,
+              refresh_token_exp: 0
+            }
           }
         }
       ])

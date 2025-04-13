@@ -8,7 +8,7 @@ import jwt from "jsonwebtoken";
 import { DishStatus, OrderStatus, Role, TableStatus } from "@/constants/type";
 import { toast } from "sonner";
 import envConfig from "@/config";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { BookX, CookingPot, HandCoins, Loader, Truck } from "lucide-react";
 import { TokenPayload } from "@/types/jwt.types";
 import guestApiRequest from "@/apiRequests/guest";
@@ -223,10 +223,18 @@ export const simpleMatchText = (fullText: string, matchText: string) => {
 };
 
 export const formatDateTimeToLocaleString = (date: string | Date) => {
-  return format(
-    date instanceof Date ? date : new Date(date),
-    "HH:mm:ss dd/MM/yyyy"
-  );
+  try {
+    const dateObj = date instanceof Date ? date : new Date(date);
+
+    if (!isValid(dateObj)) {
+      throw new Error("Invalid date format");
+    }
+
+    return format(dateObj, "HH:mm:ss dd/MM/yyyy");
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return "Invalid date";
+  }
 };
 
 export const formatDateTimeToTimeString = (date: string | Date) => {

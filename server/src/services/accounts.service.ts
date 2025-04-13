@@ -189,18 +189,29 @@ class AccountsService {
     )
   }
 
-  async getGuests() {
-    return await databaseService.guests
-      .find(
-        {},
-        {
-          projection: {
-            refresh_token: 0,
-            refresh_token_exp: 0
-          }
+  async getGuests(fromDate?: string, toDate?: string) {
+    const matchCondition: { created_at?: { $gte?: Date; $lte?: Date } } = {}
+    if (fromDate || toDate) {
+      matchCondition.created_at = {}
+      if (fromDate) {
+        matchCondition.created_at.$gte = new Date(fromDate)
+      }
+      if (toDate) {
+        matchCondition.created_at.$lte = new Date(toDate)
+      }
+    }
+    const guests = databaseService.guests.aggregate([
+      {
+        $match: matchCondition
+      },
+      {
+        $project: {
+          refresh_token: 0,
+          refresh_token_exp: 0
         }
-      )
-      .toArray()
+      }
+    ])
+    return guests.toArray()
   }
 }
 

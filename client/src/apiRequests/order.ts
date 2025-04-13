@@ -1,4 +1,4 @@
-import http from '@/lib/http'
+import http from "@/lib/http";
 import {
   CreateOrdersBodyType,
   CreateOrdersResType,
@@ -8,27 +8,27 @@ import {
   PayGuestOrdersBodyType,
   PayGuestOrdersResType,
   UpdateOrderBodyType,
-  UpdateOrderResType
-} from '@/schemaValidations/order.schema'
-import queryString from 'query-string'
+  UpdateOrderResType,
+} from "@/schemaValidations/order.schema";
+import queryString from "query-string";
 
 const orderApiRequest = {
   createOrders: (body: CreateOrdersBodyType) =>
-    http.post<CreateOrdersResType>('/orders', body),
+    http.post<CreateOrdersResType>("/orders", body),
   getOrderList: (queryParams: GetOrdersQueryParamsType) =>
     http.get<GetOrdersResType>(
-      '/orders?' +
+      "/orders?" +
         queryString.stringify({
           fromDate: queryParams.fromDate?.toISOString(),
-          toDate: queryParams.toDate?.toISOString()
+          toDate: queryParams.toDate?.toISOString(),
         })
     ),
-  updateOrder: (orderId: number, body: UpdateOrderBodyType) =>
-    http.put<UpdateOrderResType>(`/orders/${orderId}`, body),
-  getOrderDetail: (orderId: number) =>
+  updateOrder: (order_id: string, body: UpdateOrderBodyType) =>
+    http.put<UpdateOrderResType>(`/orders/${order_id}`, body),
+  getOrderDetail: (orderId: string) =>
     http.get<GetOrderDetailResType>(`/orders/${orderId}`),
   pay: (body: PayGuestOrdersBodyType) =>
-    http.post<PayGuestOrdersResType>(`/orders/pay`, body)
-}
+    http.post<PayGuestOrdersResType>(`/orders/pay`, body),
+};
 
-export default orderApiRequest
+export default orderApiRequest;

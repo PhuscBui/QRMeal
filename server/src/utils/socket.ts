@@ -30,16 +30,12 @@ class SocketService {
 
     // Authentication middleware
     this.io.use(async (socket: Socket, next) => {
-      console.log(chalk.blue('Socket authentication middleware'))
-      console.log(socket.handshake.auth)
       const { Authorization } = socket.handshake.auth
-      console.log(chalk.yellow('Authorization:', Authorization))
       if (!Authorization) {
         return next(new Error('Authorization không hợp lệ'))
       }
 
       const accessToken = Authorization.split(' ')[1]
-      console.log(chalk.blueBright('Access Token:', accessToken))
 
       try {
         const decodedAccessToken = await verifyToken({
