@@ -51,22 +51,22 @@ export default function OrderGuestDetail({
       {guest && (
         <Fragment>
           <div className='space-x-1'>
-            <span className='font-semibold'>Tên:</span>
+            <span className='font-semibold'>Name:</span>
             <span>{guest.name}</span>
             <span className='font-semibold'>(#{guest._id})</span>
             <span>|</span>
-            <span className='font-semibold'>Bàn:</span>
+            <span className='font-semibold'>Table:</span>
             <span>{guest.table_number}</span>
           </div>
           <div className='space-x-1'>
-            <span className='font-semibold'>Ngày đăng ký:</span>
+            <span className='font-semibold'>Create at:</span>
             <span>{formatDateTimeToLocaleString(guest.created_at)}</span>
           </div>
         </Fragment>
       )}
 
       <div className='space-y-1'>
-        <div className='font-semibold'>Đơn hàng:</div>
+        <div className='font-semibold'>Orders:</div>
         {orders.map((order, index) => {
           return (
             <div key={order._id} className='flex gap-2 items-center text-xs'>
@@ -89,24 +89,24 @@ export default function OrderGuestDetail({
               <span className='truncate w-[70px] sm:w-[100px]' title={order.dish_snapshot.name}>
                 {order.dish_snapshot.name}
               </span>
-              <span className='font-semibold' title={`Tổng: ${order.quantity}`}>
+              <span className='font-semibold' title={`Total: ${order.quantity}`}>
                 x{order.quantity}
               </span>
               <span className='italic'>{formatCurrency(order.quantity * order.dish_snapshot.price)}</span>
               <span
                 className='hidden sm:inline'
-                title={`Tạo: ${formatDateTimeToLocaleString(
+                title={`Create: ${formatDateTimeToLocaleString(
                   order.created_at
-                )} | Cập nhật: ${formatDateTimeToLocaleString(order.updated_at)}
+                )} | Update at: ${formatDateTimeToLocaleString(order.updated_at)}
           `}
               >
                 {formatDateTimeToLocaleString(order.created_at)}
               </span>
               <span
                 className='sm:hidden'
-                title={`Tạo: ${formatDateTimeToLocaleString(
+                title={`Create: ${formatDateTimeToLocaleString(
                   order.created_at
-                )} | Cập nhật: ${formatDateTimeToLocaleString(order.updated_at)}
+                )} | Update at: ${formatDateTimeToLocaleString(order.updated_at)}
           `}
               >
                 {formatDateTimeToTimeString(order.created_at)}
@@ -117,7 +117,7 @@ export default function OrderGuestDetail({
       </div>
 
       <div className='space-x-1'>
-        <span className='font-semibold'>Chưa thanh toán:</span>
+        <span className='font-semibold'>Not yet paid:</span>
         <Badge>
           <span>
             {formatCurrency(
@@ -129,7 +129,7 @@ export default function OrderGuestDetail({
         </Badge>
       </div>
       <div className='space-x-1'>
-        <span className='font-semibold'>Đã thanh toán:</span>
+        <span className='font-semibold'>Paid:</span>
         <Badge variant={'outline'}>
           <span>
             {formatCurrency(
@@ -149,7 +149,7 @@ export default function OrderGuestDetail({
           disabled={ordersFilterToPurchase.length === 0}
           onClick={pay}
         >
-          Thanh toán tất cả ({ordersFilterToPurchase.length} đơn)
+          Pay all ({ordersFilterToPurchase.length} orders)
         </Button>
       </div>
     </div>

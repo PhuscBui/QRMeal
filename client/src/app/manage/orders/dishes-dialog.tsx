@@ -1,22 +1,9 @@
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import AutoPagination from "@/components/auto-pagination";
-import { DishListResType } from "@/schemaValidations/dish.schema";
-import { useEffect, useState } from "react";
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import AutoPagination from '@/components/auto-pagination'
+import { DishListResType } from '@/schemaValidations/dish.schema'
+import { useEffect, useState } from 'react'
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -27,67 +14,61 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import { formatCurrency, getDishStatus, simpleMatchText } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
-import Image from "next/image";
-import { useDishListQuery } from "@/queries/useDish";
+  useReactTable
+} from '@tanstack/react-table'
+import { formatCurrency, getDishStatus, simpleMatchText } from '@/lib/utils'
+import { Input } from '@/components/ui/input'
+import Image from 'next/image'
+import { useDishListQuery } from '@/queries/useDish'
 
-type DishItem = DishListResType["result"][0];
+type DishItem = DishListResType['result'][0]
 
 export const columns: ColumnDef<DishItem>[] = [
   {
-    id: "dishName",
-    header: "Món ăn",
+    id: 'dishName',
+    header: 'Dish',
     cell: ({ row }) => (
-      <div className="flex items-center space-x-4">
+      <div className='flex items-center space-x-4'>
         <Image
-          src={row.original.image || "https://placehold.co/600x400"}
+          src={row.original.image || 'https://placehold.co/600x400'}
           alt={row.original.name}
           width={50}
           height={50}
-          className="rounded-md object-cover w-[50px] h-[50px]"
+          className='rounded-md object-cover w-[50px] h-[50px]'
         />
         <span>{row.original.name}</span>
       </div>
     ),
     filterFn: (row, columnId, filterValue: string) => {
-      if (filterValue === undefined) return true;
-      return simpleMatchText(String(row.original.name), String(filterValue));
-    },
+      if (filterValue === undefined) return true
+      return simpleMatchText(String(row.original.name), String(filterValue))
+    }
   },
   {
-    accessorKey: "price",
-    header: "Giá cả",
-    cell: ({ row }) => (
-      <div className="capitalize">{formatCurrency(row.getValue("price"))}</div>
-    ),
+    accessorKey: 'price',
+    header: 'Price',
+    cell: ({ row }) => <div className='capitalize'>{formatCurrency(row.getValue('price'))}</div>
   },
   {
-    accessorKey: "status",
-    header: "Trạng thái",
-    cell: ({ row }) => <div>{getDishStatus(row.getValue("status"))}</div>,
-  },
-];
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => <div>{getDishStatus(row.getValue('status'))}</div>
+  }
+]
 
-const PAGE_SIZE = 10;
-export function DishesDialog({
-  onChoose,
-}: {
-  onChoose: (dish: DishItem) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const dishListQuery = useDishListQuery();
-  const data = dishListQuery.data?.payload.result ?? [];
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = useState({});
+const PAGE_SIZE = 10
+export function DishesDialog({ onChoose }: { onChoose: (dish: DishItem) => void }) {
+  const [open, setOpen] = useState(false)
+  const dishListQuery = useDishListQuery()
+  const data = dishListQuery.data?.payload.result ?? []
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [rowSelection, setRowSelection] = useState({})
   const [pagination, setPagination] = useState({
     pageIndex: 0, // Gía trị mặc định ban đầu, không có ý nghĩa khi data được fetch bất đồng bộ
-    pageSize: PAGE_SIZE, //default page size
-  });
+    pageSize: PAGE_SIZE //default page size
+  })
 
   const table = useReactTable({
     data,
@@ -107,49 +88,42 @@ export function DishesDialog({
       columnFilters,
       columnVisibility,
       rowSelection,
-      pagination,
-    },
-  });
+      pagination
+    }
+  })
 
   useEffect(() => {
     table.setPagination({
       pageIndex: 0,
-      pageSize: PAGE_SIZE,
-    });
-  }, [table]);
+      pageSize: PAGE_SIZE
+    })
+  }, [table])
 
   const choose = (dish: DishItem) => {
-    onChoose(dish);
-    setOpen(false);
-  };
+    onChoose(dish)
+    setOpen(false)
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Thay đổi</Button>
+        <Button variant='outline'>Change</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-full overflow-auto">
+      <DialogContent className='sm:max-w-[600px] max-h-full overflow-auto'>
         <DialogHeader>
-          <DialogTitle>Chọn món ăn</DialogTitle>
+          <DialogTitle>Select dish</DialogTitle>
         </DialogHeader>
         <div>
-          <div className="w-full">
-            <div className="flex items-center py-4">
+          <div className='w-full'>
+            <div className='flex items-center py-4'>
               <Input
-                placeholder="Lọc tên"
-                value={
-                  (table.getColumn("dishName")?.getFilterValue() as string) ??
-                  ""
-                }
-                onChange={(event) =>
-                  table
-                    .getColumn("dishName")
-                    ?.setFilterValue(event.target.value)
-                }
-                className="max-w-sm"
+                placeholder='Name ...'
+                value={(table.getColumn('dishName')?.getFilterValue() as string) ?? ''}
+                onChange={(event) => table.getColumn('dishName')?.setFilterValue(event.target.value)}
+                className='max-w-sm'
               />
             </div>
-            <div className="rounded-md border">
+            <div className='rounded-md border'>
               <Table>
                 <TableHeader>
                   {table.getHeaderGroups().map((headerGroup) => (
@@ -159,12 +133,9 @@ export function DishesDialog({
                           <TableHead key={header.id}>
                             {header.isPlaceholder
                               ? null
-                              : flexRender(
-                                  header.column.columnDef.header,
-                                  header.getContext()
-                                )}
+                              : flexRender(header.column.columnDef.header, header.getContext())}
                           </TableHead>
-                        );
+                        )
                       })}
                     </TableRow>
                   ))}
@@ -174,26 +145,20 @@ export function DishesDialog({
                     table.getRowModel().rows.map((row) => (
                       <TableRow
                         key={row.id}
-                        data-state={row.getIsSelected() && "selected"}
+                        data-state={row.getIsSelected() && 'selected'}
                         onClick={() => choose(row.original)}
-                        className="cursor-pointer"
+                        className='cursor-pointer'
                       >
                         {row.getVisibleCells().map((cell) => (
                           <TableCell key={cell.id}>
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
-                            )}
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </TableCell>
                         ))}
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell
-                        colSpan={columns.length}
-                        className="h-24 text-center"
-                      >
+                      <TableCell colSpan={columns.length} className='h-24 text-center'>
                         No results.
                       </TableCell>
                     </TableRow>
@@ -201,11 +166,10 @@ export function DishesDialog({
                 </TableBody>
               </Table>
             </div>
-            <div className="flex items-center justify-end space-x-2 py-4">
-              <div className="text-xs text-muted-foreground py-4 flex-1 ">
-                Hiển thị{" "}
-                <strong>{table.getPaginationRowModel().rows.length}</strong>{" "}
-                trong <strong>{data.length}</strong> kết quả
+            <div className='flex items-center justify-end space-x-2 py-4'>
+              <div className='text-xs text-muted-foreground py-4 flex-1 '>
+                Display <strong>{table.getPaginationRowModel().rows.length}</strong> of <strong>{data.length}</strong>{' '}
+                items
               </div>
               <div>
                 <AutoPagination
@@ -214,7 +178,7 @@ export function DishesDialog({
                   onClick={(pageNumber) =>
                     table.setPagination({
                       pageIndex: pageNumber - 1,
-                      pageSize: PAGE_SIZE,
+                      pageSize: PAGE_SIZE
                     })
                   }
                   isLink={false}
@@ -225,5 +189,5 @@ export function DishesDialog({
         </div>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

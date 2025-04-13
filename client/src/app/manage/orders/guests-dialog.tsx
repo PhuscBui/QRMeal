@@ -26,7 +26,7 @@ type GuestItem = GetListGuestsResType['result'][0]
 export const columns: ColumnDef<GuestItem>[] = [
   {
     accessorKey: 'name',
-    header: 'Tên',
+    header: 'Name',
     cell: ({ row }) => (
       <div className='capitalize'>
         {row.getValue('name')} | (#{row.original._id})
@@ -39,7 +39,7 @@ export const columns: ColumnDef<GuestItem>[] = [
   },
   {
     accessorKey: 'table_number',
-    header: 'Số bàn',
+    header: 'Table number',
     cell: ({ row }) => <div className='capitalize'>{row.getValue('table_number')}</div>,
     filterFn: (row, columnId, filterValue: string) => {
       if (filterValue === undefined) return true
@@ -48,7 +48,7 @@ export const columns: ColumnDef<GuestItem>[] = [
   },
   {
     accessorKey: 'created_at',
-    header: () => <div>Tạo</div>,
+    header: () => <div>Create at</div>,
     cell: ({ row }) => (
       <div className='flex items-center space-x-4 text-sm'>
         {formatDateTimeToLocaleString(row.getValue('created_at'))}
@@ -121,30 +121,30 @@ export default function GuestsDialog({ onChoose }: { onChoose: (guest: GuestItem
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant='outline'>Chọn khách</Button>
+        <Button variant='outline'>Chooos guest</Button>
       </DialogTrigger>
       <DialogContent className='sm:max-w-[700px] max-h-full overflow-auto'>
         <DialogHeader>
-          <DialogTitle>Chọn khách hàng</DialogTitle>
+          <DialogTitle>Select guest</DialogTitle>
         </DialogHeader>
         <div>
           <div className='w-full'>
             <div className='flex flex-wrap gap-2'>
               <div className='flex items-center'>
-                <span className='mr-2'>Từ</span>
+                <span className='mr-2'>From</span>
                 <Input
                   type='datetime-local'
-                  placeholder='Từ ngày'
+                  placeholder='From'
                   className='text-sm'
                   value={format(fromDate, 'yyyy-MM-dd HH:mm').replace(' ', 'T')}
                   onChange={(event) => setFromDate(new Date(event.target.value))}
                 />
               </div>
               <div className='flex items-center'>
-                <span className='mr-2'>Đến</span>
+                <span className='mr-2'>To</span>
                 <Input
                   type='datetime-local'
-                  placeholder='Đến ngày'
+                  placeholder='to'
                   value={format(toDate, 'yyyy-MM-dd HH:mm').replace(' ', 'T')}
                   onChange={(event) => setToDate(new Date(event.target.value))}
                 />
@@ -155,16 +155,16 @@ export default function GuestsDialog({ onChoose }: { onChoose: (guest: GuestItem
             </div>
             <div className='flex items-center py-4 gap-2'>
               <Input
-                placeholder='Tên hoặc Id'
+                placeholder='Name or ID ...'
                 value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
                 onChange={(event) => table.getColumn('name')?.setFilterValue(event.target.value)}
                 className='w-[170px]'
               />
               <Input
-                placeholder='Số bàn'
+                placeholder='Table number'
                 value={(table.getColumn('table_number')?.getFilterValue() as string) ?? ''}
                 onChange={(event) => table.getColumn('table_number')?.setFilterValue(event.target.value)}
-                className='w-[80px]'
+                className='w-[170px]'
               />
             </div>
             <div className='rounded-md border'>
@@ -214,8 +214,8 @@ export default function GuestsDialog({ onChoose }: { onChoose: (guest: GuestItem
             </div>
             <div className='flex items-center justify-end space-x-2 py-4'>
               <div className='text-xs text-muted-foreground py-4 flex-1 '>
-                Hiển thị <strong>{table.getPaginationRowModel().rows.length}</strong> trong{' '}
-                <strong>{data.length}</strong> kết quả
+                Display <strong>{table.getPaginationRowModel().rows.length}</strong> of <strong>{data.length}</strong>{' '}
+                items
               </div>
               <div>
                 <AutoPagination
