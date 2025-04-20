@@ -41,6 +41,10 @@ app.use(helmet())
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
+  next()
+})
 app.use(express.json())
 app.use('/auth', authRouter)
 app.use('/accounts', accountsRouter)

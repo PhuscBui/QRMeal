@@ -1,44 +1,31 @@
-import {
-  Home,
-  LineChart,
-  ShoppingCart,
-  Users2,
-  Salad,
-  Table,
-} from "lucide-react";
+import { Home, ShoppingCart, Users2, Salad, Table } from 'lucide-react'
 
 const menuItems = [
   {
-    title: "Dashboard",
+    title: 'Dashboard',
     Icon: Home,
-    href: "/",
+    href: '/manage/dashboard'
   },
   {
-    title: "Orders",
+    title: 'Orders',
     Icon: ShoppingCart,
-    href: "/manage/orders",
+    href: '/manage/orders'
   },
   {
-    title: "Tables",
+    title: 'Tables',
     Icon: Table,
-    href: "/manage/tables",
+    href: '/manage/tables'
   },
   {
-    title: "Dishes",
+    title: 'Dishes',
     Icon: Salad,
-    href: "/manage/dishes",
-  },
-
-  {
-    title: "Analytics",
-    Icon: LineChart,
-    href: "/manage/analytics",
+    href: '/manage/dishes'
   },
   {
-    title: "Accounts",
+    title: 'Accounts',
     Icon: Users2,
-    href: "/manage/accounts",
-  },
-];
+    href: '/manage/accounts'
+  }
+]
 
-export default menuItems;
+export default menuItems

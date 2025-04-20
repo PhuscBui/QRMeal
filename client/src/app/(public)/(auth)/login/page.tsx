@@ -1,30 +1,35 @@
-import LoginForm from "@/app/(public)/(auth)/login/login-form";
-import { Suspense } from "react";
-import Image from "next/image";
+/* eslint-disable @next/next/no-img-element */
+import LoginForm from '@/app/(public)/(auth)/login/login-form'
+import { QrCode } from 'lucide-react'
+import { Suspense } from 'react'
 
-export default function Login() {
+export default function LoginPage() {
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row">
-      {/* Login Form Section */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-4">
-        <Suspense fallback={<div>Loading...</div>}>
-          <LoginForm />
-        </Suspense>
-      </div>
-
-      {/* Image Section */}
-      <div className="w-full md:w-1/2 bg-gray-100 hidden md:flex items-center justify-center relative">
-        <div className="relative w-full h-full">
-          <Image src="/login.png" alt="Login background" fill priority />
-          {/* Optional overlay text */}
-          <div className="absolute inset-0 flex items-center justify-center z-10">
-            {/* <div className="bg-black bg-opacity-30 p-6 rounded-lg text-white">
-              <h2 className="text-2xl font-bold">Welcome Back</h2>
-              <p className="mt-2">Sign in to access your account</p>
-            </div> */}
+    <div className='grid min-h-svh lg:grid-cols-2'>
+      <div className='flex flex-col gap-4 p-6 md:p-10'>
+        <div className='flex justify-center gap-2 md:justify-start'>
+          <a href='#' className='flex items-center gap-2 font-medium'>
+            <div className='flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground'>
+              <QrCode className='size-4' />
+            </div>
+            QR Meal
+          </a>
+        </div>
+        <div className='flex flex-1 items-center justify-center'>
+          <div className='w-full max-w-xs'>
+            <Suspense fallback={<div>Loading...</div>}>
+              <LoginForm />
+            </Suspense>
           </div>
         </div>
       </div>
+      <div className='relative hidden bg-muted lg:block'>
+        <img
+          src='/login.svg'
+          alt='Image'
+          className='absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale'
+        />
+      </div>
     </div>
-  );
+  )
 }
