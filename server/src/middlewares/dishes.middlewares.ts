@@ -81,53 +81,62 @@ const statusSchema: ParamSchema = {
 }
 
 export const createDishValidator = validate(
-  checkSchema({
-    name: nameSchema,
-    price: priceSchema,
-    description: descriptionSchema,
-    image: imageSchema,
-    status: statusSchema
-  })
+  checkSchema(
+    {
+      name: nameSchema,
+      price: priceSchema,
+      description: descriptionSchema,
+      image: imageSchema,
+      status: statusSchema
+    },
+    ['body']
+  )
 )
 
 export const updateDishValidator = validate(
-  checkSchema({
-    name: nameSchema,
-    price: priceSchema,
-    description: descriptionSchema,
-    image: imageSchema,
-    status: statusSchema
-  })
+  checkSchema(
+    {
+      name: nameSchema,
+      price: priceSchema,
+      description: descriptionSchema,
+      image: imageSchema,
+      status: statusSchema
+    },
+    ['body']
+  )
 )
 
 export const dishIdValidator = validate(
-  checkSchema({
-    dishId: {
-      notEmpty: {
-        errorMessage: DISHES_MESSAGE.DISH_ID_IS_REQUIRED
-      },
-      isString: {
-        errorMessage: DISHES_MESSAGE.DISH_ID_MUST_BE_A_STRING
-      },
-      custom: {
-        options: async (value: string, { req }) => {
-          if (!ObjectId.isValid(value)) {
-            throw new ErrorWithStatus({
-              message: DISHES_MESSAGE.DISH_ID_IS_INVALID,
-              status: HTTP_STATUS.BAD_REQUEST
-            })
+  checkSchema(
+    {
+      dishId: {
+        notEmpty: {
+          errorMessage: DISHES_MESSAGE.DISH_ID_IS_REQUIRED
+        },
+        isString: {
+          errorMessage: DISHES_MESSAGE.DISH_ID_MUST_BE_A_STRING
+        },
+        custom: {
+          options: async (value: string, { req }) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                message: DISHES_MESSAGE.DISH_ID_IS_INVALID,
+                status: HTTP_STATUS.BAD_REQUEST
+              })
+            }
+            const dish = await dishesService.getDish(value)
+            if (!dish) {
+              throw new ErrorWithStatus({
+                message: DISHES_MESSAGE.DISH_NOT_FOUND,
+                status: HTTP_STATUS.NOT_FOUND
+              })
+            }
+            req.dish = dish
+            return true
           }
-          const dish = await dishesService.getDish(value)
-          if (!dish) {
-            throw new ErrorWithStatus({
-              message: DISHES_MESSAGE.DISH_NOT_FOUND,
-              status: HTTP_STATUS.NOT_FOUND
-            })
-          }
-          req.dish = dish
-          return true
         }
       }
-    }
-  })
+    },
+    ['params']
+  )
 )

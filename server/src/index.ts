@@ -16,6 +16,8 @@ import { initFolder } from '~/utils/file'
 import socketService from '~/utils/socket'
 import cors from 'cors'
 import helmet from 'helmet'
+import dashboardRouter from '~/routes/dashboard.routes'
+import promotionsRoutes from '~/routes/promotion.routes'
 
 initFolder()
 
@@ -54,6 +56,8 @@ app.use('/static', staticRouter)
 app.use('/tables', tablesRouter)
 app.use('/guest', guestsRouter)
 app.use('/orders', ordersRouter)
+app.use('/dashboard', dashboardRouter)
+app.use('/promotions', promotionsRoutes)
 
 app.use(defaultErrorHandler)
 

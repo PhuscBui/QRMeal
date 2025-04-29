@@ -15,7 +15,7 @@ export const loginGuestController = async (
   req: Request<ParamsDictionary, GuestLoginResponse, GuestLoginReqBody>,
   res: Response
 ) => {
-  const { token, table_number, name } = req.body
+  const { token, table_number, name, phone } = req.body
   const table = await databaseService.tables.findOne({ token: token, number: table_number })
   if (table === null) {
     res.status(HTTP_STATUS.NOT_FOUND).json({ message: TABLES_MESSAGES.TABLE_NOT_FOUND })
@@ -35,6 +35,7 @@ export const loginGuestController = async (
   const guest = await databaseService.guests.insertOne(
     new Guest({
       name: name,
+      phone: phone,
       table_number: table_number,
       role: Role.Guest
     })

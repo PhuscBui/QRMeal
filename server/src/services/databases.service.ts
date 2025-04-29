@@ -5,6 +5,7 @@ import Dish from '~/models/schemas/Dish.schema'
 import DishSnapshot from '~/models/schemas/DishSnapshot.schema'
 import Guest from '~/models/schemas/Guest.schema'
 import Order from '~/models/schemas/Order.schema'
+import Promotion from '~/models/schemas/Promotion.schema'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import Socket from '~/models/schemas/Socket.schema'
 import { Table } from '~/models/schemas/Table.schema'
@@ -58,6 +59,10 @@ class DatabaseService {
 
   get guests(): Collection<Guest> {
     return this.db.collection(envConfig.dbGuestsCollection)
+  }
+
+  get promotions(): Collection<Promotion> {
+    return this.db.collection(envConfig.dbPromotionsCollection)
   }
 
   get sockets(): Collection<Socket> {

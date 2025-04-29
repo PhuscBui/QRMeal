@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb'
 interface GuestType {
   _id?: ObjectId
   name: string
+  phone: string
   table_number: number
   role: string
   refresh_token?: string | null
@@ -14,6 +15,7 @@ interface GuestType {
 export default class Guest {
   _id?: ObjectId
   name: string
+  phone: string
   table_number: number
   role: string
   refresh_token?: string | null
@@ -25,6 +27,7 @@ export default class Guest {
     const date = new Date()
     this._id = guest._id
     this.name = guest.name
+    this.phone = guest.phone
     this.table_number = guest.table_number
     this.role = guest.role
     this.refresh_token = guest.refresh_token || null

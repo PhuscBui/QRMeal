@@ -15,6 +15,7 @@ export interface AccountResponseResult {
 export interface GuestResponseResult {
   _id: string
   name: string
+  phone: string
   role: string
   table_number: number
   created_at: string

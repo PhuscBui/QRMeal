@@ -1,86 +1,98 @@
-"use client";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useForm } from "react-hook-form";
-import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  GuestLoginBody,
-  GuestLoginBodyType,
-} from "@/schemaValidations/guest.schema";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
-import { useGuestLoginMutation } from "@/queries/useGuest";
-import { useAppContext } from "@/components/app-provider";
-import { handleErrorApi } from "@/lib/utils";
+'use client'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useForm } from 'react-hook-form'
+import { Form, FormField, FormItem, FormMessage } from '@/components/ui/form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { GuestLoginBody, GuestLoginBodyType } from '@/schemaValidations/guest.schema'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { useEffect } from 'react'
+import { useGuestLoginMutation } from '@/queries/useGuest'
+import { useAppContext } from '@/components/app-provider'
+import { handleErrorApi } from '@/lib/utils'
 
 export default function GuestLoginForm() {
-  const { setRole } = useAppContext();
-  const searchParams = useSearchParams();
-  const params = useParams();
-  const table_number = Number(params.number);
-  const token = searchParams.get("token");
-  const router = useRouter();
-  const loginMutation = useGuestLoginMutation();
+  const { setRole } = useAppContext()
+  const searchParams = useSearchParams()
+  const params = useParams()
+  const table_number = Number(params.number)
+  const token = searchParams.get('token')
+  const router = useRouter()
+  const loginMutation = useGuestLoginMutation()
   const form = useForm<GuestLoginBodyType>({
     resolver: zodResolver(GuestLoginBody),
     defaultValues: {
-      name: "",
-      token: token ?? "",
-      table_number,
-    },
-  });
+      name: '',
+      phone: '',
+      token: token ?? '',
+      table_number
+    }
+  })
 
   useEffect(() => {
     if (!token) {
-      router.push("/");
+      router.push('/')
     }
-  }, [token, router]);
+  }, [token, router])
 
   async function onSubmit(values: GuestLoginBodyType) {
-    if (loginMutation.isPending) return;
+    if (loginMutation.isPending) return
     try {
-      const result = await loginMutation.mutateAsync(values);
-      setRole(result.payload.result.guest.role);
-      router.push("/guest/menu");
+      const result = await loginMutation.mutateAsync(values)
+      setRole(result.payload.result.guest.role)
+      router.push('/guest/menu')
     } catch (error) {
       handleErrorApi({
         error,
-        setError: form.setError,
-      });
+        setError: form.setError
+      })
     }
   }
 
   return (
-    <Card className="mx-auto max-w-sm">
+    <Card className='mx-auto max-w-sm'>
       <CardHeader>
-        <CardTitle className="text-2xl">Đăng nhập gọi món</CardTitle>
+        <CardTitle className='text-2xl'>Đăng nhập gọi món</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form
-            className="space-y-2 max-w-[600px] flex-shrink-0 w-full"
+            className='space-y-2 max-w-[600px] flex-shrink-0 w-full'
             noValidate
             onSubmit={form.handleSubmit(onSubmit, console.log)}
           >
-            <div className="grid gap-4">
+            <div className='grid gap-4'>
               <FormField
                 control={form.control}
-                name="name"
+                name='name'
                 render={({ field }) => (
                   <FormItem>
-                    <div className="grid gap-2">
-                      <Label htmlFor="name">Tên khách hàng</Label>
-                      <Input id="name" type="text" required {...field} />
+                    <div className='grid gap-2'>
+                      <Label htmlFor='name'>Tên khách hàng</Label>
+                      <Input id='name' type='text' required {...field} />
                       <FormMessage />
                     </div>
                   </FormItem>
                 )}
               />
 
-              <Button type="submit" className="w-full">
+              <FormField
+                control={form.control}
+                name='phone'
+                render={({ field }) => (
+                  <FormItem>
+                    <div className='grid gap-2'>
+                      <Label htmlFor='phone'>Số điện thoại</Label>
+                      <Input id='phone' type='text' required {...field} />
+                      <FormMessage />
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <Button type='submit' className='w-full'>
                 Đăng nhập
               </Button>
             </div>
@@ -88,5 +100,5 @@ export default function GuestLoginForm() {
         </Form>
       </CardContent>
     </Card>
-  );
+  )
 }

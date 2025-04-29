@@ -1,5 +1,6 @@
 export interface GuestLoginReqBody {
   name: string
+  phone: string
   token: string
   table_number: number
 }
