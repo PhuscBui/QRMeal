@@ -1,4 +1,4 @@
-import { ParamsDictionary } from 'express-serve-static-core'
+import { ParamsDictionary, Query } from 'express-serve-static-core'
 
 export interface CreatePromotionReqBody {
   name: string
@@ -13,7 +13,7 @@ export interface CreatePromotionReqBody {
   is_active: boolean
 }
 
-export interface GetPromotionsQueryParams {
+export interface GetPromotionsQueryParams extends Query {
   active?: string
 }
 

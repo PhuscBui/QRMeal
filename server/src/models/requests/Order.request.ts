@@ -1,4 +1,4 @@
-import { ParamsDictionary } from 'express-serve-static-core'
+import { ParamsDictionary, Query } from 'express-serve-static-core'
 
 export interface CreateOrdersReqBody {
   guest_id: string
@@ -8,7 +8,7 @@ export interface CreateOrdersReqBody {
   }[]
 }
 
-export interface GetOrdersQueryParams {
+export interface GetOrdersQueryParams extends Query {
   fromDate?: string
   toDate?: string
 }

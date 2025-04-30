@@ -4,6 +4,8 @@ import Account from '~/models/schemas/Account.schema'
 import Dish from '~/models/schemas/Dish.schema'
 import DishSnapshot from '~/models/schemas/DishSnapshot.schema'
 import Guest from '~/models/schemas/Guest.schema'
+import GuestLoyalty from '~/models/schemas/GuestLoyalty.schema'
+import GuestPromotion from '~/models/schemas/GuestPromotion.schema'
 import Order from '~/models/schemas/Order.schema'
 import Promotion from '~/models/schemas/Promotion.schema'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
@@ -63,6 +65,14 @@ class DatabaseService {
 
   get promotions(): Collection<Promotion> {
     return this.db.collection(envConfig.dbPromotionsCollection)
+  }
+
+  get guest_promotions(): Collection<GuestPromotion> {
+    return this.db.collection(envConfig.dbGuestPromotionsCollection)
+  }
+
+  get guest_loyalties(): Collection<GuestLoyalty> {
+    return this.db.collection(envConfig.dbGuestLoyaltiesCollection)
   }
 
   get sockets(): Collection<Socket> {

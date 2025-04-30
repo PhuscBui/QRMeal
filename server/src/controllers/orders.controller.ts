@@ -1,4 +1,4 @@
-import { Request, Response } from 'express'
+import { query, Request, Response } from 'express'
 import { ParamsDictionary } from 'express-serve-static-core'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { ORDERS_MESSAGE } from '~/constants/messages'
@@ -39,9 +39,11 @@ export const createOrdersController = async (
   })
 }
 
-export const getOrdersController = async (req: Request<GetOrdersQueryParams, GetOrdersResponse>, res: Response) => {
+export const getOrdersController = async (
+  req: Request<ParamsDictionary, GetOrdersResponse, unknown, GetOrdersQueryParams>,
+  res: Response
+) => {
   const orders = await ordersService.getOrders(req.query)
-
   res.status(HTTP_STATUS.OK).json({
     message: ORDERS_MESSAGE.ORDER_GET_SUCCESS,
     result: orders

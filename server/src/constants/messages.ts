@@ -173,3 +173,48 @@ export const PROMOTIONS_MESSAGE = {
   END_DATE_MUST_BE_GREATER_THAN_START_DATE: 'End date must be greater than start date',
   PROMOTION_ID_MUST_BE_A_VALID_OBJECT_ID: 'Promotion ID must be a valid ObjectId'
 } as const
+
+export const GUEST_LOYALTY_MESSAGE = {
+  GUEST_LOYALTY_NOT_FOUND: 'Guest loyalty not found',
+  GUEST_LOYALTY_CREATED: 'Guest loyalty created',
+  GUEST_LOYALTY_UPDATED: 'Guest loyalty updated',
+  GUEST_LOYALTY_DELETED: 'Guest loyalty deleted',
+  GUEST_LOYALTY_FETCHED: 'Guest loyalty fetched',
+  GUEST_LOYALTIES_FETCHED: 'Guest loyalties fetched',
+  GUEST_PHONE_IS_REQUIRED: 'Guest phone is required',
+  GUEST_PHONE_MUST_BE_A_STRING: 'Guest phone must be a string',
+  GUEST_PHONE_IS_INVALID: 'Guest phone is invalid',
+  GUEST_ID_IS_REQUIRED: 'Guest ID is required',
+  GUEST_ID_MUST_BE_A_STRING: 'Guest ID must be a string',
+  GUEST_ID_IS_INVALID: 'Guest ID is invalid',
+  TOTAL_SPEND_IS_REQUIRED: 'Total spend is required',
+  TOTAL_SPEND_MUST_BE_A_NUMBER: 'Total spend must be a number',
+  TOTAL_SPEND_MUST_BE_GREATER_THAN_0: 'Total spend must be greater than 0',
+  VISIT_COUNT_IS_REQUIRED: 'Visit count is required',
+  VISIT_COUNT_MUST_BE_A_NUMBER: 'Visit count must be a number',
+  VISIT_COUNT_MUST_BE_GREATER_THAN_0: 'Visit count must be greater than 0',
+  VISIT_COUNT_MUST_BE_AN_INTEGER: 'Visit count must be an integer',
+  LOYALTY_POINTS_IS_REQUIRED: 'Loyalty points is required',
+  LOYALTY_POINTS_MUST_BE_A_NUMBER: 'Loyalty points must be a number',
+  LOYALTY_POINTS_MUST_BE_GREATER_THAN_0: 'Loyalty points must be greater than 0'
+} as const
+
+export const GUEST_PROMOTION_MESSAGE = {
+  GUEST_PROMOTION_NOT_FOUND: 'Guest promotion not found',
+  GUEST_PROMOTION_CREATED: 'Guest promotion created',
+  GUEST_PROMOTION_UPDATED: 'Guest promotion updated',
+  GUEST_PROMOTION_DELETED: 'Guest promotion deleted',
+  GUEST_PROMOTION_FETCHED: 'Guest promotion fetched',
+  GUEST_PROMOTIONS_FETCHED: 'Guest promotions fetched',
+  GUEST_ID_IS_REQUIRED: 'Guest ID is required',
+  GUEST_ID_MUST_BE_A_STRING: 'Guest ID must be a string',
+  GUEST_ID_IS_INVALID: 'Guest ID is invalid',
+  GUEST_PHONE_IS_REQUIRED: 'Guest phone is required',
+  GUEST_PHONE_MUST_BE_A_STRING: 'Guest phone must be a string',
+  GUEST_PHONE_IS_INVALID: 'Guest phone is invalid',
+  PROMOTION_ID_IS_REQUIRED: 'Promotion ID is required',
+  PROMOTION_ID_MUST_BE_A_STRING: 'Promotion ID must be a string',
+  PROMOTION_ID_IS_INVALID: 'Promotion ID is invalid',
+  GUEST_PROMOTION_ID_IS_REQUIRED: 'Guest promotion ID is required',
+  GUEST_PROMOTION_ID_MUST_BE_A_STRING: 'Guest promotion ID must be a string'
+} as const

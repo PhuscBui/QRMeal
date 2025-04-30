@@ -1,6 +1,8 @@
 import { TokenPayload } from '~/models/requests/Account.request'
 import Account from '~/models/schemas/Account.schema'
 import Dish from '~/models/schemas/Dish.schema'
+import GuestLoyalty from '~/models/schemas/GuestLoyalty.schema'
+import GuestPromotion from '~/models/schemas/GuestPromotion.schema'
 import Promotion from '~/models/schemas/Promotion.schema'
 
 declare module 'express' {
@@ -10,6 +12,8 @@ declare module 'express' {
     decoded_refresh_token?: TokenPayload
     dish?: Dish
     promotion?: Promotion
+    guestLoyalty?: GuestLoyalty
+    guestPromotions?: GuestPromotion[]
   }
 }
 

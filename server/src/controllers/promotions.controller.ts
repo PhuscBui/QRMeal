@@ -28,7 +28,7 @@ export const createPromotionController = async (
 }
 
 export const getPromotionsController = async (
-  req: Request<GetPromotionsQueryParams, GetPromotionsResponse>,
+  req: Request<ParamsDictionary, GetPromotionsResponse, unknown, GetPromotionsQueryParams>,
   res: Response
 ) => {
   const promotions = await promotionsService.getPromotions(req.query)

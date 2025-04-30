@@ -18,6 +18,8 @@ import cors from 'cors'
 import helmet from 'helmet'
 import dashboardRouter from '~/routes/dashboard.routes'
 import promotionsRoutes from '~/routes/promotion.routes'
+import guest_loyaltyRouter from '~/routes/guest-loyalty.routes'
+import guest_promotionRouter from '~/routes/guest-promotion.routes'
 
 initFolder()
 
@@ -58,6 +60,8 @@ app.use('/guest', guestsRouter)
 app.use('/orders', ordersRouter)
 app.use('/dashboard', dashboardRouter)
 app.use('/promotions', promotionsRoutes)
+app.use('/guest-loyalty', guest_loyaltyRouter)
+app.use('/guest-promotion', guest_promotionRouter)
 
 app.use(defaultErrorHandler)
 
