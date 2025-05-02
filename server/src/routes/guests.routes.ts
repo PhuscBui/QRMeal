@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import {
   guestCreateOrderController,
+  guestGetMeController,
   guestGetOrdersController,
   loginGuestController,
   logoutGuestController,
@@ -57,5 +58,10 @@ guestsRouter.post('/orders', accessTokenValidator, wrapRequestHandler(guestCreat
  * Response: Body : GuestGetOrdersRes
  */
 guestsRouter.get('/orders', accessTokenValidator, wrapRequestHandler(guestGetOrdersController))
+
+/**
+ *
+ */
+guestsRouter.get('/me', accessTokenValidator, wrapRequestHandler(guestGetMeController))
 
 export default guestsRouter

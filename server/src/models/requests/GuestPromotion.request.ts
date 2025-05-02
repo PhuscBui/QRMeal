@@ -13,3 +13,8 @@ export interface GuestPromotionReqParams extends ParamsDictionary {
 export interface DeleteGuestPromotionReqParams extends ParamsDictionary {
   guestPromotionId: string
 }
+
+export interface DeleteGuestPromotionReqBody {
+  guest_id: string
+  promotion_id: string
+}

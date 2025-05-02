@@ -4,6 +4,7 @@ import HTTP_STATUS from '~/constants/httpStatus'
 import { GUEST_PROMOTION_MESSAGE } from '~/constants/messages'
 import {
   CreateGuestPromotionReqBody,
+  DeleteGuestPromotionReqBody,
   DeleteGuestPromotionReqParams,
   GuestPromotionReqParams
 } from '~/models/requests/GuestPromotion.request'
@@ -36,11 +37,11 @@ export const createGuestPromotionController = async (
 }
 
 export const deleteGuestPromotionController = async (
-  req: Request<DeleteGuestPromotionReqParams, DeleteGuestLoyaltyResponse>,
+  req: Request<ParamsDictionary, DeleteGuestLoyaltyResponse, DeleteGuestPromotionReqBody>,
   res: Response
 ) => {
-  const { guestPromotionId } = req.params
-  const result = await guestPromotionService.deleteGuestPromotion(guestPromotionId)
+  const { guest_id, promotion_id } = req.body
+  const result = await guestPromotionService.deleteGuestPromotion(guest_id, promotion_id)
 
   if (!result) {
     res.status(HTTP_STATUS.NOT_FOUND).json({
@@ -48,6 +49,7 @@ export const deleteGuestPromotionController = async (
     })
     return
   }
+
   res.json({
     message: GUEST_PROMOTION_MESSAGE.GUEST_PROMOTION_DELETED
   })

@@ -108,3 +108,16 @@ export const guestGetOrdersController = async (req: Request, res: Response) => {
     result
   })
 }
+
+export const guestGetMeController = async (req: Request, res: Response) => {
+  const { account_id } = req.decoded_authorization as TokenPayload
+  const result = await guestsService.getMe(account_id)
+  if (result === null) {
+    res.status(HTTP_STATUS.NOT_FOUND).json({ message: USERS_MESSAGES.USER_NOT_FOUND })
+    return
+  }
+  res.json({
+    message: USERS_MESSAGES.ACCOUNTS_FETCHED,
+    result
+  })
+}

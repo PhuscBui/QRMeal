@@ -21,9 +21,12 @@ class GuestPromotionService {
     return guestPromotionResult
   }
 
-  async deleteGuestPromotion(guestPromotionId: string) {
-    const result = await databaseService.guest_promotions.deleteOne({ _id: new ObjectId(guestPromotionId) })
-    return result.acknowledged
+  async deleteGuestPromotion(guest_id: string, promotion_id: string) {
+    const result = await databaseService.guest_promotions.findOneAndDelete({
+      guest_id: new ObjectId(guest_id),
+      promotion_id: new ObjectId(promotion_id)
+    })
+    return result
   }
 }
 

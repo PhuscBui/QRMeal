@@ -17,6 +17,6 @@ guest_promotionRouter.get('/:guestId', guestIdValidator, wrapRequestHandler(getG
 
 guest_promotionRouter.post('/', createGuestPromotionValidator, wrapRequestHandler(createGuestPromotionController))
 
-guest_promotionRouter.delete('/:guestPromotionId', deleteGuestPromotionController)
+guest_promotionRouter.post('/cancel', deleteGuestPromotionController)
 
 export default guest_promotionRouter

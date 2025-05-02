@@ -53,3 +53,18 @@ export type GuestCreateOrdersResType = z.TypeOf<typeof GuestCreateOrdersRes>
 export const GuestGetOrdersRes = GuestCreateOrdersRes
 
 export type GuestGetOrdersResType = z.TypeOf<typeof GuestGetOrdersRes>
+
+export const GuestSchema = z.object({
+  _id: z.string(),
+  name: z.string(),
+  phone: z.string(),
+  role: z.enum(RoleValues),
+  table_number: z.number().nullable()
+})
+
+export const GuestRes = z.object({
+  message: z.string(),
+  result: GuestSchema
+})
+
+export type GuestResType = z.TypeOf<typeof GuestRes>

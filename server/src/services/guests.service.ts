@@ -308,6 +308,27 @@ class GuestsService {
       .toArray()
     return orders
   }
+
+  async getMe(account_id: string) {
+    const guest = await databaseService.guests.findOne(
+      { _id: new ObjectId(account_id) },
+      {
+        projection: {
+          refresh_token: 0,
+          refresh_token_exp: 0,
+          created_at: 0,
+          updated_at: 0
+        }
+      }
+    )
+    if (guest === null) {
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.USER_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
+    }
+    return guest
+  }
 }
 
 const guestsService = new GuestsService()

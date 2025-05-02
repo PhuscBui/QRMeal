@@ -25,3 +25,10 @@ export const useGuestGetOrderListQuery = () => {
     queryKey: ['guest-orders']
   })
 }
+
+export const useGuestMe = () => {
+  return useQuery({
+    queryKey: ['guest-me'],
+    queryFn: guestApiRequest.getMe
+  })
+}
