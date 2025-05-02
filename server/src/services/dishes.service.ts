@@ -38,7 +38,7 @@ class DishesService {
   }
 
   async deleteDish(dishId: string) {
-    const result = await databaseService.dishes.deleteOne({ _id: new ObjectId(dishId) })
+    const result = await databaseService.dishes.findOneAndDelete({ _id: new ObjectId(dishId) })
     return result
   }
 }

@@ -61,8 +61,8 @@ const discountValueSchema: ParamSchema = {
     errorMessage: PROMOTIONS_MESSAGE.DISCOUNT_VALUE_MUST_BE_GREATER_THAN_0
   },
   custom: {
-    options: (value) => parseFloat(value) > 0,
-    errorMessage: PROMOTIONS_MESSAGE.DISCOUNT_VALUE_MUST_BE_GREATER_THAN_0
+    options: (value) => parseFloat(value) >= 0,
+    errorMessage: PROMOTIONS_MESSAGE.DISCOUNT_VALUE_MUST_BE_GREATER_THAN_OR_EQUAL_TO_0
   }
 }
 
@@ -81,8 +81,8 @@ const minSpendSchema: ParamSchema = {
     errorMessage: PROMOTIONS_MESSAGE.MIN_SPEND_LENGTH_MUST_BE_GREATER_THAN_0
   },
   custom: {
-    options: (value) => parseFloat(value) > 0,
-    errorMessage: PROMOTIONS_MESSAGE.MIN_SPEND_MUST_BE_GREATER_THAN_0
+    options: (value) => parseFloat(value) >= 0,
+    errorMessage: PROMOTIONS_MESSAGE.MIN_SPEND_MUST_BE_GREATER_THAN_OR_EQUAL_TO_0
   }
 }
 
@@ -101,8 +101,8 @@ const minVisitsSchema: ParamSchema = {
     errorMessage: PROMOTIONS_MESSAGE.MIN_VISITS_LENGTH_MUST_BE_GREATER_THAN_0
   },
   custom: {
-    options: (value) => parseInt(value) > 0,
-    errorMessage: PROMOTIONS_MESSAGE.MIN_VISITS_MUST_BE_GREATER_THAN_0
+    options: (value) => parseInt(value) >= 0,
+    errorMessage: PROMOTIONS_MESSAGE.MIN_VISITS_MUST_BE_GREATER_THAN_OR_EQUAL_TO_0
   }
 }
 
@@ -121,8 +121,8 @@ const minLoyaltyPointsSchema: ParamSchema = {
     errorMessage: PROMOTIONS_MESSAGE.MIN_LOYALTY_POINTS_LENGTH_MUST_BE_GREATER_THAN_0
   },
   custom: {
-    options: (value) => parseInt(value) > 0,
-    errorMessage: PROMOTIONS_MESSAGE.MIN_LOYALTY_POINTS_MUST_BE_GREATER_THAN_0
+    options: (value) => parseInt(value) >= 0,
+    errorMessage: PROMOTIONS_MESSAGE.MIN_LOYALTY_POINTS_MUST_BE_GREATER_THAN_OR_EQUAL_TO_0
   }
 }
 
@@ -146,9 +146,9 @@ const endDateSchema: ParamSchema = {
     options: (value, { req }) => {
       const startDate = new Date(req.body.start_date)
       const endDate = new Date(value)
-      return startDate < endDate
+      return startDate <= endDate
     },
-    errorMessage: PROMOTIONS_MESSAGE.END_DATE_MUST_BE_GREATER_THAN_START_DATE
+    errorMessage: PROMOTIONS_MESSAGE.END_DATE_MUST_BE_GREATER_THAN_OR_EQUAL_TO_START_DATE
   }
 }
 

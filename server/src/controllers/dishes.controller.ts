@@ -71,6 +71,7 @@ export const deleteDishController = async (req: Request<DeleteDishParam, DeleteD
     return
   }
   res.json({
-    message: DISHES_MESSAGE.DISH_DELETED
+    message: DISHES_MESSAGE.DISH_DELETED,
+    result: result
   })
 }

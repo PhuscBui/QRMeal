@@ -16,7 +16,6 @@ import { Button } from '@/components/ui/button'
 import DOMPurify from 'dompurify'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { createContext, useContext, useEffect, useState } from 'react'
 import {
   AlertDialog,
@@ -28,41 +27,40 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from '@/components/ui/alert-dialog'
-import { formatCurrency, getDishStatus, handleErrorApi } from '@/lib/utils'
+import { formatCurrency, handleErrorApi } from '@/lib/utils'
 import { useSearchParams } from 'next/navigation'
 import AutoPagination from '@/components/auto-pagination'
-import { DishListResType } from '@/schemaValidations/dish.schema'
-import EditDish from '@/app/manage/dishes/edit-dish'
-import AddDish from '@/app/manage/dishes/add-dish'
-import { useDeleteDishMutation, useDishListQuery } from '@/queries/useDish'
+
 import { toast } from 'sonner'
 import { Pen, Trash } from 'lucide-react'
+import { PromotionListResType } from '@/schemaValidations/promotion.schema'
+import { useDeletePromotionMutation, usePromotionListQuery } from '@/queries/usePromotion'
+import AddPromotion from '@/app/manage/promotions/add-promotion'
+import EditPromotion from '@/app/manage/promotions/edit-promotion'
+import { PromotionType } from '@/constants/type'
 
-type DishItem = DishListResType['result'][0]
+type PromotionItem = PromotionListResType['result'][0]
 
-const statusBadge = (status: string) => {
-  if (status === 'Available') {
+const statusBadge = (status: boolean) => {
+  if (status) {
     return <span className='bg-green-100 text-green-800 rounded-full px-2 py-1 text-xs font-bold'>Available</span>
   }
-  if (status === 'Unavailable') {
-    return <span className='bg-red-100 text-red-800 rounded-full px-2 py-1 text-xs font-bold'>Unavailable</span>
-  }
-  return <span className='bg-yellow-100 text-yellow-800 rounded-full px-2 py-1 text-xs font-bold'>Hidden</span>
+  return <span className='bg-red-100 text-red-800 rounded-full px-2 py-1 text-xs font-bold'>Unavailable</span>
 }
 
-const DishTableContext = createContext<{
-  setDishIdEdit: (value: string) => void
-  dishIdEdit: string | undefined
-  dishDelete: DishItem | null
-  setDishDelete: (value: DishItem | null) => void
+const PromotionTableContext = createContext<{
+  setPromotionIdEdit: (value: string) => void
+  promotionIdEdit: string | undefined
+  promotionDelete: PromotionItem | null
+  setPromotionDelete: (value: PromotionItem | null) => void
 }>({
-  setDishIdEdit: () => {},
-  dishIdEdit: undefined,
-  dishDelete: null,
-  setDishDelete: () => {}
+  setPromotionIdEdit: () => {},
+  promotionIdEdit: undefined,
+  promotionDelete: null,
+  setPromotionDelete: () => {}
 })
 
-export const columns: ColumnDef<DishItem>[] = [
+export const columns: ColumnDef<PromotionItem>[] = [
   {
     accessorKey: 'index',
     header: 'No.',
@@ -73,26 +71,9 @@ export const columns: ColumnDef<DishItem>[] = [
     header: 'ID'
   },
   {
-    accessorKey: 'image',
-    header: 'Image',
-    cell: ({ row }) => (
-      <div>
-        <Avatar className='aspect-square w-[100px] h-[100px] rounded-md object-cover'>
-          <AvatarImage src={row.getValue('image')} />
-          <AvatarFallback className='rounded-none'>{row.original.name}</AvatarFallback>
-        </Avatar>
-      </div>
-    )
-  },
-  {
     accessorKey: 'name',
     header: 'Name',
     cell: ({ row }) => <div className='capitalize'>{row.getValue('name')}</div>
-  },
-  {
-    accessorKey: 'price',
-    header: 'Price',
-    cell: ({ row }) => <div className='capitalize'>{formatCurrency(row.getValue('price'))}</div>
   },
   {
     accessorKey: 'description',
@@ -107,28 +88,76 @@ export const columns: ColumnDef<DishItem>[] = [
     )
   },
   {
-    accessorKey: 'status',
+    accessorKey: 'discount_type',
+    header: 'Discount Type',
+    cell: ({ row }) => <div className='capitalize'>{row.getValue('discount_type')}</div>
+  },
+  {
+    accessorKey: 'is_active',
     header: 'Status',
-    cell: ({ row }) => <div>{statusBadge(getDishStatus(row.getValue('status')))}</div>
+    cell: ({ row }) => <div>{statusBadge(row.getValue('is_active'))}</div>
+  },
+  {
+    accessorKey: 'discount_value',
+    header: 'Discount Value',
+    cell: ({ row }) => {
+      const type = row.getValue('discount_type')
+      const value = row.getValue('discount_value')
+
+      if (type === PromotionType.Discount) {
+        return <div>{formatCurrency(value as number)}</div>
+      }
+
+      if (type === PromotionType.Percent) {
+        return <div>{value as number} %</div>
+      }
+
+      return <div>{formatCurrency(value as number)}</div>
+    }
+  },
+  {
+    accessorKey: 'min_spend',
+    header: 'Min Spend',
+    cell: ({ row }) => <div>{formatCurrency(row.getValue('min_spend'))}</div>
+  },
+  {
+    accessorKey: 'min_visits',
+    header: 'Min Visits',
+    cell: ({ row }) => <div>{row.getValue('min_visits')}</div>
+  },
+  {
+    accessorKey: 'min_loyalty_points',
+    header: 'Min Loyalty Points',
+    cell: ({ row }) => <div>{row.getValue('min_loyalty_points')}</div>
+  },
+  {
+    accessorKey: 'start_date',
+    header: 'Start Date',
+    cell: ({ row }) => <div>{new Date(row.getValue('start_date')).toLocaleDateString()}</div>
+  },
+  {
+    accessorKey: 'end_date',
+    header: 'End Date',
+    cell: ({ row }) => <div>{new Date(row.getValue('end_date')).toLocaleDateString()}</div>
   },
   {
     id: 'actions',
     enableHiding: false,
     cell: function Actions({ row }) {
-      const { setDishIdEdit, setDishDelete } = useContext(DishTableContext)
-      const openEditDish = () => {
-        setDishIdEdit(row.original._id)
+      const { setPromotionIdEdit, setPromotionDelete } = useContext(PromotionTableContext)
+      const openEditPromotion = () => {
+        setPromotionIdEdit(row.original._id)
       }
 
-      const openDeleteDish = () => {
-        setDishDelete(row.original)
+      const openDeletePromotion = () => {
+        setPromotionDelete(row.original)
       }
       return (
         <div className='flex gap-2'>
-          <Button variant='default' className='h-8 w-8 p-0' onClick={openEditDish}>
+          <Button variant='default' className='h-8 w-8 p-0' onClick={openEditPromotion}>
             <Pen className='h-4 w-4' />
           </Button>
-          <Button variant='destructive' className='h-8 w-8 p-0' onClick={openDeleteDish}>
+          <Button variant='destructive' className='h-8 w-8 p-0' onClick={openDeletePromotion}>
             <Trash className='h-4 w-4' />
           </Button>
         </div>
@@ -137,19 +166,19 @@ export const columns: ColumnDef<DishItem>[] = [
   }
 ]
 
-function AlertDialogDeleteDish({
-  dishDelete,
-  setDishDelete
+function AlertDialogDeletePromotion({
+  promotionDelete,
+  setPromotionDelete
 }: {
-  dishDelete: DishItem | null
-  setDishDelete: (value: DishItem | null) => void
+  promotionDelete: PromotionItem | null
+  setPromotionDelete: (value: PromotionItem | null) => void
 }) {
-  const { mutateAsync } = useDeleteDishMutation()
-  const deleteDish = async () => {
-    if (dishDelete) {
+  const { mutateAsync } = useDeletePromotionMutation()
+  const deletePromotion = async () => {
+    if (promotionDelete) {
       try {
-        const result = await mutateAsync(dishDelete._id)
-        setDishDelete(null)
+        const result = await mutateAsync(promotionDelete._id)
+        setPromotionDelete(null)
         toast('Success', {
           description: result.payload.message
         })
@@ -162,24 +191,24 @@ function AlertDialogDeleteDish({
   }
   return (
     <AlertDialog
-      open={Boolean(dishDelete)}
+      open={Boolean(promotionDelete)}
       onOpenChange={(value) => {
         if (!value) {
-          setDishDelete(null)
+          setPromotionDelete(null)
         }
       }}
     >
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete dish</AlertDialogTitle>
+          <AlertDialogTitle>Delete Promotion</AlertDialogTitle>
           <AlertDialogDescription>
-            <span className='bg-foreground text-primary-foreground rounded p-1'>{dishDelete?.name}</span> will be
+            <span className='bg-foreground text-primary-foreground rounded p-1'>{promotionDelete?.name}</span> will be
             deleted. You can&apos;t undo this action.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={deleteDish}>Continue</AlertDialogAction>
+          <AlertDialogAction onClick={deletePromotion}>Continue</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -187,14 +216,14 @@ function AlertDialogDeleteDish({
 }
 // Số lượng item trên 1 trang
 const PAGE_SIZE = 10
-export default function DishTable() {
+export default function PromotionTable() {
   const searchParam = useSearchParams()
   const page = searchParam.get('page') ? Number(searchParam.get('page')) : 1
   const pageIndex = page - 1
-  const [dishIdEdit, setDishIdEdit] = useState<string | undefined>()
-  const [dishDelete, setDishDelete] = useState<DishItem | null>(null)
-  const dishListQuery = useDishListQuery()
-  const data = dishListQuery.data?.payload.result ?? []
+  const [promotionIdEdit, setPromotionIdEdit] = useState<string | undefined>()
+  const [promotionDelete, setPromotionDelete] = useState<PromotionItem | null>(null)
+  const promotionListQuery = usePromotionListQuery()
+  const data = promotionListQuery.data?.payload.result ?? []
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
@@ -205,7 +234,6 @@ export default function DishTable() {
     pageIndex, // Gía trị mặc định ban đầu, không có ý nghĩa khi data được fetch bất đồng bộ
     pageSize: PAGE_SIZE //default page size
   })
-  console.log(data)
   const table = useReactTable({
     data,
     columns,
@@ -236,10 +264,12 @@ export default function DishTable() {
   }, [table, pageIndex])
 
   return (
-    <DishTableContext.Provider value={{ dishIdEdit, setDishIdEdit, dishDelete, setDishDelete }}>
+    <PromotionTableContext.Provider
+      value={{ setPromotionIdEdit, promotionIdEdit, promotionDelete, setPromotionDelete }}
+    >
       <div className='w-full'>
-        <EditDish id={dishIdEdit} setId={setDishIdEdit} />
-        <AlertDialogDeleteDish dishDelete={dishDelete} setDishDelete={setDishDelete} />
+        <EditPromotion id={promotionIdEdit} setId={setPromotionIdEdit} />
+        <AlertDialogDeletePromotion promotionDelete={promotionDelete} setPromotionDelete={setPromotionDelete} />
         <div className='flex items-center py-4'>
           <Input
             placeholder='Filter by name'
@@ -248,7 +278,7 @@ export default function DishTable() {
             className='max-w-sm'
           />
           <div className='ml-auto flex items-center gap-2'>
-            <AddDish />
+            <AddPromotion />
           </div>
         </div>
         <div className='rounded-md border'>
@@ -299,6 +329,6 @@ export default function DishTable() {
           </div>
         </div>
       </div>
-    </DishTableContext.Provider>
+    </PromotionTableContext.Provider>
   )
 }

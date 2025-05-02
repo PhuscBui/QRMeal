@@ -5,7 +5,7 @@ import { type ClassValue, clsx } from 'clsx'
 import { UseFormSetError } from 'react-hook-form'
 import { twMerge } from 'tailwind-merge'
 import jwt from 'jsonwebtoken'
-import { DishStatus, OrderStatus, Role, TableStatus } from '@/constants/type'
+import { DishStatus, OrderStatus, PromotionType, Role, TableStatus } from '@/constants/type'
 import { toast } from 'sonner'
 import envConfig from '@/config'
 import { format, isValid } from 'date-fns'
@@ -143,6 +143,19 @@ export const getDishStatus = (status: (typeof DishStatus)[keyof typeof DishStatu
       return 'Unavailable'
     default:
       return 'Hidden'
+  }
+}
+
+export const getPromotionType = (type: (typeof PromotionType)[keyof typeof PromotionType]) => {
+  switch (type) {
+    case PromotionType.Percent:
+      return 'Percent'
+    case PromotionType.FreeItem:
+      return 'Free Item'
+    case PromotionType.LoyaltyPoints:
+      return 'Loyalty Points'
+    default:
+      return 'Discount'
   }
 }
 
