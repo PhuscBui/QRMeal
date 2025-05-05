@@ -49,3 +49,23 @@ export const filterMiddleware =
     req.body = pick(req.body, filterKeys)
     next()
   }
+
+export const dateQueryValidator = validate(
+  checkSchema(
+    {
+      fromDate: {
+        optional: true,
+        isISO8601: {
+          errorMessage: COMMON_MESSAGES.FROM_DATE_MUST_BE_A_DATE
+        }
+      },
+      toDate: {
+        optional: true,
+        isISO8601: {
+          errorMessage: COMMON_MESSAGES.TO_DATE_MUST_BE_A_DATE
+        }
+      }
+    },
+    ['query']
+  )
+)

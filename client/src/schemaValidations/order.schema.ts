@@ -21,6 +21,7 @@ export const OrderSchema = z.object({
     .object({
       _id: z.string(),
       name: z.string(),
+      phone: z.string(),
       table_number: z.number().nullable(),
       created_at: z.date(),
       updated_at: z.date()

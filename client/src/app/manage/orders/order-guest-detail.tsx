@@ -10,6 +10,7 @@ import {
   handleErrorApi
 } from '@/lib/utils'
 import { usePayForGuestMutation } from '@/queries/useOrder'
+import { useCreateRevenueMutation } from '@/queries/useRevenue'
 import { GetOrdersResType, PayGuestOrdersResType } from '@/schemaValidations/order.schema'
 import Image from 'next/image'
 import { Fragment } from 'react'
@@ -30,6 +31,7 @@ export default function OrderGuestDetail({
     : []
   const purchasedOrderFilter = guest ? orders.filter((order) => order.status === OrderStatus.Paid) : []
   const payForGuestMutation = usePayForGuestMutation()
+  const createRevenueMutation = useCreateRevenueMutation()
 
   const pay = async () => {
     if (payForGuestMutation.isPending || !guest) return
@@ -40,6 +42,14 @@ export default function OrderGuestDetail({
       if (onPaySuccess) {
         onPaySuccess(result.payload)
       }
+
+      await createRevenueMutation.mutateAsync({
+        guest_id: guest._id,
+        guest_phone: guest.phone,
+        total_amount: ordersFilterToPurchase.reduce((acc, order) => {
+          return acc + order.quantity * order.dish_snapshot.price
+        }, 0)
+      })
     } catch (error) {
       handleErrorApi({
         error

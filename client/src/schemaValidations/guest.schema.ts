@@ -7,7 +7,7 @@ const phoneRegex = new RegExp(/^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[
 export const GuestLoginBody = z
   .object({
     name: z.string().min(2).max(50),
-    phone: z.string().regex(phoneRegex, 'Invalid Number!').min(10).max(10),
+    phone: z.string().regex(phoneRegex, 'Invalid Number!').min(10).max(10).optional(),
     table_number: z.number(),
     token: z.string()
   })

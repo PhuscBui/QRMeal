@@ -9,6 +9,7 @@ import GuestPromotion from '~/models/schemas/GuestPromotion.schema'
 import Order from '~/models/schemas/Order.schema'
 import Promotion from '~/models/schemas/Promotion.schema'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
+import Revenue from '~/models/schemas/Revenue.schema'
 import Socket from '~/models/schemas/Socket.schema'
 import { Table } from '~/models/schemas/Table.schema'
 
@@ -73,6 +74,10 @@ class DatabaseService {
 
   get guest_loyalties(): Collection<GuestLoyalty> {
     return this.db.collection(envConfig.dbGuestLoyaltiesCollection)
+  }
+
+  get revenues(): Collection<Revenue> {
+    return this.db.collection(envConfig.dbRevenuesCollection)
   }
 
   get sockets(): Collection<Socket> {

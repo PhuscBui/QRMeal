@@ -14,9 +14,10 @@ interface PromotionCardProps {
   guestId: string
   guestPhone: string
   isApply?: boolean
+  canApply?: boolean
 }
 
-export default function PromotionCard({ promotion, guestId, guestPhone, isApply }: PromotionCardProps) {
+export default function PromotionCard({ promotion, guestId, guestPhone, isApply, canApply }: PromotionCardProps) {
   const addPromotion = useAddGuestPromotionMutation()
   const deletePromotion = useDeleteGuestPromotionMutation()
 
@@ -115,6 +116,13 @@ export default function PromotionCard({ promotion, guestId, guestPhone, isApply 
           </div>
         )}
 
+        {promotion.min_visits > 0 && (
+          <div className='flex items-center text-sm'>
+            <ShoppingBag className='h-4 w-4 mr-2 text-primary' />
+            <span>Số lần ghé thăm tối thiểu: {promotion.min_visits}</span>
+          </div>
+        )}
+
         {promotion.min_loyalty_points > 0 && (
           <div className='flex items-center text-sm'>
             <Award className='h-4 w-4 mr-2 text-primary' />
@@ -138,7 +146,7 @@ export default function PromotionCard({ promotion, guestId, guestPhone, isApply 
         <Button
           variant='default'
           onClick={handleApplyPromotion}
-          disabled={!promotion.is_active || addPromotion.isPending || isApply}
+          disabled={!promotion.is_active || addPromotion.isPending || isApply || !canApply}
         >
           {addPromotion.isPending ? 'Applying...' : 'Apply'}
         </Button>

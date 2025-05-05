@@ -3,7 +3,7 @@ import { ObjectId } from 'mongodb'
 interface GuestType {
   _id?: ObjectId
   name: string
-  phone: string
+  phone: string | null
   table_number: number
   role: string
   refresh_token?: string | null
@@ -15,7 +15,7 @@ interface GuestType {
 export default class Guest {
   _id?: ObjectId
   name: string
-  phone: string
+  phone: string | null
   table_number: number
   role: string
   refresh_token?: string | null

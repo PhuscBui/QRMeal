@@ -17,6 +17,7 @@ export const envConfig = {
   dbPromotionsCollection: process.env.MONGODB_PROMOTIONS_COLLECTION as string,
   dbGuestPromotionsCollection: process.env.MONGODB_GUEST_PROMOTIONS_COLLECTION as string,
   dbGuestLoyaltiesCollection: process.env.MONGODB_GUEST_LOYALTIES_COLLECTION as string,
+  dbRevenuesCollection: process.env.MONGODB_REVENUES_COLLECTION as string,
   dbSocketsCollection: process.env.MONGODB_SOCKETS_COLLECTION as string,
 
   initialEmailOwner: process.env.INITIAL_EMAIL_OWNER as string,

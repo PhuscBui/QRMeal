@@ -176,6 +176,17 @@ export default function EditPromotion({
     }
   }
 
+  // Helper function to format date string or return empty string
+  const formatDateValue = (dateValue: Date | undefined): string => {
+    if (!dateValue) return ''
+    try {
+      return new Date(dateValue).toISOString().split('T')[0]
+    } catch (error) {
+      console.error('Error formatting date:', error)
+      return ''
+    }
+  }
+
   return (
     <Dialog
       open={Boolean(id)}
@@ -442,7 +453,7 @@ export default function EditPromotion({
               <FormField
                 control={form.control}
                 name='start_date'
-                render={({ field }) => (
+                render={({ field: { value, onChange, ...restField } }) => (
                   <FormItem>
                     <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
                       <Label htmlFor='start_date' className='text-sm font-bold'>
@@ -453,8 +464,12 @@ export default function EditPromotion({
                           id='start_date'
                           type='date'
                           className='w-full'
-                          value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                          onChange={(e) => field.onChange(new Date(e.target.value))}
+                          value={formatDateValue(value)}
+                          onChange={(e) => {
+                            const dateValue = e.target.value ? new Date(e.target.value) : undefined
+                            onChange(dateValue)
+                          }}
+                          {...restField}
                         />
                         <FormMessage />
                       </div>
@@ -466,7 +481,7 @@ export default function EditPromotion({
               <FormField
                 control={form.control}
                 name='end_date'
-                render={({ field }) => (
+                render={({ field: { value, onChange, ...restField } }) => (
                   <FormItem>
                     <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
                       <Label htmlFor='end_date' className='text-sm font-bold'>
@@ -477,8 +492,12 @@ export default function EditPromotion({
                           id='end_date'
                           type='date'
                           className='w-full'
-                          value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                          onChange={(e) => field.onChange(new Date(e.target.value))}
+                          value={formatDateValue(value)}
+                          onChange={(e) => {
+                            const dateValue = e.target.value ? new Date(e.target.value) : undefined
+                            onChange(dateValue)
+                          }}
+                          {...restField}
                         />
                         <FormMessage />
                       </div>

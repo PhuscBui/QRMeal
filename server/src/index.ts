@@ -20,6 +20,7 @@ import dashboardRouter from '~/routes/dashboard.routes'
 import promotionsRoutes from '~/routes/promotion.routes'
 import guest_loyaltyRouter from '~/routes/guest-loyalty.routes'
 import guest_promotionRouter from '~/routes/guest-promotion.routes'
+import revenuesRouter from '~/routes/revenues.routes'
 
 initFolder()
 
@@ -62,6 +63,7 @@ app.use('/dashboard', dashboardRouter)
 app.use('/promotions', promotionsRoutes)
 app.use('/guest-loyalty', guest_loyaltyRouter)
 app.use('/guest-promotion', guest_promotionRouter)
+app.use('/revenues', revenuesRouter)
 
 app.use(defaultErrorHandler)
 

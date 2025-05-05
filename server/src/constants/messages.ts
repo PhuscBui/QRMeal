@@ -111,7 +111,10 @@ export const COMMON_MESSAGES = {
   UPLOAD_IMAGE_SUCCESS: 'Upload image success',
   IMAGE_NOT_FOUND: 'Image not found',
   IMAGE_URL_MUST_BE_A_STRING: 'Image URL must be a string',
-  IMAGE_URL_LENGTH_MUST_BE_FROM_1_TO_400: 'Image URL length must be from 1 to 400'
+  IMAGE_URL_LENGTH_MUST_BE_FROM_1_TO_400: 'Image URL length must be from 1 to 400',
+
+  FROM_DATE_MUST_BE_A_DATE: 'From date must be a date',
+  TO_DATE_MUST_BE_A_DATE: 'To date must be a date'
 } as const
 
 export const ORDERS_MESSAGE = {
@@ -218,4 +221,36 @@ export const GUEST_PROMOTION_MESSAGE = {
   PROMOTION_ID_IS_INVALID: 'Promotion ID is invalid',
   GUEST_PROMOTION_ID_IS_REQUIRED: 'Guest promotion ID is required',
   GUEST_PROMOTION_ID_MUST_BE_A_STRING: 'Guest promotion ID must be a string'
+} as const
+
+export const REVENUES_MESSAGE = {
+  REVENUE_NOT_FOUND: 'Revenue not found',
+  REVENUE_CREATED: 'Revenue created',
+  REVENUE_UPDATED: 'Revenue updated',
+  REVENUE_DELETED: 'Revenue deleted',
+  REVENUE_FETCHED: 'Revenue fetched',
+  REVENUES_FETCHED: 'Revenues fetched',
+  GUEST_ID_IS_REQUIRED: 'Guest ID is required',
+  GUEST_ID_MUST_BE_A_STRING: 'Guest ID must be a string',
+  GUEST_ID_IS_INVALID: 'Guest ID is invalid',
+  REVENUE_CREATE_FAILED: 'Revenue create failed',
+  TOTAL_AMOUNT_IS_REQUIRED: 'Total amount is required',
+  TOTAL_AMOUNT_MUST_BE_A_NUMBER: 'Total amount must be a number',
+  TOTAL_AMOUNT_MUST_BE_GREATER_THAN_0: 'Total amount must be greater than 0',
+  TOTAL_AMOUNT_MUST_BE_POSITIVE: 'Total amount must be positive'
+} as const
+
+export const GUEST_MESSAGE = {
+  GUEST_NOT_FOUND: 'Guest not found',
+  GUEST_CREATED: 'Guest created',
+  GUEST_UPDATED: 'Guest updated',
+  GUEST_DELETED: 'Guest deleted',
+  GUEST_FETCHED: 'Guest fetched',
+  GUESTS_FETCHED: 'Guests fetched',
+  GUEST_ID_IS_REQUIRED: 'Guest ID is required',
+  GUEST_ID_MUST_BE_A_STRING: 'Guest ID must be a string',
+  GUEST_ID_IS_INVALID: 'Guest ID is invalid',
+  GUEST_PHONE_IS_REQUIRED: 'Guest phone is required',
+  GUEST_PHONE_MUST_BE_A_STRING: 'Guest phone must be a string',
+  GUEST_PHONE_IS_INVALID: 'Guest phone is invalid'
 } as const
