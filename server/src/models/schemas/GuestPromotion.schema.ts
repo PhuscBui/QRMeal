@@ -5,6 +5,7 @@ interface GuestPromotionType {
   guest_id: ObjectId
   guest_phone: string
   promotion_id: ObjectId
+  used?: boolean
   created_at?: Date
   updated_at?: Date
 }
@@ -14,6 +15,7 @@ export default class GuestPromotion {
   guest_id: ObjectId
   guest_phone: string
   promotion_id: ObjectId
+  used?: boolean
   created_at?: Date
   updated_at?: Date
 
@@ -23,6 +25,7 @@ export default class GuestPromotion {
     this.guest_id = guestPromotion.guest_id
     this.guest_phone = guestPromotion.guest_phone
     this.promotion_id = guestPromotion.promotion_id
+    this.used = guestPromotion.used || false
     this.created_at = guestPromotion.created_at || date
     this.updated_at = guestPromotion.updated_at || date
   }

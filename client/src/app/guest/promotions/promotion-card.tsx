@@ -15,9 +15,17 @@ interface PromotionCardProps {
   guestPhone: string
   isApply?: boolean
   canApply?: boolean
+  isUsed?: boolean
 }
 
-export default function PromotionCard({ promotion, guestId, guestPhone, isApply, canApply }: PromotionCardProps) {
+export default function PromotionCard({
+  promotion,
+  guestId,
+  guestPhone,
+  isApply,
+  canApply,
+  isUsed
+}: PromotionCardProps) {
   const addPromotion = useAddGuestPromotionMutation()
   const deletePromotion = useDeleteGuestPromotionMutation()
 
@@ -140,13 +148,25 @@ export default function PromotionCard({ promotion, guestId, guestPhone, isApply,
       </div>
 
       <div className='flex justify-end gap-2'>
-        <Button variant='destructive' onClick={handleDeletePromotion} disabled={deletePromotion.isPending || !isApply}>
+        {isUsed && (
+          <Badge variant='outline' className='bg-red-50 text-red-700 border-red-200'>
+            Used
+          </Badge>
+        )}
+
+        <Button
+          variant='destructive'
+          onClick={handleDeletePromotion}
+          disabled={deletePromotion.isPending || !isApply || isUsed}
+          hidden={isUsed}
+        >
           Cancel apply
         </Button>
         <Button
           variant='default'
           onClick={handleApplyPromotion}
-          disabled={!promotion.is_active || addPromotion.isPending || isApply || !canApply}
+          disabled={!promotion.is_active || addPromotion.isPending || isApply || !canApply || isUsed}
+          hidden={isUsed}
         >
           {addPromotion.isPending ? 'Applying...' : 'Apply'}
         </Button>

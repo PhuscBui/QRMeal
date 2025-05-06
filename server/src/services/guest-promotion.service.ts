@@ -28,6 +28,23 @@ class GuestPromotionService {
     })
     return result
   }
+
+  async usedPromotion(guest_id: string, promotion_id: string) {
+    const result = await databaseService.guest_promotions.findOneAndUpdate(
+      {
+        guest_id: new ObjectId(guest_id),
+        promotion_id: new ObjectId(promotion_id)
+      },
+      { $set: { used: true } },
+      { returnDocument: 'after' }
+    )
+    return result
+  }
+
+  async getGuestPromotionByPhone(guestPhone: string) {
+    const result = await databaseService.guest_promotions.find({ guest_phone: guestPhone }).toArray()
+    return result
+  }
 }
 
 const guestPromotionService = new GuestPromotionService()

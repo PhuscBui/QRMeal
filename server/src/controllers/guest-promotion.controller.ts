@@ -5,11 +5,16 @@ import { GUEST_PROMOTION_MESSAGE } from '~/constants/messages'
 import {
   CreateGuestPromotionReqBody,
   DeleteGuestPromotionReqBody,
-  DeleteGuestPromotionReqParams,
-  GuestPromotionReqParams
+  GuestPromotionByPhoneReqParams,
+  GuestPromotionReqParams,
+  UsedPromotionReqBody
 } from '~/models/requests/GuestPromotion.request'
 import { DeleteGuestLoyaltyResponse } from '~/models/response/GuestLoyalty.response'
-import { CreateGuestPromotionResponse, GetGuestPromotionByGuestId } from '~/models/response/GuestPromotion.response'
+import {
+  CreateGuestPromotionResponse,
+  GetGuestPromotionByGuestId,
+  UsedPromotionResponse
+} from '~/models/response/GuestPromotion.response'
 import guestPromotionService from '~/services/guest-promotion.service'
 
 export const getGuestPromotionByGuestIdController = async (
@@ -24,6 +29,24 @@ export const getGuestPromotionByGuestIdController = async (
   })
 }
 
+export const getGuestPromotionByPhoneController = async (
+  req: Request<GuestPromotionByPhoneReqParams, GetGuestPromotionByGuestId>,
+  res: Response
+) => {
+  const { guestPhone } = req.params
+  const result = await guestPromotionService.getGuestPromotionByPhone(guestPhone)
+  if (!result) {
+    res.status(HTTP_STATUS.NOT_FOUND).json({
+      message: GUEST_PROMOTION_MESSAGE.GUEST_PROMOTION_NOT_FOUND
+    })
+    return
+  }
+  res.json({
+    message: GUEST_PROMOTION_MESSAGE.GUEST_PROMOTIONS_FETCHED,
+    result: result
+  })
+}
+
 export const createGuestPromotionController = async (
   req: Request<ParamsDictionary, CreateGuestPromotionResponse, CreateGuestPromotionReqBody>,
   res: Response
@@ -32,6 +55,26 @@ export const createGuestPromotionController = async (
 
   res.json({
     message: GUEST_PROMOTION_MESSAGE.GUEST_PROMOTION_CREATED,
+    result: result
+  })
+}
+
+export const usedPromotionController = async (
+  req: Request<ParamsDictionary, UsedPromotionResponse, UsedPromotionReqBody>,
+  res: Response
+) => {
+  const { guest_id, promotion_id } = req.body
+  const result = await guestPromotionService.usedPromotion(guest_id, promotion_id)
+
+  if (!result) {
+    res.status(HTTP_STATUS.NOT_FOUND).json({
+      message: GUEST_PROMOTION_MESSAGE.GUEST_PROMOTION_NOT_FOUND
+    })
+    return
+  }
+
+  res.json({
+    message: GUEST_PROMOTION_MESSAGE.GUEST_PROMOTION_USED,
     result: result
   })
 }

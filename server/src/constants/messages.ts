@@ -220,7 +220,8 @@ export const GUEST_PROMOTION_MESSAGE = {
   PROMOTION_ID_MUST_BE_A_STRING: 'Promotion ID must be a string',
   PROMOTION_ID_IS_INVALID: 'Promotion ID is invalid',
   GUEST_PROMOTION_ID_IS_REQUIRED: 'Guest promotion ID is required',
-  GUEST_PROMOTION_ID_MUST_BE_A_STRING: 'Guest promotion ID must be a string'
+  GUEST_PROMOTION_ID_MUST_BE_A_STRING: 'Guest promotion ID must be a string',
+  GUEST_PROMOTION_USED: 'Guest promotion used'
 } as const
 
 export const REVENUES_MESSAGE = {

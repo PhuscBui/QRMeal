@@ -9,6 +9,26 @@ export const useGetGuestPromotionQuery = ({ guestId, enabled }: { guestId: strin
   })
 }
 
+export const useGetGuestPromotionByPhoneQuery = ({ guestPhone, enabled }: { guestPhone: string; enabled: boolean }) => {
+  return useQuery({
+    queryKey: ['guest-promotion', guestPhone],
+    queryFn: () => guestPromotionApiRequest.getGuestPromotionByPhone(guestPhone),
+    enabled
+  })
+}
+
+export const useUsedPromotionMutation = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: guestPromotionApiRequest.usedPromotion,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['guest-promotion']
+      })
+    }
+  })
+}
+
 export const useAddGuestPromotionMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({

@@ -6,12 +6,13 @@ import { Award, CreditCard, ShoppingBag, Star } from 'lucide-react'
 import PromotionCard from '@/app/guest/promotions/promotion-card'
 import { useGuestMe } from '@/queries/useGuest'
 import { useGetGuestLoyaltyQuery } from '@/queries/useGuestLoyalty'
-import { useGetGuestPromotionQuery } from '@/queries/useGuestPromotion'
+import { useGetGuestPromotionByPhoneQuery, useGetGuestPromotionQuery } from '@/queries/useGuestPromotion'
 import { usePromotionListQuery } from '@/queries/usePromotion'
 import type { GuestLoyalty } from '@/schemaValidations/guest-loyalty.schema'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PromotionResType } from '@/schemaValidations/promotion.schema'
+import { GuestPromotion } from '@/schemaValidations/guest-promotion.schema'
 
 export default function PromotionList() {
   const { data, isLoading: isPromotionsLoading } = usePromotionListQuery()
@@ -37,6 +38,26 @@ export default function PromotionList() {
     [guestPromotionResult]
   )
 
+  const { data: guestPromotionByPhoneResult } = useGetGuestPromotionByPhoneQuery({
+    enabled: Boolean(guest),
+    guestPhone: guest?.phone as string
+  })
+
+  const guestPromotionsByPhone = useMemo(
+    () => (guestPromotionByPhoneResult?.payload.result ?? []) as Array<GuestPromotion>,
+    [guestPromotionByPhoneResult]
+  )
+
+  console.log('guestPromotionsByPhone', guestPromotionsByPhone)
+
+  // Lọc ra các chương trình khuyến mãi đã sử dụng
+  const usedPromotionIds = useMemo(() => {
+    const usedPromotions = guestPromotionsByPhone.filter((promotion) => promotion.used)
+    return usedPromotions.map((promotion) => promotion.promotion_id)
+  }, [guestPromotionsByPhone])
+
+  console.log('usedPromotionIds', usedPromotionIds)
+
   const isApply = (promotionId: string) => {
     return guestPromotions.some((promotion: { promotion_id: string }) => promotion.promotion_id === promotionId)
   }
@@ -55,6 +76,10 @@ export default function PromotionList() {
     if (promotion.min_loyalty_points && loyalty.loyalty_points < promotion.min_loyalty_points) return false
 
     return true
+  }
+
+  const isUsed = (promotionId: string) => {
+    return usedPromotionIds.some((promotion) => promotion === promotionId)
   }
 
   const isLoading = isPromotionsLoading || isGuestLoading || isLoyaltyLoading || isGuestPromotionsLoading
@@ -88,6 +113,7 @@ export default function PromotionList() {
               guestPhone={guest?.phone ?? ''}
               isApply={isApply(promotion._id)}
               canApply={canApplyPromotion(promotion, guestLoyalty)}
+              isUsed={isUsed(promotion._id)}
             />
           ))}
         </div>

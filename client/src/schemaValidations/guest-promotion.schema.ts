@@ -5,6 +5,7 @@ export const GuestPromotionSchema = z.object({
   guest_id: z.string(),
   guest_phone: z.string(),
   promotion_id: z.string(),
+  used: z.boolean(),
   create_at: z.date(),
   updated_at: z.date()
 })
@@ -44,3 +45,10 @@ export const DeleteGuestPromotionBody = z.object({
 })
 
 export type DeleteGuestPromotionBodyType = z.infer<typeof DeleteGuestPromotionBody>
+
+export const UsedPromotionBody = z.object({
+  guest_id: z.string(),
+  promotion_id: z.string()
+})
+
+export type UsedPromotionBodyType = z.infer<typeof UsedPromotionBody>

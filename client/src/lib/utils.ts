@@ -13,6 +13,7 @@ import { BookX, CookingPot, HandCoins, Loader, Truck } from 'lucide-react'
 import { TokenPayload } from '@/types/jwt.types'
 import guestApiRequest from '@/apiRequests/guest'
 import authApiRequest from '@/apiRequests/auth'
+import { PromotionResType } from '@/schemaValidations/promotion.schema'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -230,4 +231,17 @@ export const OrderStatusIcon = {
   [OrderStatus.Rejected]: BookX,
   [OrderStatus.Delivered]: Truck,
   [OrderStatus.Paid]: HandCoins
+}
+
+export const calculateDiscount = (promotion: PromotionResType['result'], totalPrice: number, freeItem?: number) => {
+  if (promotion.discount_type === PromotionType.Percent) {
+    return (totalPrice * promotion.discount_value) / 100
+  } else if (promotion.discount_type === PromotionType.Discount) {
+    return promotion.discount_value
+  } else if (promotion.discount_type === PromotionType.FreeItem) {
+    return freeItem ?? 0
+  } else if (promotion.discount_type === PromotionType.LoyaltyPoints) {
+    return promotion.discount_value
+  }
+  return 0
 }
