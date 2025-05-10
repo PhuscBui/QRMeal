@@ -6,22 +6,17 @@ export interface DashboardResponseResult {
   newCustomers: number // Số khách hàng mới
   activeAccounts: number // Số tài khoản nhân viên đang hoạt động
 
-  dailyStats: {
-    date: string // ví dụ: '2024-06-09'
-    orders: number // Số đơn hàng trong ngày
-    revenue: number // Doanh thu trong ngày
-    mobileVisitors: number // Lượt truy cập từ thiết bị di động
-    desktopVisitors: number // Lượt truy cập từ máy tính
-  }[] // Dữ liệu thống kê theo ngày (cho biểu đồ)
+  timeStats: {
+    orders: number // Số đơn hàng trong kỳ
+    revenue: number // Doanh thu trong kỳ
+    visitors: number // Lượt truy cập từ thiết bị di động
+  }[] // Dữ liệu thống kê theo thời gian (cho biểu đồ)
 
   qrCodes: {
     id: string
     name: string // Tên mã QR (ví dụ: Bàn số 1, Menu chính, Đặt món nhanh)
-    type: 'table' | 'menu' | 'order' | 'other'
-    createdAt: string // Ngày tạo
-    scans: number // Số lượt quét
-    linkedResource?: string // Liên kết đến tài nguyên (ví dụ: ID bàn, ID menu)
-  }[] // Danh sách các mã QR được sử dụng trong hệ thống
+    created_at: string // Ngày tạo
+  }[] 
 
   meta?: {
     lastUpdated: string // Thời điểm cập nhật gần nhất

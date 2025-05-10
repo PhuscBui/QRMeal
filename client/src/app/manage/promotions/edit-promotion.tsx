@@ -466,7 +466,7 @@ export default function EditPromotion({
                           className='w-full'
                           value={formatDateValue(value)}
                           onChange={(e) => {
-                            const dateValue = e.target.value ? new Date(e.target.value) : undefined
+                            const dateValue = e.target.value ? new Date(e.target.value) : null
                             onChange(dateValue)
                           }}
                           {...restField}
@@ -494,7 +494,7 @@ export default function EditPromotion({
                           className='w-full'
                           value={formatDateValue(value)}
                           onChange={(e) => {
-                            const dateValue = e.target.value ? new Date(e.target.value) : undefined
+                            const dateValue = e.target.value ? new Date(e.target.value) : null
                             onChange(dateValue)
                           }}
                           {...restField}

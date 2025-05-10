@@ -2,10 +2,10 @@ import promotionApiRequest from '@/apiRequests/promotion'
 import { GetPromotionsQuery, UpdatePromotionBodyType } from '@/schemaValidations/promotion.schema'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-export const usePromotionListQuery = (queryParams?: GetPromotionsQuery) => {
+export const usePromotionListQuery = () => {
   return useQuery({
-    queryFn: () => promotionApiRequest.getPromotionList(queryParams),
-    queryKey: ['promotions', queryParams]
+    queryFn: () => promotionApiRequest.getPromotionList(),
+    queryKey: ['promotions'],
   })
 }
 

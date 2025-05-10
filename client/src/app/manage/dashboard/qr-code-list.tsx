@@ -2,43 +2,18 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { QrCodeType } from '@/schemaValidations/dashboard.schema'
 import { Download, Edit, QrCode, Trash } from 'lucide-react'
+import { format } from 'date-fns'
 
-export function QrCodeList() {
-  const qrCodes = [
-    {
-      id: 'qr-001',
-      name: 'Bàn số 1',
-      type: 'Bàn',
-      createdAt: '15/04/2024',
-      scans: 45
-    },
-    {
-      id: 'qr-002',
-      name: 'Bàn số 2',
-      type: 'Bàn',
-      createdAt: '15/04/2024',
-      scans: 38
-    },
-    {
-      id: 'qr-003',
-      name: 'Menu chính',
-      type: 'Menu',
-      createdAt: '10/04/2024',
-      scans: 120
-    },
-    {
-      id: 'qr-004',
-      name: 'Menu đồ uống',
-      type: 'Menu',
-      createdAt: '10/04/2024',
-      scans: 85
-    }
-  ]
+
+export function QrCodeList(
+  { qrCodes }: { qrCodes: QrCodeType[] }
+) {
 
   return (
     <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
-      {qrCodes.map((qrCode) => (
+      {qrCodes.slice(0, 4).map((qrCode) => (
         <Card key={qrCode.id} className='overflow-hidden'>
           <CardContent className='p-0'>
             <div className='flex flex-col items-center p-4'>
@@ -46,23 +21,21 @@ export function QrCodeList() {
                 <QrCode className='h-12 w-12 text-muted-foreground' />
               </div>
               <h3 className='text-lg font-semibold'>{qrCode.name}</h3>
-              <p className='text-sm text-muted-foreground'>{qrCode.type}</p>
               <div className='mt-2 flex w-full justify-between text-xs text-muted-foreground'>
-                <span>Tạo: {qrCode.createdAt}</span>
-                <span>Quét: {qrCode.scans}</span>
+                <span>Create at: {format(qrCode.created_at, 'dd/MM/yyyy')}</span>
               </div>
               <div className='mt-4 flex w-full justify-between gap-2'>
                 <Button variant='outline' size='sm' className='flex-1'>
                   <Edit className='mr-1 h-3 w-3' />
-                  Sửa
+                  Edit
                 </Button>
                 <Button variant='outline' size='sm' className='flex-1'>
                   <Download className='mr-1 h-3 w-3' />
-                  Tải
+                  Download
                 </Button>
                 <Button variant='outline' size='sm' className='flex-1'>
                   <Trash className='mr-1 h-3 w-3' />
-                  Xóa
+                 Delete
                 </Button>
               </div>
             </div>

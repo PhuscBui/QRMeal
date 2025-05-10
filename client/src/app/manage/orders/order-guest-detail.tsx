@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { OrderStatus } from '@/constants/type'
+import { OrderStatus, PromotionType } from '@/constants/type'
 import {
   OrderStatusIcon,
   calculateDiscount,
@@ -35,7 +35,9 @@ export default function OrderGuestDetail({
   const ordersFilterToPurchase = guest
     ? orders.filter((order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Rejected)
     : []
-  const purchasedOrderFilter = guest ? orders.filter((order) => order.status === OrderStatus.Paid) : []
+
+    const purchasedOrderFilter = guest ? orders.filter((order) => order.status === OrderStatus.Paid) : []
+    console.log('ordersFilterToPurchase', purchasedOrderFilter)
   const payForGuestMutation = usePayForGuestMutation()
   const createRevenueMutation = useCreateRevenueMutation()
   const promotionListQuery = usePromotionListQuery()
@@ -64,11 +66,25 @@ export default function OrderGuestDetail({
   const usePromotions = useMemo(() => {
     return promotions.filter((promotion) => usePromotionIds.includes(promotion._id))
   }, [promotions, usePromotionIds])
-  console.log('usePromotions', usePromotions)
+
+  const minPrice = useMemo(() => {
+    return ordersFilterToPurchase.reduce((min, order) => {
+      return Math.min(min, order.dish_snapshot.price)
+    }, Infinity)
+  }, [ordersFilterToPurchase])
 
   const calculateTotalAmount = (price: number, promotion: PromotionResType['result'][]) => {
     if (promotion.length === 0) return price
+    
     const totalDiscount = promotion.reduce((acc, promotion) => {
+      if (promotion.discount_type === PromotionType.FreeItem) {
+        // For free item promotions, find the cheapest item in the order
+        const cheapestItem = ordersFilterToPurchase.reduce((min, order) => {
+          const itemPrice = order.dish_snapshot.price
+          return itemPrice < min ? itemPrice : min
+        }, Infinity)
+        return acc + cheapestItem
+      }
       return acc + calculateDiscount(promotion, price)
     }, 0)
 
@@ -222,7 +238,8 @@ export default function OrderGuestDetail({
                       promotion,
                       ordersFilterToPurchase.reduce((acc, order) => {
                         return acc + order.quantity * order.dish_snapshot.price
-                      }, 0)
+                      }, 0),
+                      minPrice
                     )
                   )
                 }, 0)
