@@ -1,6 +1,6 @@
 import { checkSchema, ParamSchema } from 'express-validator'
 
-import { TABLES_MESSAGES } from '~/constants/messages'
+import { COMMON_MESSAGES, GUEST_MESSAGE, TABLES_MESSAGES, USERS_MESSAGES } from '~/constants/messages'
 import { TableStatusValues } from '~/constants/type'
 import tablesService from '~/services/tables.service'
 import { validate } from '~/utils/validation'

@@ -19,6 +19,8 @@ export default function GuestLoginForm() {
   const params = useParams()
   const table_number = Number(params.number)
   const token = searchParams.get('token')
+  const isReserve = searchParams.get('isReserve')
+  console.log(isReserve)
   const router = useRouter()
   const loginMutation = useGuestLoginMutation()
   const form = useForm<GuestLoginBodyType>({
@@ -54,7 +56,9 @@ export default function GuestLoginForm() {
   return (
     <Card className='mx-auto max-w-sm'>
       <CardHeader>
-        <CardTitle className='text-2xl'>Đăng nhập gọi món</CardTitle>
+        <CardTitle className='text-2xl'>
+          {isReserve ? 'Đăng nhập đặt bàn' : 'Đăng nhập gọi món'}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>

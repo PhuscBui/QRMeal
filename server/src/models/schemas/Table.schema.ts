@@ -6,6 +6,7 @@ interface TableType {
   capacity: number
   status: string
   token: string
+  location: string
   created_at?: Date
   updated_at?: Date
 }
@@ -16,6 +17,7 @@ export class Table {
   capacity: number
   status: string
   token: string
+  location: string
   created_at: Date
   updated_at: Date
 
@@ -26,6 +28,7 @@ export class Table {
     this.capacity = table.capacity
     this.status = table.status
     this.token = table.token
+    this.location = table.location
     this.created_at = table.created_at || date
     this.updated_at = table.updated_at || date
   }

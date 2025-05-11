@@ -1,3 +1,4 @@
+import { TableStatus } from '~/constants/type'
 import { CreateTableReqBody, UpdateTableReqBody } from '~/models/requests/Table.request'
 import { Table } from '~/models/schemas/Table.schema'
 import databaseService from '~/services/databases.service'
@@ -16,7 +17,8 @@ class TablesService {
         number: payload.number,
         capacity: payload.capacity,
         status: payload.status,
-        token
+        token,
+        location: payload.location
       })
     )
     return await databaseService.tables.findOne({ _id: result.insertedId })
@@ -31,6 +33,7 @@ class TablesService {
   }
 
   async updateTable(number: number, payload: UpdateTableReqBody) {
+    console.log(payload);
     if (payload.changeToken) {
       const token = randomId()
       const [table] = await Promise.all([
@@ -42,7 +45,8 @@ class TablesService {
             $set: {
               capacity: payload.capacity,
               status: payload.status,
-              token
+              token,
+              location: payload.location
             },
             $currentDate: { updated_at: true }
           },
@@ -67,7 +71,8 @@ class TablesService {
       {
         $set: {
           capacity: payload.capacity,
-          status: payload.status
+          status: payload.status,
+          location: payload.location
         },
         $currentDate: { updated_at: true }
       },
@@ -78,6 +83,7 @@ class TablesService {
   async deleteTable(number: number) {
     return await databaseService.tables.findOneAndDelete({ number })
   }
+
 }
 
 const tablesService = new TablesService()

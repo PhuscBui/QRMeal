@@ -37,6 +37,14 @@ import {
 import { useAddTableMutation } from "@/queries/useTable";
 import { toast } from "sonner";
 
+const locationOptions = [
+  { label: "Window", value: "Window" },
+  { label: "Center", value: "Center" },
+  { label: "Patio", value: "Patio" },
+  { label: "Bar", value: "Bar" },
+  { label: "Private Room", value: "Private Room" },
+];
+
 export default function AddTable() {
   const [open, setOpen] = useState(false);
   const addTableMutation = useAddTableMutation();
@@ -46,6 +54,7 @@ export default function AddTable() {
       number: 0,
       capacity: 2,
       status: TableStatus.Hidden,
+      location: "",
     },
   });
   const reset = () => {
@@ -176,6 +185,39 @@ export default function AddTable() {
                         </Select>
                       </div>
 
+                      <FormMessage />
+                    </div>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                      <Label htmlFor="location" className="text-sm font-bold">
+                        Location
+                      </Label>
+                      <div className="col-span-3 w-full space-y-2">
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select location" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {locationOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <FormMessage />
                     </div>
                   </FormItem>

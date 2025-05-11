@@ -5,6 +5,7 @@ export const CreateTableBody = z.object({
   number: z.coerce.number().positive(),
   capacity: z.coerce.number().positive(),
   status: z.enum(TableStatusValues).optional(),
+  location: z.string(),
 });
 
 export type CreateTableBodyType = z.TypeOf<typeof CreateTableBody>;
@@ -15,6 +16,7 @@ export const TableSchema = z.object({
   capacity: z.coerce.number(),
   status: z.enum(TableStatusValues),
   token: z.string(),
+  location: z.string(),
   created_at: z.date(),
   updated_at: z.date(),
 });
@@ -37,6 +39,7 @@ export const UpdateTableBody = z.object({
   changeToken: z.boolean(),
   capacity: z.coerce.number().positive(),
   status: z.enum(TableStatusValues).optional(),
+  location: z.string(),
 });
 export type UpdateTableBodyType = z.TypeOf<typeof UpdateTableBody>;
 export const TableParams = z.object({

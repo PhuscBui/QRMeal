@@ -113,6 +113,13 @@ export const columns: ColumnDef<TableItem>[] = [
     ),
   },
   {
+    accessorKey: "location",
+    header: "Location",
+    cell: ({ row }) => (
+      <div>{row.getValue("location")}</div>
+    ),
+  },
+  {
     accessorKey: "token",
     header: "QR Code",
     cell: ({ row }) => (

@@ -31,5 +31,9 @@ export const envConfig = {
   accessTokenExpiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN as string,
   refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN as string,
   guestAccessTokenExpiresIn: process.env.GUEST_ACCESS_TOKEN_EXPIRES_IN as string,
-  guestRefreshTokenExpiresIn: process.env.GUEST_REFRESH_TOKEN_EXPIRES_IN as string
+  guestRefreshTokenExpiresIn: process.env.GUEST_REFRESH_TOKEN_EXPIRES_IN as string,
+
+  cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME as string,
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY as string,
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET as string,
 }

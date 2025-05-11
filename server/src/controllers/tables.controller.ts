@@ -2,11 +2,12 @@ import { Request, Response } from 'express'
 import { ParamsDictionary } from 'express-serve-static-core'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { TABLES_MESSAGES } from '~/constants/messages'
-import { CreateTableReqBody, TableParams, UpdateTableReqBody } from '~/models/requests/Table.request'
+import { CreateTableReqBody, ReserveTableReqBody, TableParams, UpdateTableReqBody } from '~/models/requests/Table.request'
 import {
   CreateTableResponse,
   DeleteTableResponse,
   GetTablesResponse,
+  ReserveTableResponse,
   UpdateTableResponse
 } from '~/models/response/Table.response'
 import tablesService from '~/services/tables.service'
@@ -74,3 +75,4 @@ export const deleteTableController = async (req: Request<TableParams, DeleteTabl
     message: TABLES_MESSAGES.TABLE_DELETED
   })
 }
+

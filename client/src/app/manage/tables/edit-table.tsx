@@ -38,6 +38,14 @@ import { useGetTableQuery, useUpdateTableMutation } from "@/queries/useTable";
 import { toast } from "sonner";
 import QRCodeTable from "@/components/qrcode-table";
 
+const locationOptions = [
+  { label: "Window", value: "Window" },
+  { label: "Center", value: "Center" },
+  { label: "Patio", value: "Patio" },
+  { label: "Bar", value: "Bar" },
+  { label: "Private Room", value: "Private Room" },
+];
+
 export default function EditTable({
   id,
   setId,
@@ -55,21 +63,24 @@ export default function EditTable({
       capacity: 2,
       status: TableStatus.Hidden,
       changeToken: false,
+      location: "",
     },
   });
   const { data } = useGetTableQuery({ enabled: Boolean(id), id: id as number });
-
+  console.log(data);
   useEffect(() => {
     if (data) {
-      const { capacity, status } = data.payload.result;
+      const { capacity, status, location } = data.payload.result;
       form.reset({
         capacity,
         status,
         changeToken: form.getValues("changeToken"),
+        location,
       });
     }
   }, [data, form]);
   const onSubmit = async (values: UpdateTableBodyType) => {
+    console.log(values);
     if (updateTableMutation.isPending) return;
     try {
       const body: UpdateTableBodyType & { id: number } = {
@@ -257,6 +268,39 @@ export default function EditTable({
                   </div>
                 </div>
               </FormItem>
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                      <Label htmlFor="location" className="text-sm font-bold">
+                        Location
+                      </Label>
+                      <div className="col-span-3 w-full space-y-2">
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={data?.payload.result.location}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select location" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {locationOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <FormMessage />
+                    </div>
+                  </FormItem>
+                )}
+              />
             </div>
           </form>
         </Form>

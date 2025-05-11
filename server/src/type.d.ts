@@ -4,6 +4,7 @@ import Dish from '~/models/schemas/Dish.schema'
 import GuestLoyalty from '~/models/schemas/GuestLoyalty.schema'
 import GuestPromotion from '~/models/schemas/GuestPromotion.schema'
 import Promotion from '~/models/schemas/Promotion.schema'
+import { Table } from '~/models/schemas/Table.schema'
 
 declare module 'express' {
   interface Request {
@@ -11,6 +12,7 @@ declare module 'express' {
     decoded_authorization?: TokenPayload
     decoded_refresh_token?: TokenPayload
     dish?: Dish
+    table?: Table
     promotion?: Promotion
     guestLoyalty?: GuestLoyalty
     guestPromotions?: GuestPromotion[]

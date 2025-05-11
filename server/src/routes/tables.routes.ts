@@ -56,7 +56,7 @@ tablesRouter.put(
   accessTokenValidator,
   isAdminValidator,
   updateTableValidator,
-  filterMiddleware<UpdateTableReqBody>(['status', 'capacity', 'changeToken']),
+  filterMiddleware<UpdateTableReqBody>(['status', 'capacity', 'changeToken', 'location']),
   wrapRequestHandler(updateTableController)
 )
 
@@ -67,5 +67,7 @@ tablesRouter.put(
  * Request: Params : number
  */
 tablesRouter.delete('/:number', accessTokenValidator, isAdminValidator, wrapRequestHandler(deleteTableController))
+
+
 
 export default tablesRouter
