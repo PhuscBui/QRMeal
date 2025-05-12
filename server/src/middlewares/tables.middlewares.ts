@@ -81,3 +81,47 @@ export const updateTableValidator = validate(
     ['body']
   )
 )
+
+export const reserveTableValidator = validate(
+  checkSchema(
+    {
+      table_number: {
+        notEmpty: {
+          errorMessage: TABLES_MESSAGES.TABLE_NUMBER_IS_REQUIRED
+        },
+        isNumeric: {
+          errorMessage: TABLES_MESSAGES.TABLE_NUMBER_MUST_BE_A_NUMBER
+        },
+        isInt: {
+          errorMessage: TABLES_MESSAGES.TABLE_NUMBER_MUST_BE_A_NUMBER
+        },
+        custom: {
+          options: async (value) => {
+            const isExists = await tablesService.checkTableExist(Number(value))
+            if (!isExists) {
+              return Promise.reject(TABLES_MESSAGES.TABLE_NOT_FOUND)
+            }
+            return Promise.resolve()
+          }
+        }
+      },
+      guest_id: {
+        notEmpty: {
+          errorMessage: TABLES_MESSAGES.GUEST_ID_IS_REQUIRED
+        }
+      },
+      reservation_time: {
+        notEmpty: {
+          errorMessage: TABLES_MESSAGES.RESERVATION_TIME_IS_REQUIRED
+        }
+      },
+      note: {
+        optional: true,
+        isString: {
+          errorMessage: TABLES_MESSAGES.NOTE_MUST_BE_A_STRING
+        }
+      },
+    },
+    ['body']
+  )
+)

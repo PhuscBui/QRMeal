@@ -33,6 +33,8 @@ export default function GuestLoginForm() {
     }
   })
 
+
+
   useEffect(() => {
     if (!token) {
       router.push('/')
@@ -57,7 +59,7 @@ export default function GuestLoginForm() {
     <Card className='mx-auto max-w-sm'>
       <CardHeader>
         <CardTitle className='text-2xl'>
-          {isReserve ? 'Đăng nhập đặt bàn' : 'Đăng nhập gọi món'}
+          {isReserve ? 'Điền thông tin để đặt bàn' : 'Đăng nhập gọi món'}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -97,7 +99,7 @@ export default function GuestLoginForm() {
               />
 
               <Button type='submit' className='w-full'>
-                Đăng nhập
+                {isReserve ? 'Tiếp tục' : 'Đăng nhập'}
               </Button>
             </div>
           </form>

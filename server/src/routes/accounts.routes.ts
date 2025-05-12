@@ -6,6 +6,7 @@ import {
   deleteEmployeeController,
   getAccountsController,
   getEmployeeAccountController,
+  getGuestByIdController,
   getGuestsController,
   getMeController,
   updateEmployeeController,
@@ -139,5 +140,12 @@ accountsRouter.post('/guests', accessTokenValidator, isAdminValidator, wrapReque
  * Method: GET
  */
 accountsRouter.get('/guests', accessTokenValidator, isAdminValidator, wrapRequestHandler(getGuestsController))
+
+/**
+ * Description. Get Guest by id
+ * Path:  /guests/:id
+ * Method: GET
+ */
+accountsRouter.get('/guests/:id', accessTokenValidator, wrapRequestHandler(getGuestByIdController))
 
 export default accountsRouter

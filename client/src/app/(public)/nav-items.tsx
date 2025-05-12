@@ -29,6 +29,11 @@ const menuItems: {
     href: '/'
   },
   {
+    title: 'Booking',
+    href: '/guest/booking',
+    role: [Role.Guest]
+  },
+  {
     title: 'Promotions',
     href: '/guest/promotions',
     role: [Role.Guest]

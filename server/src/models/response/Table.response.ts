@@ -7,3 +7,4 @@ export type GetTableResponse = ApiResponse<Table>
 export type UpdateTableResponse = ApiResponse<Table>
 export type DeleteTableResponse = ApiResponse
 export type ReserveTableResponse = ApiResponse<Table>
+export type CancelReservationResponse = ApiResponse<Table>

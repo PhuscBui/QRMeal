@@ -41,10 +41,14 @@ export default async function Home() {
             Experience the finest Vietnamese cuisine with our carefully crafted dishes
           </p>
           <div className='flex flex-col sm:flex-row gap-4'>
+            <Link href='#dish'>
             <Button size='lg' className='bg-amber-500 hover:bg-amber-600 text-white'>
-              <Link href='#dish'>Explore Menu</Link>
-            </Button>
-            <Button size='lg'>Book a Table</Button>
+              Explore Menu
+              </Button>
+            </Link>
+            <Link href='/reserve'>
+              <Button size='lg'>Book a Table</Button>
+            </Link>
           </div>
         </div>
       </section>

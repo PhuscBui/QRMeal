@@ -10,6 +10,12 @@ export const CreateTableBody = z.object({
 
 export type CreateTableBodyType = z.TypeOf<typeof CreateTableBody>;
 
+export const ReservationSchema = z.object({
+  guest_id: z.string(),
+  reservation_time: z.date(),
+  note: z.string().optional(),
+})
+
 export const TableSchema = z.object({
   _id: z.string(),
   number: z.coerce.number(),
@@ -17,6 +23,7 @@ export const TableSchema = z.object({
   status: z.enum(TableStatusValues),
   token: z.string(),
   location: z.string(),
+  reservation: ReservationSchema,
   created_at: z.date(),
   updated_at: z.date(),
 });
@@ -46,3 +53,21 @@ export const TableParams = z.object({
   number: z.coerce.number(),
 });
 export type TableParamsType = z.TypeOf<typeof TableParams>;
+
+export const ReserveTableBody = z.object({
+  table_number: z.coerce.number(),
+  token: z.string(),
+  guest_id: z.string(),
+  reservation_time: z.date(),
+  note: z.string().optional(),
+});
+
+export type ReserveTableBodyType = z.TypeOf<typeof ReserveTableBody>;
+
+export const CancelReservationBody = z.object({
+  table_number: z.coerce.number(),
+  token: z.string(),
+  guest_id: z.string(),
+});
+
+export type CancelReservationBodyType = z.TypeOf<typeof CancelReservationBody>;

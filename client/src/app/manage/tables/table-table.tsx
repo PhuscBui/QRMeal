@@ -44,6 +44,14 @@ import { useDeleteTableMutation, useTableListQuery } from "@/queries/useTable";
 import QRCodeTable, { DownloadQRCodeTable } from "@/components/qrcode-table";
 import { toast } from "sonner";
 import { Pen, Trash } from "lucide-react";
+import { format } from "date-fns";
+import ReservationDetail from "@/app/manage/tables/reservation-detail";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type TableItem = TableListResType["result"][0];
 
@@ -129,6 +137,23 @@ export const columns: ColumnDef<TableItem>[] = [
           tableNumber={row.getValue("number")}
         />
       </div>
+    ),
+  },
+  {
+    accessorKey: "reservation",
+    header: "Reservation",
+    cell: ({ row }) => (
+      <div>{row.original.reservation? <Dialog>
+        <DialogTrigger asChild>
+          <Button>View Reservation</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogTitle>Reservation Details</DialogTitle>
+          <div>
+            <ReservationDetail tableNumber={row.original.number} />
+          </div>
+        </DialogContent>
+      </Dialog> : "No reservation"}</div>
     ),
   },
   {

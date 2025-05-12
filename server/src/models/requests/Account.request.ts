@@ -61,3 +61,7 @@ export interface GetGuestParam {
   fromDate?: string | undefined
   toDate?: string | undefined
 }
+
+export interface GetGuestByIdParam extends ParamsDictionary {
+  id: string
+}

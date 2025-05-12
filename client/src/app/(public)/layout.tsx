@@ -35,7 +35,7 @@ export default function Layout({
             </Button>
           </SheetTrigger>
           <SheetContent side="left">
-            <nav className="grid gap-6 text-lg font-medium">
+            <nav className="grid gap-6 text-lg font-medium pl-2">
               <Link
                 href="#"
                 className="flex items-center gap-2 text-lg font-semibold"
@@ -44,7 +44,7 @@ export default function Layout({
                 <span className="sr-only">Big boy</span>
               </Link>
 
-              <NavItems className="text-muted-foreground transition-colors hover:text-foreground" />
+              <NavItems className="text-muted-foreground transition-colors hover:text-foreground " />
             </nav>
           </SheetContent>
         </Sheet>

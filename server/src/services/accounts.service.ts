@@ -175,7 +175,8 @@ class AccountsService {
     const result = await databaseService.guests.insertOne(
       new Guest({
         ...payload,
-        role: Role.Guest
+        role: Role.Guest,
+        phone: ''
       })
     )
     return await databaseService.guests.findOne(
@@ -212,6 +213,11 @@ class AccountsService {
       }
     ])
     return guests.toArray()
+  }
+
+  async getGuestById(id: string) {
+    const guest = await databaseService.guests.findOne({ _id: new ObjectId(id) })
+    return guest
   }
 }
 

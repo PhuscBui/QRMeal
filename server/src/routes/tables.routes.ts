@@ -1,15 +1,17 @@
 import { Router } from 'express'
 import {
+  cancelReservationController,
   createTableController,
   deleteTableController,
   getTableController,
   getTablesController,
+  reserveTableController,
   updateTableController
 } from '~/controllers/tables.controller'
 import { isAdminValidator } from '~/middlewares/account.middlewares'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import { filterMiddleware } from '~/middlewares/common.middlewares'
-import { createTableValidator, updateTableValidator } from '~/middlewares/tables.middlewares'
+import { createTableValidator, reserveTableValidator, updateTableValidator } from '~/middlewares/tables.middlewares'
 import { UpdateTableReqBody } from '~/models/requests/Table.request'
 import { wrapRequestHandler } from '~/utils/handlers'
 
@@ -67,6 +69,22 @@ tablesRouter.put(
  * Request: Params : number
  */
 tablesRouter.delete('/:number', accessTokenValidator, isAdminValidator, wrapRequestHandler(deleteTableController))
+
+/**
+ * Description. Reserve table
+ * Path:  /reserve
+ * Method: POST
+ * Request: Body : Table
+ */
+tablesRouter.post('/reserve', accessTokenValidator, reserveTableValidator, wrapRequestHandler(reserveTableController))
+
+/**
+ * Description. Cancel reservation
+ * Path:  /cancel-reservation
+ * Method: POST
+ * Request: Body : Table
+ */
+tablesRouter.post('/cancel-reservation', wrapRequestHandler(cancelReservationController))
 
 
 

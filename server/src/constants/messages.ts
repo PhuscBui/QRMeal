@@ -1,5 +1,7 @@
 export const USERS_MESSAGES = {
   VALIDATION_ERROR: 'Validation error',
+  GUEST_NOT_FOUND: 'Guest not found',
+  GET_GUEST_SUCCESS: 'Get guest success',
 
   EMAIL_IS_VALID: 'Email is not valid',
   EMAIL_IS_REQUIRED: 'Email is required',
@@ -76,6 +78,7 @@ export const DISHES_MESSAGE = {
 } as const
 
 export const TABLES_MESSAGES = {
+  YOU_ARE_NOT_ALLOWED_TO_CANCEL_THIS_RESERVATION: 'You are not allowed to cancel this reservation',
   TABLE_NOT_ASSIGNED: 'Table not assigned',
   TABLE_NOT_FOUND: 'Table not found',
   TABLE_CREATED: 'Table created',
@@ -83,6 +86,8 @@ export const TABLES_MESSAGES = {
   TABLE_DELETED: 'Table deleted',
   TABLE_FETCHED: 'Table fetched',
   TABLES_FETCHED: 'Tables fetched',
+  TABLE_NOT_AVAILABLE: 'Table not available',
+  TABLE_RESERVED: 'Table reserved',
   TABLE_NUMBER_IS_REQUIRED: 'Table number is required',
   TABLE_NUMBER_MUST_BE_A_NUMBER: 'Table number must be a number',
   TABLE_NUMBER_MUST_BE_GREATER_THAN_0: 'Table number must be greater than 0',
@@ -97,7 +102,10 @@ export const TABLES_MESSAGES = {
   TABLE_NUMBER_IS_EXISTS: 'Table number is exists',
   CHANGE_TOKEN_MUST_BE_A_BOOLEAN: 'Change token must be a boolean',
   TABLE_IS_HIDDEN_PLEASE_CHOOSE_ANOTHER_TABLE: 'Table is hidden, please choose another table',
-  TABLE_IS_RESERVED_PLEASE_CHOOSE_ANOTHER_TABLE: 'Table is reserved, please choose another table'
+  TABLE_IS_RESERVED_PLEASE_CHOOSE_ANOTHER_TABLE: 'Table is reserved, please choose another table',
+  RESERVATION_TIME_IS_REQUIRED: 'Reservation time is required',
+  NOTE_MUST_BE_A_STRING: 'Note must be a string',
+  GUEST_ID_IS_REQUIRED: 'Guest ID is required'
 } as const
 
 export const COMMON_MESSAGES = {

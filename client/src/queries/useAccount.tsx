@@ -100,3 +100,10 @@ export const useCreateGuestMutation = () => {
     mutationFn: accountApiRequest.createGuest,
   });
 };
+
+export const useGetGuestByIdQuery = (id: string) => {
+  return useQuery({
+    queryKey: ["guests", id],
+    queryFn: () => accountApiRequest.getGuestById(id),
+  });
+};

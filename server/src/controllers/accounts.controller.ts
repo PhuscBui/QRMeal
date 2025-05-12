@@ -9,6 +9,7 @@ import {
   CreateGuestReqBody,
   DeleteEmployeeParam,
   GetEmployeeParam,
+  GetGuestByIdParam,
   GetGuestParam,
   TokenPayload,
   UpdateEmployeeParam,
@@ -214,5 +215,13 @@ export const getGuestsController = async (req: Request<GetGuestParam, GetGuestRe
   res.status(HTTP_STATUS.OK).json({
     message: USERS_MESSAGES.ACCOUNTS_FETCHED,
     result: guests
+  })
+}
+
+export const getGuestByIdController = async (req: Request<GetGuestByIdParam, GetGuestResponse>, res: Response) => {
+  const guest = await accountsService.getGuestById(req.params.id)
+  res.status(HTTP_STATUS.OK).json({
+    message: USERS_MESSAGES.GET_GUEST_SUCCESS,
+    result: guest
   })
 }

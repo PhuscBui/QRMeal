@@ -62,3 +62,28 @@ export const useDeleteTableMutation = () => {
     }
   })
 }
+
+export const useReserveTableMutation = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: tableApiRequest.reserveTable,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['tables']
+      })
+    }
+  })
+}
+
+export const useCancelReservationMutation = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: tableApiRequest.cancelReservation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['tables']
+      })
+    }
+  })
+}
+

@@ -2,8 +2,10 @@ import { Request, Response } from 'express'
 import { ParamsDictionary } from 'express-serve-static-core'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { TABLES_MESSAGES } from '~/constants/messages'
-import { CreateTableReqBody, ReserveTableReqBody, TableParams, UpdateTableReqBody } from '~/models/requests/Table.request'
+import { TokenPayload } from '~/models/requests/Account.request'
+import { CancelReservationReqBody, CreateTableReqBody, ReserveTableReqBody, TableParams, UpdateTableReqBody } from '~/models/requests/Table.request'
 import {
+  CancelReservationResponse,
   CreateTableResponse,
   DeleteTableResponse,
   GetTablesResponse,
@@ -76,3 +78,18 @@ export const deleteTableController = async (req: Request<TableParams, DeleteTabl
   })
 }
 
+export const reserveTableController = async (req: Request<ParamsDictionary, ReserveTableResponse, ReserveTableReqBody>, res: Response) => {
+  const table = await tablesService.reserveTable(req.body)
+  res.json({
+    message: TABLES_MESSAGES.TABLE_RESERVED,
+    result: table
+  })
+}
+
+export const cancelReservationController = async (req: Request<ParamsDictionary, CancelReservationResponse, CancelReservationReqBody>, res: Response) => {
+  const table = await tablesService.cancelReservation(req.body)
+  res.json({
+    message: TABLES_MESSAGES.TABLE_RESERVED,
+    result: table
+  })
+}

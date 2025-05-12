@@ -45,6 +45,8 @@ const accountApiRequest = {
     ),
   createGuest: (body: CreateGuestBodyType) =>
     http.post<CreateGuestResType>(`${prefix}/guests`, body),
+  getGuestById: (id: string) =>
+    http.get<CreateGuestResType>(`${prefix}/guests/${id}`),
 };
 
 export default accountApiRequest;

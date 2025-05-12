@@ -28,4 +28,13 @@ export interface TableTokenPayload {
 export interface ReserveTableReqBody {
   table_number: number
   token: string
+  guest_id: string
+  reservation_time: Date
+  note: string
+}
+
+export interface CancelReservationReqBody {
+  table_number: number
+  token: string
+  guest_id: string
 }

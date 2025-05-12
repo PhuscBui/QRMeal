@@ -1,4 +1,5 @@
 import { ObjectId } from 'mongodb'
+import { TableReservation } from '~/models/schemas/TableReservation.schema'
 
 interface TableType {
   _id?: ObjectId
@@ -7,6 +8,7 @@ interface TableType {
   status: string
   token: string
   location: string
+  reservation: TableReservation | null
   created_at?: Date
   updated_at?: Date
 }
@@ -18,6 +20,7 @@ export class Table {
   status: string
   token: string
   location: string
+  reservation: TableReservation | null
   created_at: Date
   updated_at: Date
 
@@ -29,6 +32,7 @@ export class Table {
     this.status = table.status
     this.token = table.token
     this.location = table.location
+    this.reservation = table.reservation || null
     this.created_at = table.created_at || date
     this.updated_at = table.updated_at || date
   }
