@@ -18,10 +18,17 @@ const nextConfig: NextConfig = {
         pathname: '/**',
         port: '',
         search: ''
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+        port: '',
+        search: ''
       }
     ],
     dangerouslyAllowSVG: true,
-    domains: ['placehold.co']
+    domains: ['placehold.co', 'img.freepik.com']
   }
 }
 
