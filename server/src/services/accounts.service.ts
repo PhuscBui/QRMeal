@@ -176,7 +176,7 @@ class AccountsService {
       new Guest({
         ...payload,
         role: Role.Guest,
-        phone: ''
+        phone: payload.phone
       })
     )
     return await databaseService.guests.findOne(

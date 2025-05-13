@@ -295,8 +295,8 @@ export default function EditDish({
           </form>
         </Form>
         <DialogFooter>
-          <Button type="submit" form="edit-dish-form">
-            Update
+          <Button type="submit" form="edit-dish-form" disabled={updateDishMutation.isPending || uploadMediaMutation.isPending}>
+            {updateDishMutation.isPending || uploadMediaMutation.isPending ? "Updating Dish..." : "Update"}
           </Button>
         </DialogFooter>
       </DialogContent>

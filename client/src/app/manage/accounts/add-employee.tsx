@@ -279,8 +279,8 @@ export default function AddEmployee() {
           </form>
         </Form>
         <DialogFooter>
-          <Button type="submit" form="add-employee-form">
-            Add Employee
+          <Button type="submit" form="add-employee-form" disabled={addAccountMutation.isPending || uploadMediaMutation.isPending}>
+            {addAccountMutation.isPending || uploadMediaMutation.isPending ? "Adding Employee..." : "Add Employee"}
           </Button>
         </DialogFooter>
       </DialogContent>

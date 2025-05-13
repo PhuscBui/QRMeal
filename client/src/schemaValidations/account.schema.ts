@@ -147,6 +147,7 @@ export type GetGuestListQueryParamsType = z.TypeOf<
 export const CreateGuestBody = z
   .object({
     name: z.string().trim().min(2).max(256),
+    phone: z.string().min(10).max(11),
     table_number: z.number(),
   })
   .strict();
@@ -158,6 +159,7 @@ export const CreateGuestRes = z.object({
   result: z.object({
     _id: z.string(),
     name: z.string(),
+    phone: z.string().min(10).max(11),
     role: z.enum(RoleValues),
     table_number: z.number().nullable(),
     created_at: z.date(),

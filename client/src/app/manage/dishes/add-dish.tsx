@@ -276,8 +276,8 @@ export default function AddDish() {
           </form>
         </Form>
         <DialogFooter>
-          <Button type="submit" form="add-dish-form">
-            Add dish
+          <Button type="submit" form="add-dish-form" disabled={addDishMutation.isPending || uploadMediaMutation.isPending}>
+            {addDishMutation.isPending || uploadMediaMutation.isPending ? "Adding Dish..." : "Add dish"}
           </Button>
         </DialogFooter>
       </DialogContent>

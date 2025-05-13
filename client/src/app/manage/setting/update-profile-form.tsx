@@ -220,8 +220,8 @@ export default function UpdateProfileForm() {
                 <Button variant="outline" size="sm" type="reset">
                   Reset
                 </Button>
-                <Button size="sm" type="submit">
-                  Save
+                <Button size="sm" type="submit" disabled={updateMeMutation.isPending || uploadMediaMutation.isPending}>
+                  {updateMeMutation.isPending || uploadMediaMutation.isPending ? "Saving..." : "Save"}
                 </Button>
               </div>
             </div>

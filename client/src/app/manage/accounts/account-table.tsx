@@ -83,12 +83,12 @@ export const columns: ColumnDef<AccountType>[] = [
     cell: ({ row }) => (
       <div>
         <Avatar className="aspect-square w-[100px] h-[100px] rounded-md object-cover">
-          <AvatarImage src={row.getValue("avatar")} />
+          <AvatarImage src={row.getValue("avatar") || undefined} />
           <AvatarFallback className="rounded-none">
             {row.original.name
               .split(" ")
               .map((name) => name[0])
-              .join("")}
+              .join("") || "U"}
           </AvatarFallback>
         </Avatar>
       </div>

@@ -52,6 +52,7 @@ import {
   DialogTrigger,
   DialogTitle,
 } from "@/components/ui/dialog";
+import AddReservationDialog from "@/app/manage/tables/add-reservation";
 
 type TableItem = TableListResType["result"][0];
 
@@ -153,7 +154,7 @@ export const columns: ColumnDef<TableItem>[] = [
             <ReservationDetail tableNumber={row.original.number} />
           </div>
         </DialogContent>
-      </Dialog> : "No reservation"}</div>
+      </Dialog> : <AddReservationDialog tableNumber={row.original.number} token={row.original.token} />}</div>
     ),
   },
   {

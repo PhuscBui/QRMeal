@@ -50,8 +50,9 @@ export default function ReservationDetail({ tableNumber }: { tableNumber: number
         <div>
           <span className="font-semibold">Reservation Time:</span> {format(new Date(reservation.reservation_time), "dd/MM/yyyy HH:mm")}
         </div>
-        <div>
-          <span className="font-semibold">Guest:</span> {guest?.name}
+        <div className="flex flex-col gap-2">
+         <span>  <span className="font-semibold">Guest:</span> {guest?.name} </span>
+         <span>  <span className="font-semibold">Phone:</span> {guest?.phone} </span>
         </div>
         {reservation.note && (
           <div>

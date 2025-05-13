@@ -55,6 +55,7 @@ export interface ChangePasswordReqBody {
 export interface CreateGuestReqBody {
   name: string
   table_number: number
+  phone: string
 }
 
 export interface GetGuestParam {

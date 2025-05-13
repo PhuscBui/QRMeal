@@ -344,8 +344,8 @@ export default function EditEmployee({
           </form>
         </Form>
         <DialogFooter>
-          <Button type="submit" form="edit-employee-form">
-            Update
+          <Button type="submit" form="edit-employee-form" disabled={updateAccountMutation.isPending || uploadMediaMutation.isPending}>
+            {updateAccountMutation.isPending || uploadMediaMutation.isPending ? "Updating Employee..." : "Update"}
           </Button>
         </DialogFooter>
       </DialogContent>
