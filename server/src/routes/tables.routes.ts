@@ -8,7 +8,7 @@ import {
   reserveTableController,
   updateTableController
 } from '~/controllers/tables.controller'
-import { isAdminValidator } from '~/middlewares/account.middlewares'
+import { isAdminValidator, isEmployeeValidator } from '~/middlewares/account.middlewares'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import { filterMiddleware } from '~/middlewares/common.middlewares'
 import { createTableValidator, reserveTableValidator, updateTableValidator } from '~/middlewares/tables.middlewares'
@@ -56,7 +56,7 @@ tablesRouter.get('/:number', wrapRequestHandler(getTableController))
 tablesRouter.put(
   '/:number',
   accessTokenValidator,
-  isAdminValidator,
+  isEmployeeValidator,
   updateTableValidator,
   filterMiddleware<UpdateTableReqBody>(['status', 'capacity', 'changeToken', 'location']),
   wrapRequestHandler(updateTableController)
@@ -68,7 +68,7 @@ tablesRouter.put(
  * Method: DELETE
  * Request: Params : number
  */
-tablesRouter.delete('/:number', accessTokenValidator, isAdminValidator, wrapRequestHandler(deleteTableController))
+tablesRouter.delete('/:number', accessTokenValidator, isEmployeeValidator, wrapRequestHandler(deleteTableController))
 
 /**
  * Description. Reserve table

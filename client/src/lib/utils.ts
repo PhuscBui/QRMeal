@@ -14,6 +14,7 @@ import { TokenPayload } from '@/types/jwt.types'
 import guestApiRequest from '@/apiRequests/guest'
 import authApiRequest from '@/apiRequests/auth'
 import { PromotionResType } from '@/schemaValidations/promotion.schema'
+import { io } from 'socket.io-client'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -244,4 +245,12 @@ export const calculateDiscount = (promotion: PromotionResType['result'], totalPr
     return promotion.discount_value
   }
   return 0
+}
+
+export const generateSocket = (token: string) => {
+  return io(envConfig.NEXT_PUBLIC_API_ENDPOINT, {
+    auth: {
+      Authorization: `Bearer ${token}`
+    }
+  })
 }

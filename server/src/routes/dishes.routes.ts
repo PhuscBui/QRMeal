@@ -6,7 +6,7 @@ import {
   getDishesController,
   updateDishController
 } from '~/controllers/dishes.controller'
-import { isAdminValidator } from '~/middlewares/account.middlewares'
+import { isAdminValidator, isEmployeeValidator } from '~/middlewares/account.middlewares'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import { filterMiddleware } from '~/middlewares/common.middlewares'
 import { createDishValidator, dishIdValidator, updateDishValidator } from '~/middlewares/dishes.middlewares'
@@ -42,7 +42,7 @@ dishesRouter.get('/:dishId', dishIdValidator, wrapRequestHandler(getDishControll
 dishesRouter.post(
   '/',
   accessTokenValidator,
-  isAdminValidator,
+  isEmployeeValidator,
   createDishValidator,
   wrapRequestHandler(createDishController)
 )
@@ -57,7 +57,7 @@ dishesRouter.post(
 dishesRouter.put(
   '/:dishId',
   accessTokenValidator,
-  isAdminValidator,
+  isEmployeeValidator,
   updateDishValidator,
   dishIdValidator,
   filterMiddleware<UpdateDishReqBody>(['name', 'price', 'image', 'description', 'status']),
@@ -73,7 +73,7 @@ dishesRouter.put(
 dishesRouter.delete(
   '/:dishId',
   accessTokenValidator,
-  isAdminValidator,
+  isEmployeeValidator,
   dishIdValidator,
   wrapRequestHandler(deleteDishController)
 )

@@ -1,61 +1,40 @@
-"use client";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from "@/components/ui/form";
-import { getTableLink, getTableStatus, handleErrorApi } from "@/lib/utils";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  UpdateTableBody,
-  UpdateTableBodyType,
-} from "@/schemaValidations/table.schema";
-import { TableStatus, TableStatusValues } from "@/constants/type";
-import { Switch } from "@/components/ui/switch";
-import Link from "next/link";
-import { useEffect } from "react";
-import { useGetTableQuery, useUpdateTableMutation } from "@/queries/useTable";
-import { toast } from "sonner";
-import QRCodeTable from "@/components/qrcode-table";
+'use client'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
+import { getTableLink, getTableStatus, handleErrorApi } from '@/lib/utils'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { UpdateTableBody, UpdateTableBodyType } from '@/schemaValidations/table.schema'
+import { TableStatus, TableStatusValues } from '@/constants/type'
+import { Switch } from '@/components/ui/switch'
+import Link from 'next/link'
+import { useEffect } from 'react'
+import { useGetTableQuery, useUpdateTableMutation } from '@/queries/useTable'
+import { toast } from 'sonner'
+import QRCodeTable from '@/components/qrcode-table'
 
 const locationOptions = [
-  { label: "Window", value: "Window" },
-  { label: "Center", value: "Center" },
-  { label: "Patio", value: "Patio" },
-  { label: "Bar", value: "Bar" },
-  { label: "Private Room", value: "Private Room" },
-];
+  { label: 'Window', value: 'Window' },
+  { label: 'Center', value: 'Center' },
+  { label: 'Patio', value: 'Patio' },
+  { label: 'Bar', value: 'Bar' },
+  { label: 'Private Room', value: 'Private Room' }
+]
 
 export default function EditTable({
   id,
   setId,
-  onSubmitSuccess,
+  onSubmitSuccess
 }: {
-  id?: number | undefined;
-  setId: (value: number | undefined) => void;
-  onSubmitSuccess?: () => void;
+  id?: number | undefined
+  setId: (value: number | undefined) => void
+  onSubmitSuccess?: () => void
 }) {
-  const updateTableMutation = useUpdateTableMutation();
+  const updateTableMutation = useUpdateTableMutation()
 
   const form = useForm<UpdateTableBodyType>({
     resolver: zodResolver(UpdateTableBody),
@@ -63,63 +42,63 @@ export default function EditTable({
       capacity: 2,
       status: TableStatus.Hidden,
       changeToken: false,
-      location: "",
-    },
-  });
-  const { data } = useGetTableQuery({ enabled: Boolean(id), id: id as number });
-  console.log(data);
+      location: ''
+    }
+  })
+  const { data } = useGetTableQuery({ enabled: Boolean(id), id: id as number })
+  console.log(data)
   useEffect(() => {
     if (data) {
-      const { capacity, status, location } = data.payload.result;
+      const { capacity, status, location } = data.payload.result
       form.reset({
         capacity,
         status,
-        changeToken: form.getValues("changeToken"),
-        location,
-      });
+        changeToken: form.getValues('changeToken'),
+        location
+      })
     }
-  }, [data, form]);
+  }, [data, form])
   const onSubmit = async (values: UpdateTableBodyType) => {
-    console.log(values);
-    if (updateTableMutation.isPending) return;
+    console.log(values)
+    if (updateTableMutation.isPending) return
     try {
       const body: UpdateTableBodyType & { id: number } = {
         id: id as number,
-        ...values,
-      };
-      const result = await updateTableMutation.mutateAsync(body);
-      toast("Success", {
-        description: result.payload.message,
-      });
-      reset();
+        ...values
+      }
+      const result = await updateTableMutation.mutateAsync(body)
+      toast('Success', {
+        description: result.payload.message
+      })
+      reset()
       if (onSubmitSuccess) {
-        onSubmitSuccess();
+        onSubmitSuccess()
       }
     } catch (error) {
       handleErrorApi({
         error,
-        setError: form.setError,
-      });
+        setError: form.setError
+      })
     }
-  };
+  }
   const reset = () => {
-    setId(undefined);
-  };
+    setId(undefined)
+  }
 
   return (
     <Dialog
       open={Boolean(id)}
       onOpenChange={(value) => {
         if (!value) {
-          reset();
+          reset()
         }
       }}
     >
       <DialogContent
-        className="sm:max-w-[600px] max-h-screen overflow-auto"
+        className='sm:max-w-[600px] max-h-screen overflow-auto'
         onCloseAutoFocus={() => {
-          form.reset();
-          setId(undefined);
+          form.reset()
+          setId(undefined)
         }}
       >
         <DialogHeader>
@@ -128,21 +107,21 @@ export default function EditTable({
         <Form {...form}>
           <form
             noValidate
-            className="grid auto-rows-max items-start gap-4 md:gap-8"
+            className='grid auto-rows-max items-start gap-4 md:gap-8'
             onSubmit={form.handleSubmit(onSubmit, console.log)}
-            id="edit-table-form"
+            id='edit-table-form'
           >
-            <div className="grid gap-4 py-4">
+            <div className='grid gap-4 py-4'>
               <FormItem>
-                <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                  <Label htmlFor="name" className="text-sm font-bold">
+                <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
+                  <Label htmlFor='name' className='text-sm font-bold'>
                     Table number
                   </Label>
-                  <div className="col-span-3 w-full space-y-2">
+                  <div className='col-span-3 w-full space-y-2'>
                     <Input
-                      id="number"
-                      type="number"
-                      className="w-full"
+                      id='number'
+                      type='number'
+                      className='w-full'
                       value={data?.payload.result.number ?? 0}
                       readOnly
                     />
@@ -152,20 +131,15 @@ export default function EditTable({
               </FormItem>
               <FormField
                 control={form.control}
-                name="capacity"
+                name='capacity'
                 render={({ field }) => (
                   <FormItem>
-                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="price" className="text-sm font-bold">
+                    <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
+                      <Label htmlFor='price' className='text-sm font-bold'>
                         Capacity
                       </Label>
-                      <div className="col-span-3 w-full space-y-2">
-                        <Input
-                          id="capacity"
-                          className="w-full"
-                          {...field}
-                          type="number"
-                        />
+                      <div className='col-span-3 w-full space-y-2'>
+                        <Input id='capacity' className='w-full' {...field} type='number' />
                         <FormMessage />
                       </div>
                     </div>
@@ -174,24 +148,18 @@ export default function EditTable({
               />
               <FormField
                 control={form.control}
-                name="status"
+                name='status'
                 render={({ field }) => (
                   <FormItem>
-                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label
-                        htmlFor="description"
-                        className="text-sm font-bold"
-                      >
+                    <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
+                      <Label htmlFor='description' className='text-sm font-bold'>
                         Status
                       </Label>
-                      <div className="col-span-3 w-full space-y-2">
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
+                      <div className='col-span-3 w-full space-y-2'>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select status" />
+                              <SelectValue placeholder='Select status' />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -211,20 +179,16 @@ export default function EditTable({
               />
               <FormField
                 control={form.control}
-                name="changeToken"
+                name='changeToken'
                 render={({ field }) => (
                   <FormItem>
-                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="price" className="text-sm font-bold">
+                    <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
+                      <Label htmlFor='price' className='text-sm font-bold'>
                         Change QR Code
                       </Label>
-                      <div className="col-span-3 w-full space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="changeToken"
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
+                      <div className='col-span-3 w-full space-y-2'>
+                        <div className='flex items-center space-x-2'>
+                          <Switch id='changeToken' checked={field.value} onCheckedChange={field.onChange} />
                         </div>
                       </div>
 
@@ -234,34 +198,29 @@ export default function EditTable({
                 )}
               />
               <FormItem>
-                <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                  <Label className="text-sm font-bold">QR Code</Label>
-                  <div className="col-span-3 w-full space-y-2">
-                    {data && (
-                      <QRCodeTable
-                        token={data.payload.result.token}
-                        tableNumber={data.payload.result.number}
-                      />
-                    )}
+                <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
+                  <Label className='text-sm font-bold'>QR Code</Label>
+                  <div className='col-span-3 w-full space-y-2'>
+                    {data && <QRCodeTable token={data.payload.result.token} tableNumber={data.payload.result.number} />}
                   </div>
                 </div>
               </FormItem>
               <FormItem>
-                <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                  <Label className="text-sm font-bold">URL order</Label>
-                  <div className="col-span-3 w-full space-y-2">
+                <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
+                  <Label className='text-sm font-bold'>URL order</Label>
+                  <div className='col-span-3 w-full space-y-2'>
                     {data && (
                       <Link
                         href={getTableLink({
                           token: data.payload.result.token,
-                          tableNumber: data.payload.result.number,
+                          tableNumber: data.payload.result.number
                         })}
-                        target="_blank"
-                        className="break-all"
+                        target='_blank'
+                        className='break-all'
                       >
                         {getTableLink({
                           token: data.payload.result.token,
-                          tableNumber: data.payload.result.number,
+                          tableNumber: data.payload.result.number
                         })}
                       </Link>
                     )}
@@ -270,21 +229,18 @@ export default function EditTable({
               </FormItem>
               <FormField
                 control={form.control}
-                name="location"
+                name='location'
                 render={({ field }) => (
                   <FormItem>
-                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="location" className="text-sm font-bold">
+                    <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
+                      <Label htmlFor='location' className='text-sm font-bold'>
                         Location
                       </Label>
-                      <div className="col-span-3 w-full space-y-2">
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={data?.payload.result.location}
-                        >
+                      <div className='col-span-3 w-full space-y-2'>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select location" />
+                              <SelectValue placeholder='Select location' />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -305,11 +261,11 @@ export default function EditTable({
           </form>
         </Form>
         <DialogFooter>
-          <Button type="submit" form="edit-table-form">
+          <Button type='submit' form='edit-table-form'>
             Update
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

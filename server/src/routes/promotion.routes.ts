@@ -6,7 +6,7 @@ import {
   getPromotionsController,
   updatePromotionController
 } from '~/controllers/promotions.controller'
-import { isAdminValidator } from '~/middlewares/account.middlewares'
+import { isAdminValidator, isEmployeeValidator } from '~/middlewares/account.middlewares'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import { filterMiddleware } from '~/middlewares/common.middlewares'
 import {
@@ -26,7 +26,7 @@ promotionsRoutes.get('/:promotionId', promotionIdValidator, getPromotionDetailCo
 promotionsRoutes.post(
   '',
   accessTokenValidator,
-  isAdminValidator,
+  isEmployeeValidator,
   createPromotionValidator,
   wrapRequestHandler(createPromotionController)
 )
@@ -34,7 +34,7 @@ promotionsRoutes.post(
 promotionsRoutes.put(
   '/:promotionId',
   accessTokenValidator,
-  isAdminValidator,
+  isEmployeeValidator,
   updatePromotionValidator,
   promotionIdValidator,
   filterMiddleware<UpdatePromotionReqBody>([
@@ -55,7 +55,7 @@ promotionsRoutes.put(
 promotionsRoutes.delete(
   '/:promotionId',
   accessTokenValidator,
-  isAdminValidator,
+  isEmployeeValidator,
   promotionIdValidator,
   wrapRequestHandler(deletePromotionController)
 )

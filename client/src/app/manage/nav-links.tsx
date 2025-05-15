@@ -10,9 +10,12 @@ import { cn } from '@/lib/utils'
 import { Package2, Settings } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useAppContext } from '@/components/app-provider'
+import { Role } from '@/constants/type'
 
 export default function NavLinks() {
   const pathname = usePathname()
+  const { role } = useAppContext()
   return (
     <TooltipProvider>
       <aside className='fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex'>
@@ -27,6 +30,9 @@ export default function NavLinks() {
 
           {menuItems.map((Item, index) => {
             const isActive = pathname === Item.href
+            if (!role || (role !== Role.Owner && role !== Role.Employee) || !Item.role.includes(role as "Owner" | "Employee")) {
+              return null
+            }
             return (
               <Tooltip key={index}>
                 <TooltipTrigger asChild>

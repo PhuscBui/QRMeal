@@ -1,33 +1,23 @@
-// import { checkSchema } from "express-validator"
-// import { validate } from "~/utils/validation"
+import { checkSchema } from "express-validator"
+import { validate } from "~/utils/validation"
+import { NextFunction, Request, Response } from 'express'
+import { TokenPayload } from "~/models/requests/Account.request"
+import databaseService from "~/services/databases.service"
+import { ObjectId } from "mongodb"
+import HTTP_STATUS from "~/constants/httpStatus"
+import { USERS_MESSAGES } from "~/constants/messages"
+import { Role } from "~/constants/type"
 
-// export const loginValidator = validate(
-//   checkSchema(
-//     {
-//       email: {
-//         isEmail: {
-//           errorMessage: USERS_MESSAGES.EMAIL_IS_VALID
-//         },
-//         notEmpty: {
-//           errorMessage: USERS_MESSAGES.EMAIL_IS_REQUIRED
-//         },
-//         trim: true,
-//         custom: {
-//           options: async (value, { req }) => {
-//             const user = await databaseService.accounts.findOne({
-//               email: value,
-//               password: hashPassword(req.body.password)
-//             })
-//             if (user === null) {
-//               return Promise.reject(new Error(USERS_MESSAGES.EMAIL_OR_PASSWORD_IS_INCORRECT))
-//             }
-//             req.user = user
-//             return Promise.resolve()
-//           }
-//         }
-//       },
-//       password: passwordSchema
-//     },
-//     ['body']
-//   )
-// )
+
+export const isGuestValidator = async (req: Request, res: Response, next: NextFunction) => {
+  const { account_id } = req.decoded_authorization as TokenPayload
+  const user = await databaseService.guests.findOne({ _id: new ObjectId(account_id) })
+  if (!user || user.role !== Role.Guest) {
+    res.status(HTTP_STATUS.FORBIDDEN).json({
+      message: USERS_MESSAGES.UNAUTHORIZED
+    })
+    return
+  }
+
+  next()
+}

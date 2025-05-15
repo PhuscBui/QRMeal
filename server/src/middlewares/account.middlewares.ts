@@ -175,6 +175,20 @@ export const isAdminValidator = async (req: Request, res: Response, next: NextFu
   next()
 }
 
+export const isEmployeeValidator = async (req: Request, res: Response, next: NextFunction) => {
+  const { account_id } = req.decoded_authorization as TokenPayload
+  const user = await databaseService.accounts.findOne({ _id: new ObjectId(account_id) })
+  if (!user || (user.role !== Role.Employee && user.role !== Role.Owner)) {
+    res.status(HTTP_STATUS.FORBIDDEN).json({
+      message: USERS_MESSAGES.UNAUTHORIZED
+    })
+    return
+  }
+
+  next()
+}
+
+
 export const updateMeValidator = validate(
   checkSchema(
     {
