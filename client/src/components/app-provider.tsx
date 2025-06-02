@@ -1,18 +1,13 @@
-"use client";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import RefreshToken from "@/components/refresh-token";
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import {
-  decodeToken,
-  generateSocket,
-  getAccessTokenFromLocalStorage,
-  removeTokensFromLocalStorage,
-} from "@/lib/utils";
-import { RoleType } from "@/types/jwt.types";
-import socket from "@/lib/socket";
-import { io, type Socket } from "socket.io-client";
-import envConfig from "@/config";
+'use client'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import RefreshToken from '@/components/refresh-token'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { decodeToken, generateSocket, getAccessTokenFromLocalStorage, removeTokensFromLocalStorage } from '@/lib/utils'
+import { RoleType } from '@/types/jwt.types'
+import socket from '@/lib/socket'
+import { io, type Socket } from 'socket.io-client'
+import envConfig from '@/config'
 
 // Default
 // staleTime: 0
@@ -21,10 +16,10 @@ import envConfig from "@/config";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+      refetchOnWindowFocus: false
+    }
+  }
+})
 
 const AppContext = createContext({
   isAuth: false,
@@ -33,36 +28,32 @@ const AppContext = createContext({
   setRole: (role?: RoleType | undefined) => {},
   socket: undefined as Socket | undefined,
   setSocket: (socket?: Socket | undefined) => {},
-  disconnectSocket: () => {},
-});
+  disconnectSocket: () => {}
+})
 
 export const useAppContext = () => {
-  return useContext(AppContext);
-};
+  return useContext(AppContext)
+}
 
-export default function AppProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [socket, setSocket] = useState<Socket | undefined>();
-  const [role, setRoleState] = useState<RoleType | undefined>();
-  const count = useRef(0);
+export default function AppProvider({ children }: { children: React.ReactNode }) {
+  const [socket, setSocket] = useState<Socket | undefined>()
+  const [role, setRoleState] = useState<RoleType | undefined>()
+  const count = useRef(0)
   useEffect(() => {
-    if (count.current > 0) return;
-    const accessToken = getAccessTokenFromLocalStorage();
+    if (count.current > 0) return
+    const accessToken = getAccessTokenFromLocalStorage()
     if (accessToken) {
-      const role = decodeToken(accessToken).role;
-      setRoleState(role);
-      setSocket(generateSocket(accessToken));
+      const role = decodeToken(accessToken).role
+      setRoleState(role)
+      setSocket(generateSocket(accessToken))
     }
-    count.current++;
-  }, []);
+    count.current++
+  }, [])
 
   const disconnectSocket = useCallback(() => {
-    socket?.disconnect();
-    setSocket(undefined);
-  }, [socket, setSocket]);
+    socket?.disconnect()
+    setSocket(undefined)
+  }, [socket, setSocket])
 
   // const setRole = useCallback((role?: RoleType | undefined) => {
   //   setRoleState(role);
@@ -72,21 +63,21 @@ export default function AppProvider({
   // }, []);
 
   const setRole = (role?: RoleType | undefined) => {
-    setRoleState(role);
+    setRoleState(role)
     if (!role) {
-      removeTokensFromLocalStorage();
+      removeTokensFromLocalStorage()
     }
-  };
+  }
 
-  const isAuth = Boolean(role);
+  const isAuth = Boolean(role)
 
   return (
     <AppContext value={{ role, setRole, isAuth, socket, setSocket, disconnectSocket }}>
       <QueryClientProvider client={queryClient}>
         {children}
         <RefreshToken />
-        <ReactQueryDevtools initialIsOpen={false} />
+        {/* <ReactQueryDevtools initialIsOpen={false} /> */}
       </QueryClientProvider>
     </AppContext>
-  );
+  )
 }

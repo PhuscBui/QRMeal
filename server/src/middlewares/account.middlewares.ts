@@ -188,7 +188,6 @@ export const isEmployeeValidator = async (req: Request, res: Response, next: Nex
   next()
 }
 
-
 export const updateMeValidator = validate(
   checkSchema(
     {

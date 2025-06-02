@@ -6,7 +6,7 @@ const menuItems = [
     title: 'Dashboard',
     Icon: Home,
     href: '/manage/dashboard',
-    role: [Role.Owner, Role.Employee]
+    role: [Role.Owner]
   },
   {
     title: 'Orders',

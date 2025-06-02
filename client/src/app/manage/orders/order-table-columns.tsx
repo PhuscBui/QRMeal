@@ -62,7 +62,7 @@ const orderTableColumns: ColumnDef<OrderItem>[] = [
   },
   {
     id: 'dishName',
-    header: 'Món ăn',
+    header: 'Dish',
     cell: ({ row }) => (
       <div className='flex items-center gap-2'>
         <Popover>

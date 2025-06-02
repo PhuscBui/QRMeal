@@ -69,6 +69,7 @@ export default function GuestsDialog({ onChoose }: { onChoose: (guest: GuestItem
     fromDate,
     toDate
   })
+  console.log('guestListQuery', guestListQuery.data?.payload.result)
   const data = guestListQuery.data?.payload.result ?? []
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])

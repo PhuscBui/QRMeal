@@ -16,6 +16,7 @@ import {
   changePasswordValidator,
   createEmployeeValidator,
   isAdminValidator,
+  isEmployeeValidator,
   updateEmployeeValidator,
   updateMeValidator
 } from '~/middlewares/account.middlewares'
@@ -132,14 +133,14 @@ accountsRouter.put(
  * Method: POST
  * Request: Body : GuestBody
  */
-accountsRouter.post('/guests', accessTokenValidator, isAdminValidator, wrapRequestHandler(createGuestController))
+accountsRouter.post('/guests', accessTokenValidator, isEmployeeValidator, wrapRequestHandler(createGuestController))
 
 /**
  * Description. Get all guest accounts
  * Path:  /guests
  * Method: GET
  */
-accountsRouter.get('/guests', accessTokenValidator, isAdminValidator, wrapRequestHandler(getGuestsController))
+accountsRouter.get('/guests', accessTokenValidator, isEmployeeValidator, wrapRequestHandler(getGuestsController))
 
 /**
  * Description. Get Guest by id

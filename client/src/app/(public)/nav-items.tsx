@@ -56,12 +56,17 @@ const menuItems: {
   {
     title: 'Dashboard',
     href: '/manage/dashboard',
-    role: [Role.Owner, Role.Employee]
+    role: [Role.Owner]
+  },
+  {
+    title: 'Orders',
+    href: '/manage/orders',
+    role: [Role.Employee, Role.Owner]
   }
 ]
 
 export default function NavItems({ className }: { className?: string }) {
-  const { role, setRole,  disconnectSocket } = useAppContext()
+  const { role, setRole, disconnectSocket } = useAppContext()
   const logoutMutation = useLogoutMutation()
   const router = useRouter()
 

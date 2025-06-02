@@ -162,7 +162,7 @@ class GuestsService {
       })
     }
 
-    if (table.status === TableStatus.Reserved) {
+    if (table.status === TableStatus.Reserved && table.reservation?.guest_id.toString() !== guest._id.toString()) {
       throw new ErrorWithStatus({
         message: TABLES_MESSAGES.TABLE_IS_RESERVED_PLEASE_CHOOSE_ANOTHER_TABLE,
         status: HTTP_STATUS.BAD_REQUEST

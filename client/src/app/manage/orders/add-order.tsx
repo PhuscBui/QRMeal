@@ -72,7 +72,8 @@ export default function AddOrder() {
       if (isNewGuest) {
         const guestRes = await createGuestMutation.mutateAsync({
           name,
-          table_number: tableNumber
+          table_number: tableNumber,
+          phone: ''
         })
         guestId = guestRes.payload.result._id
       }

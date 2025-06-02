@@ -42,11 +42,11 @@ export default async function Home() {
           </p>
           <div className='flex flex-col sm:flex-row gap-4'>
             <Link href='#dish'>
-            <Button size='lg' className='bg-amber-500 hover:bg-amber-600 text-white'>
-              Explore Menu
+              <Button size='lg' className='bg-amber-500 hover:bg-amber-600 text-white'>
+                Explore Menu
               </Button>
             </Link>
-            <Link href='/reserve'>
+            <Link href='/booking'>
               <Button size='lg'>Book a Table</Button>
             </Link>
           </div>

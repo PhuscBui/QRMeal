@@ -12,6 +12,7 @@ import { useEffect } from 'react'
 import { useGuestLoginMutation } from '@/queries/useGuest'
 import { useAppContext } from '@/components/app-provider'
 import { generateSocket, handleErrorApi } from '@/lib/utils'
+import { useReserveTableMutation } from '@/queries/useTable'
 
 export default function GuestLoginForm() {
   const { setRole, setSocket } = useAppContext()
@@ -19,8 +20,7 @@ export default function GuestLoginForm() {
   const params = useParams()
   const table_number = Number(params.number)
   const token = searchParams.get('token')
-  const isReserve = searchParams.get('isReserve')
-  console.log(isReserve)
+  const reserveMutation = useReserveTableMutation()
   const router = useRouter()
   const loginMutation = useGuestLoginMutation()
   const form = useForm<GuestLoginBodyType>({
@@ -32,8 +32,6 @@ export default function GuestLoginForm() {
       table_number
     }
   })
-
-
 
   useEffect(() => {
     if (!token) {
@@ -47,6 +45,13 @@ export default function GuestLoginForm() {
       const result = await loginMutation.mutateAsync(values)
       setRole(result.payload.result.guest.role)
       setSocket(generateSocket(result.payload.result.access_token))
+      await reserveMutation.mutateAsync({
+        guest_id: result.payload.result.guest._id,
+        table_number: values.table_number,
+        reservation_time: new Date(),
+        note: '',
+        token: token ?? ''
+      })
       router.push('/guest/menu')
     } catch (error) {
       handleErrorApi({
@@ -59,9 +64,7 @@ export default function GuestLoginForm() {
   return (
     <Card className='mx-auto max-w-sm'>
       <CardHeader>
-        <CardTitle className='text-2xl'>
-          {isReserve ? 'Điền thông tin để đặt bàn' : 'Đăng nhập gọi món'}
-        </CardTitle>
+        <CardTitle className='text-2xl'>Login to order</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -77,7 +80,7 @@ export default function GuestLoginForm() {
                 render={({ field }) => (
                   <FormItem>
                     <div className='grid gap-2'>
-                      <Label htmlFor='name'>Tên khách hàng</Label>
+                      <Label htmlFor='name'>Name</Label>
                       <Input id='name' type='text' required {...field} />
                       <FormMessage />
                     </div>
@@ -91,7 +94,7 @@ export default function GuestLoginForm() {
                 render={({ field }) => (
                   <FormItem>
                     <div className='grid gap-2'>
-                      <Label htmlFor='phone'>Số điện thoại</Label>
+                      <Label htmlFor='phone'>Phone</Label>
                       <Input id='phone' type='text' required {...field} />
                       <FormMessage />
                     </div>
@@ -99,8 +102,8 @@ export default function GuestLoginForm() {
                 )}
               />
 
-              <Button type='submit' className='w-full'>
-                {isReserve ? 'Tiếp tục' : 'Đăng nhập'}
+              <Button type='submit' className='w-full' disabled={loginMutation.isPending || reserveMutation.isPending}>
+                {loginMutation.isPending || reserveMutation.isPending ? 'Logging in...' : 'Login'}
               </Button>
             </div>
           </form>

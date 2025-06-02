@@ -1,14 +1,14 @@
-"use client"
+'use client'
 
-import React from "react"
+import React from 'react'
 
-import { Clock } from "lucide-react"
-import { Label } from "@/components/ui/label"
-import { TimePickerInput } from "@/app/(public)/reserve/time-picker-input"
-import { Button } from "@/components/ui/button"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
-import { format } from "date-fns"
+import { Clock } from 'lucide-react'
+import { Label } from '@/components/ui/label'
+import { TimePickerInput } from '@/app/(public)/booking/time-picker-input'
+import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
+import { format } from 'date-fns'
 
 interface TimePickerDemoProps {
   date: Date
@@ -24,60 +24,60 @@ export function TimePickerDemo({ date, setDate }: TimePickerDemoProps) {
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          variant={"outline"}
-          className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
+          variant={'outline'}
+          className={cn('w-full justify-start text-left font-normal', !date && 'text-muted-foreground')}
         >
-          <Clock className="mr-2 h-4 w-4" />
-          {date ? format(date, "h:mm a") : <span>Pick a time</span>}
+          <Clock className='mr-2 h-4 w-4' />
+          {date ? format(date, 'h:mm a') : <span>Pick a time</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-4">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-end gap-2">
-            <div className="grid gap-1 text-center">
-              <Label htmlFor="hours" className="text-xs">
+      <PopoverContent className='w-auto p-4'>
+        <div className='flex flex-col gap-4'>
+          <div className='flex items-end gap-2'>
+            <div className='grid gap-1 text-center'>
+              <Label htmlFor='hours' className='text-xs'>
                 Hours
               </Label>
               <TimePickerInput
-                className="w-16"
+                className='w-16'
                 value={date}
                 onChange={setDate}
-                picker="hours"
+                picker='hours'
                 ref={hourRef}
                 onRightFocus={() => minuteRef.current?.focus()}
               />
             </div>
-            <div className="grid gap-1 text-center">
-              <Label htmlFor="minutes" className="text-xs">
+            <div className='grid gap-1 text-center'>
+              <Label htmlFor='minutes' className='text-xs'>
                 Minutes
               </Label>
               <TimePickerInput
-                className="w-16"
+                className='w-16'
                 value={date}
                 onChange={setDate}
-                picker="minutes"
+                picker='minutes'
                 ref={minuteRef}
                 onLeftFocus={() => hourRef.current?.focus()}
               />
             </div>
-            <div className="flex h-10 items-center">
+            <div className='flex h-10 items-center'>
               <Button
-                variant="ghost"
-                className="rounded-full px-2"
-                type="button"
+                variant='ghost'
+                className='rounded-full px-2'
+                type='button'
                 onClick={() => {
                   const newDate = new Date(date)
                   newDate.setHours(newDate.getHours() < 12 ? newDate.getHours() + 12 : newDate.getHours() - 12)
                   setDate(newDate)
                 }}
               >
-                {date.getHours() >= 12 ? "PM" : "AM"}
+                {date.getHours() >= 12 ? 'PM' : 'AM'}
               </Button>
             </div>
           </div>
-          <div className="flex justify-end gap-2">
+          <div className='flex justify-end gap-2'>
             <Button
-              size="sm"
+              size='sm'
               onClick={() => {
                 const now = new Date()
                 const newDate = new Date(date)
