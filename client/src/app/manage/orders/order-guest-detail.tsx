@@ -10,10 +10,12 @@ import {
   getVietnameseOrderStatus,
   handleErrorApi
 } from '@/lib/utils'
+import { useGetGuestLoyaltyQuery, useUpdateGuestLoyaltyMutation } from '@/queries/useGuestLoyalty'
 import { useGetGuestPromotionQuery, useUsedPromotionMutation } from '@/queries/useGuestPromotion'
 import { usePayForGuestMutation } from '@/queries/useOrder'
 import { usePromotionListQuery } from '@/queries/usePromotion'
 import { useCreateRevenueMutation } from '@/queries/useRevenue'
+import { useCancelReservationMutation, useGetTableQuery } from '@/queries/useTable'
 import { GuestPromotion, GuestPromotionResType } from '@/schemaValidations/guest-promotion.schema'
 import { GetOrdersResType, PayGuestOrdersResType } from '@/schemaValidations/order.schema'
 import { PromotionResType } from '@/schemaValidations/promotion.schema'
@@ -36,8 +38,16 @@ export default function OrderGuestDetail({
     ? orders.filter((order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Rejected)
     : []
 
-    const purchasedOrderFilter = guest ? orders.filter((order) => order.status === OrderStatus.Paid) : []
-    console.log('ordersFilterToPurchase', purchasedOrderFilter)
+  const cancelReservation = useCancelReservationMutation()
+  const table = useGetTableQuery({ id: guest?.table_number as number, enabled: Boolean(guest?.table_number) })
+  const guestloyalty = useGetGuestLoyaltyQuery({
+    guestPhone: guest?.phone || '',
+    enabled: Boolean(guest?.phone)
+  })
+  const updateLoyalty = useUpdateGuestLoyaltyMutation()
+
+  const purchasedOrderFilter = guest ? orders.filter((order) => order.status === OrderStatus.Paid) : []
+  console.log('ordersFilterToPurchase', purchasedOrderFilter)
   const payForGuestMutation = usePayForGuestMutation()
   const createRevenueMutation = useCreateRevenueMutation()
   const promotionListQuery = usePromotionListQuery()
@@ -75,7 +85,7 @@ export default function OrderGuestDetail({
 
   const calculateTotalAmount = (price: number, promotion: PromotionResType['result'][]) => {
     if (promotion.length === 0) return price
-    
+
     const totalDiscount = promotion.reduce((acc, promotion) => {
       if (promotion.discount_type === PromotionType.FreeItem) {
         // For free item promotions, find the cheapest item in the order
@@ -109,10 +119,21 @@ export default function OrderGuestDetail({
       )
 
       await Promise.all([
-        await createRevenueMutation.mutateAsync({
+        createRevenueMutation.mutateAsync({
           guest_id: guest._id,
           guest_phone: guest.phone,
           total_amount: total_amount
+        }),
+        cancelReservation.mutateAsync({
+          token: table.data?.payload.result?.token || '',
+          table_number: table.data?.payload.result?.number as number,
+          guest_id: guest._id
+        }),
+        updateLoyalty.mutateAsync({
+          guestPhone: guest.phone,
+          total_spend: (guestloyalty.data?.payload.result?.total_spend || 0) + total_amount,
+          loyalty_points: (guestloyalty.data?.payload.result?.loyalty_points || 0) + Math.floor(total_amount / 10000),
+          visit_count: (guestloyalty.data?.payload.result?.visit_count || 0) + 1
         }),
         await Promise.all(
           usePromotions.map((promotion) =>
