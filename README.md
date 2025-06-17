@@ -20,7 +20,7 @@ QRMeal is a modern web application that leverages QR code technology to enhance 
 - React 19.1.0
 - TypeScript
 - Tailwind CSS
-- Radix UI Components
+- Shadcn UI Components
 - React Query
 - Socket.IO Client
 - React Hook Form with Zod validation
