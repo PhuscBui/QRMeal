@@ -16,7 +16,7 @@ import {
   GetDishResponse,
   UpdateDishResponse
 } from '~/models/response/Dishes.response'
-import { dishesService } from '~/services/dishes.service'
+import dishesService from '~/services/dishes.service'
 
 export const getDishesController = async (req: Request<ParamsDictionary, GetDishesResponse>, res: Response) => {
   const result = await dishesService.getDishes()

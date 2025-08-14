@@ -37,6 +37,8 @@ import AddDish from '@/app/manage/dishes/add-dish'
 import { useDeleteDishMutation, useDishListQuery } from '@/queries/useDish'
 import { toast } from 'sonner'
 import { Pen, Trash } from 'lucide-react'
+import { useCategoryListQuery } from '@/queries/useCategory'
+import { CategoryResType } from '@/schemaValidations/category.schema'
 
 type DishItem = DishListResType['result'][0]
 
@@ -62,7 +64,7 @@ const DishTableContext = createContext<{
   setDishDelete: () => {}
 })
 
-export const columns: ColumnDef<DishItem>[] = [
+const getColumns = (categoryData: CategoryResType['result'][]): ColumnDef<DishItem>[] => [
   {
     accessorKey: 'index',
     header: 'No.',
@@ -107,6 +109,16 @@ export const columns: ColumnDef<DishItem>[] = [
     )
   },
   {
+    accessorKey: 'category_ids',
+    header: 'Categories',
+    cell: ({ row }) => {
+      const categoryIds = (row.getValue('category_ids') as string[]) || []
+      const categoryNames = categoryData.filter((c) => categoryIds?.includes(c._id)).map((c) => c.name)
+
+      return <div className='capitalize'>{categoryNames.join(', ') || 'Other'}</div>
+    }
+  },
+  {
     accessorKey: 'status',
     header: 'Status',
     cell: ({ row }) => <div>{statusBadge(getDishStatus(row.getValue('status')))}</div>
@@ -116,19 +128,12 @@ export const columns: ColumnDef<DishItem>[] = [
     enableHiding: false,
     cell: function Actions({ row }) {
       const { setDishIdEdit, setDishDelete } = useContext(DishTableContext)
-      const openEditDish = () => {
-        setDishIdEdit(row.original._id)
-      }
-
-      const openDeleteDish = () => {
-        setDishDelete(row.original)
-      }
       return (
         <div className='flex gap-2'>
-          <Button variant='default' className='h-8 w-8 p-0' onClick={openEditDish}>
+          <Button variant='default' className='h-8 w-8 p-0' onClick={() => setDishIdEdit(row.original._id)}>
             <Pen className='h-4 w-4' />
           </Button>
-          <Button variant='destructive' className='h-8 w-8 p-0' onClick={openDeleteDish}>
+          <Button variant='destructive' className='h-8 w-8 p-0' onClick={() => setDishDelete(row.original)}>
             <Trash className='h-4 w-4' />
           </Button>
         </div>
@@ -160,6 +165,7 @@ function AlertDialogDeleteDish({
       }
     }
   }
+
   return (
     <AlertDialog
       open={Boolean(dishDelete)}
@@ -195,6 +201,8 @@ export default function DishTable() {
   const [dishDelete, setDishDelete] = useState<DishItem | null>(null)
   const dishListQuery = useDishListQuery()
   const data = dishListQuery.data?.payload.result ?? []
+  const categoryListQuery = useCategoryListQuery()
+  const categoryData = categoryListQuery.data?.payload.result ?? []
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
@@ -205,10 +213,9 @@ export default function DishTable() {
     pageIndex, // Gía trị mặc định ban đầu, không có ý nghĩa khi data được fetch bất đồng bộ
     pageSize: PAGE_SIZE //default page size
   })
-  console.log(data)
   const table = useReactTable({
     data,
-    columns,
+    columns: getColumns(categoryData),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -277,7 +284,7 @@ export default function DishTable() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={columns.length} className='h-24 text-center'>
+                  <TableCell colSpan={table.getAllColumns().length} className='h-24 text-center'>
                     No results.
                   </TableCell>
                 </TableRow>

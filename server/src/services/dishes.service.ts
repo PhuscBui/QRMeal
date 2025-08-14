@@ -52,7 +52,12 @@ class DishesService {
     const result = await databaseService.dishes.findOneAndDelete({ _id: new ObjectId(dishId) })
     return result
   }
+
+  async getDishesByCategory(categoryId: string) {
+    const dishes = await databaseService.dishes.find({ category_ids: { $in: [new ObjectId(categoryId)] } }).toArray()
+    return dishes
+  }
 }
 
 const dishesService = new DishesService()
-export { dishesService }
+export default dishesService

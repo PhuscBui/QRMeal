@@ -11,13 +11,16 @@ import {
 import {
   CreateCategoryResponse,
   DeleteCategoryResponse,
-  GetCategoriesResponse,
+  GetCategoriesWithDishCountResponse,
   GetCategoryResponse,
   UpdateCategoryResponse
 } from '~/models/response/Category.response'
 import categoryService from '~/services/categories.service'
 
-export const getCategoriesController = async (req: Request<ParamsDictionary, GetCategoriesResponse>, res: Response) => {
+export const getCategoriesController = async (
+  req: Request<ParamsDictionary, GetCategoriesWithDishCountResponse>,
+  res: Response
+) => {
   const categories = await categoryService.getAllCategories()
   res.json({
     message: CATEGORIES_MESSAGE.CATEGORIES_FETCHED,

@@ -4,7 +4,7 @@ import HTTP_STATUS from '~/constants/httpStatus'
 import { COMMON_MESSAGES, DISHES_MESSAGE } from '~/constants/messages'
 import { DishStatusValues } from '~/constants/type'
 import { ErrorWithStatus } from '~/models/Error'
-import { dishesService } from '~/services/dishes.service'
+import dishesService from '~/services/dishes.service'
 import { validate } from '~/utils/validation'
 
 const nameSchema: ParamSchema = {

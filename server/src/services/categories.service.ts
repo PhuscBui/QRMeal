@@ -25,7 +25,29 @@ class CategoryService {
   }
 
   async getAllCategories() {
-    const result = await databaseService.categories.find().toArray()
+    const result = await databaseService.categories
+      .aggregate([
+        {
+          $lookup: {
+            from: 'dishes',
+            localField: '_id',
+            foreignField: 'category_ids',
+            as: 'dishes'
+          }
+        },
+        {
+          $addFields: {
+            dish_count: { $size: '$dishes' }
+          }
+        },
+        {
+          $project: {
+            dishes: 0
+          }
+        }
+      ])
+      .toArray()
+
     return result
   }
 
@@ -54,7 +76,14 @@ class CategoryService {
   }
 
   async deleteCategory(id: string) {
-    const result = await databaseService.categories.deleteOne({ _id: new ObjectId(id) })
+    const categoryId = new ObjectId(id)
+
+    const result = await databaseService.categories.deleteOne({ _id: categoryId })
+
+    if (result.deletedCount > 0) {
+      await databaseService.dishes.updateMany({ category_ids: categoryId }, { $pull: { category_ids: categoryId } })
+    }
+
     return result.deletedCount > 0
   }
 
