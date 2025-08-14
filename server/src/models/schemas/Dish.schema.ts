@@ -5,6 +5,7 @@ interface DishType {
   name: string
   price: number
   description: string
+  category_ids: ObjectId[]
   image?: string
   status: string
   created_at?: Date
@@ -16,6 +17,7 @@ export default class Dish {
   name: string
   price: number
   description: string
+  category_ids: ObjectId[]
   image?: string
   status: string
   created_at: Date
@@ -27,6 +29,7 @@ export default class Dish {
     this.name = dish.name
     this.price = dish.price
     this.description = dish.description
+    this.category_ids = dish.category_ids
     this.image = dish.image || ''
     this.status = dish.status
     this.created_at = dish.created_at || date

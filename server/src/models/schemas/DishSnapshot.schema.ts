@@ -6,6 +6,7 @@ interface DishSnapshotType {
   price: number
   image?: string
   description: string
+  category_id: ObjectId
   status: string
   dish_id: ObjectId | null
   created_at?: Date
@@ -18,6 +19,7 @@ export default class DishSnapshot {
   price: number
   image?: string
   description: string
+  category_id: ObjectId
   status: string
   dish_id: ObjectId | null
   created_at?: Date
@@ -30,6 +32,7 @@ export default class DishSnapshot {
     this.price = dishSnapshot.price
     this.image = dishSnapshot.image || ''
     this.description = dishSnapshot.description
+    this.category_id = dishSnapshot.category_id
     this.status = dishSnapshot.status
     this.dish_id = dishSnapshot.dish_id
     this.created_at = dishSnapshot.created_at || date

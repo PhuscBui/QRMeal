@@ -19,6 +19,7 @@ export const envConfig = {
   dbGuestLoyaltiesCollection: process.env.MONGODB_GUEST_LOYALTIES_COLLECTION as string,
   dbRevenuesCollection: process.env.MONGODB_REVENUES_COLLECTION as string,
   dbSocketsCollection: process.env.MONGODB_SOCKETS_COLLECTION as string,
+  dbCategoriesCollection: process.env.MONGODB_CATEGORIES_COLLECTION as string,
 
   initialEmailOwner: process.env.INITIAL_EMAIL_OWNER as string,
   initialPasswordOwner: process.env.INITIAL_PASSWORD_OWNER as string,
@@ -35,5 +36,5 @@ export const envConfig = {
 
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME as string,
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY as string,
-  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET as string,
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET as string
 }
