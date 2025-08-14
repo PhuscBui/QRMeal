@@ -6,7 +6,7 @@ import {
   getDishesController,
   updateDishController
 } from '~/controllers/dishes.controller'
-import { isAdminValidator, isEmployeeValidator } from '~/middlewares/account.middlewares'
+import { isEmployeeValidator } from '~/middlewares/account.middlewares'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import { filterMiddleware } from '~/middlewares/common.middlewares'
 import { createDishValidator, dishIdValidator, updateDishValidator } from '~/middlewares/dishes.middlewares'
@@ -60,7 +60,7 @@ dishesRouter.put(
   isEmployeeValidator,
   updateDishValidator,
   dishIdValidator,
-  filterMiddleware<UpdateDishReqBody>(['name', 'price', 'image', 'description', 'status']),
+  filterMiddleware<UpdateDishReqBody>(['name', 'price', 'image', 'description', 'category_ids', 'status']),
   wrapRequestHandler(updateDishController)
 )
 

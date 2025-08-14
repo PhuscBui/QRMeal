@@ -74,7 +74,8 @@ export const DISHES_MESSAGE = {
   STATUS_LENGTH_MUST_BE_GREATER_THAN_0: 'Status length must be greater than 0',
   STATUS_MUST_BE_AVAILABLE_OR_UNAVAILABLE_OR_HIDDEN: 'Status must be available, unavailable or hidden',
   DISH_IS_HIDDEN_PLEASE_CHOOSE_ANOTHER_DISH: 'Dish is hidden, please choose another dish',
-  DISH_IS_UNAVAILABLE_PLEASE_CHOOSE_ANOTHER_DISH: 'Dish is unavailable, please choose another dish'
+  DISH_IS_UNAVAILABLE_PLEASE_CHOOSE_ANOTHER_DISH: 'Dish is unavailable, please choose another dish',
+  CATEGORY_ID_IS_INVALID: 'Category ID is invalid'
 } as const
 
 export const TABLES_MESSAGES = {
@@ -122,7 +123,10 @@ export const COMMON_MESSAGES = {
   IMAGE_URL_LENGTH_MUST_BE_FROM_1_TO_400: 'Image URL length must be from 1 to 400',
 
   FROM_DATE_MUST_BE_A_DATE: 'From date must be a date',
-  TO_DATE_MUST_BE_A_DATE: 'To date must be a date'
+  TO_DATE_MUST_BE_A_DATE: 'To date must be a date',
+
+  ID_IS_REQUIRED: 'ID is required',
+  ID_IS_INVALID: 'ID is invalid'
 } as const
 
 export const ORDERS_MESSAGE = {
@@ -262,4 +266,24 @@ export const GUEST_MESSAGE = {
   GUEST_PHONE_IS_REQUIRED: 'Guest phone is required',
   GUEST_PHONE_MUST_BE_A_STRING: 'Guest phone must be a string',
   GUEST_PHONE_IS_INVALID: 'Guest phone is invalid'
+} as const
+
+export const CATEGORIES_MESSAGE = {
+  CATEGORY_NOT_FOUND: 'Category not found',
+  CATEGORY_CREATED: 'Category created',
+  CATEGORY_UPDATED: 'Category updated',
+  CATEGORY_DELETED: 'Category deleted',
+  CATEGORY_FETCHED: 'Category fetched',
+  CATEGORIES_FETCHED: 'Categories fetched',
+  CATEGORY_ID_IS_REQUIRED: 'Category ID is required',
+  CATEGORY_ID_MUST_BE_A_STRING: 'Category ID must be a string',
+  CATEGORY_ID_IS_INVALID: 'Category ID is invalid',
+  CATEGORY_NAME_IS_REQUIRED: 'Category name is required',
+  CATEGORY_NAME_MUST_BE_A_STRING: 'Category name must be a string',
+  CATEGORY_NAME_IS_INVALID: 'Category name is invalid',
+  CATEGORY_NAME_ALREADY_EXISTS: 'Category name already exists',
+  CATEGORY_DESCRIPTION_IS_REQUIRED: 'Category description is required',
+  CATEGORY_DESCRIPTION_MUST_BE_A_STRING: 'Category description must be a string',
+  CATEGORY_DESCRIPTION_IS_INVALID: 'Category description is invalid',
+  CATEGORY_DESCRIPTION_LENGTH_MUST_BE_GREATER_THAN_0: 'Category description length must be greater than 0'
 } as const

@@ -16,6 +16,7 @@ class DishesService {
         price: payload.price,
         image: payload.image,
         description: payload.description,
+        category_ids: payload.category_ids.map((id) => new ObjectId(id)),
         status: payload.status
       })
     )
@@ -31,7 +32,17 @@ class DishesService {
   async updateDish(dishId: string, payload: UpdateDishReqBody) {
     const result = await databaseService.dishes.findOneAndUpdate(
       { _id: new ObjectId(dishId) },
-      { $set: payload, $currentDate: { updated_at: true } },
+      {
+        $set: {
+          name: payload.name,
+          price: payload.price,
+          image: payload.image,
+          description: payload.description,
+          category_ids: payload.category_ids.map((id) => new ObjectId(id)),
+          status: payload.status
+        },
+        $currentDate: { updated_at: true }
+      },
       { returnDocument: 'after' }
     )
     return result

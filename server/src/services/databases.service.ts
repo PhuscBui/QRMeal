@@ -1,6 +1,7 @@
 import { Collection, Db, MongoClient } from 'mongodb'
 import { envConfig } from '~/config'
 import Account from '~/models/schemas/Account.schema'
+import Category from '~/models/schemas/Category.schema'
 import Dish from '~/models/schemas/Dish.schema'
 import DishSnapshot from '~/models/schemas/DishSnapshot.schema'
 import Guest from '~/models/schemas/Guest.schema'
@@ -82,6 +83,10 @@ class DatabaseService {
 
   get sockets(): Collection<Socket> {
     return this.db.collection(envConfig.dbSocketsCollection)
+  }
+
+  get categories(): Collection<Category> {
+    return this.db.collection(envConfig.dbCategoriesCollection)
   }
 
   get clientInstance(): MongoClient {

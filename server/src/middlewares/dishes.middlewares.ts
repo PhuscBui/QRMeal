@@ -63,6 +63,8 @@ const descriptionSchema: ParamSchema = {
   }
 }
 
+const categoryIdSchema: ParamSchema = {}
+
 const statusSchema: ParamSchema = {
   notEmpty: {
     errorMessage: DISHES_MESSAGE.STATUS_IS_REQUIRED
@@ -86,6 +88,7 @@ export const createDishValidator = validate(
       name: nameSchema,
       price: priceSchema,
       description: descriptionSchema,
+      category_id: categoryIdSchema,
       image: imageSchema,
       status: statusSchema
     },
@@ -99,6 +102,7 @@ export const updateDishValidator = validate(
       name: nameSchema,
       price: priceSchema,
       description: descriptionSchema,
+      category_id: categoryIdSchema,
       image: imageSchema,
       status: statusSchema
     },

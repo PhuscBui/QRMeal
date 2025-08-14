@@ -16,12 +16,12 @@ import { initFolder } from '~/utils/file'
 import socketService from '~/utils/socket'
 import cors from 'cors'
 import helmet from 'helmet'
-import dashboardRouter from '~/routes/indicators.routes'
 import promotionsRoutes from '~/routes/promotion.routes'
 import guest_loyaltyRouter from '~/routes/guest-loyalty.routes'
 import guest_promotionRouter from '~/routes/guest-promotion.routes'
 import revenuesRouter from '~/routes/revenues.routes'
 import indicatorsRouter from '~/routes/indicators.routes'
+import categoriesRouter from '~/routes/categories.routes'
 
 initFolder()
 
@@ -38,8 +38,8 @@ const start = async () => {
 start()
 app.use(
   cors({
-    origin: 'http://localhost:3000', // Cho phép frontend truy cập
-    credentials: true // Cho phép gửi cookie nếu cần
+    origin: 'http://localhost:3000',
+    credentials: true
   })
 )
 app.use(helmet())
@@ -65,6 +65,7 @@ app.use('/promotions', promotionsRoutes)
 app.use('/guest-loyalty', guest_loyaltyRouter)
 app.use('/guest-promotion', guest_promotionRouter)
 app.use('/revenues', revenuesRouter)
+app.use('/categories', categoriesRouter)
 
 app.use(defaultErrorHandler)
 
