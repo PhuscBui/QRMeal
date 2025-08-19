@@ -1,0 +1,26 @@
+{
+  "name": "qrmeal",
+  "version": "1.0.0",
+  "description": "QRMeal is a modern web application that leverages QR code technology to enhance the dining experience. This full-stack application is built with Next.js for the frontend and Node.js/Express for the backend, providing a seamless and interactive platform for restaurants and customers.",
+  "homepage": "https://github.com/PhuscBui/QRMeal#readme",
+  "bugs": {
+    "url": "https://github.com/PhuscBui/QRMeal/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PhuscBui/QRMeal.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  }
+}
