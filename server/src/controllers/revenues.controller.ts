@@ -8,15 +8,10 @@ import {
   GetRevenueByGuestPhoneParams,
   GetRevenuesQueryParams
 } from '~/models/requests/Revenue.request'
-import {
-  CreateRevenueResponse,
-  GetRevenueByGuestPhoneResponse,
-  GetRevenuesResponse
-} from '~/models/response/Revenue.response'
 import revenuesService from '~/services/revenues.service'
 
 export const getRevenuesController = async (
-  req: Request<ParamsDictionary, GetRevenuesResponse, unknown, GetRevenuesQueryParams>,
+  req: Request<ParamsDictionary, unknown, unknown, GetRevenuesQueryParams>,
   res: Response
 ) => {
   const result = await revenuesService.getRevenues(req.query)
@@ -26,10 +21,7 @@ export const getRevenuesController = async (
   })
 }
 
-export const getRevenueByGuestPhoneController = async (
-  req: Request<GetRevenueByGuestPhoneParams, GetRevenueByGuestPhoneResponse>,
-  res: Response
-) => {
+export const getRevenueByGuestPhoneController = async (req: Request<GetRevenueByGuestPhoneParams>, res: Response) => {
   const result = await revenuesService.getRevenueByGuestPhone(req.params.guestPhone)
   console.log(result)
   if (result.length === 0) {
@@ -45,7 +37,7 @@ export const getRevenueByGuestPhoneController = async (
 }
 
 export const createRevenueController = async (
-  req: Request<ParamsDictionary, CreateRevenueResponse, CreateRevenueReqBody>,
+  req: Request<ParamsDictionary, unknown, CreateRevenueReqBody>,
   res: Response
 ) => {
   const result = await revenuesService.createRevenue(req.body)

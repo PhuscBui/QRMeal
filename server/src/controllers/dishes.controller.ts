@@ -9,16 +9,9 @@ import {
   UpdateDishParam,
   UpdateDishReqBody
 } from '~/models/requests/Dishes.request'
-import {
-  CreateDishResponse,
-  DeleteDishResponse,
-  GetDishesResponse,
-  GetDishResponse,
-  UpdateDishResponse
-} from '~/models/response/Dishes.response'
 import dishesService from '~/services/dishes.service'
 
-export const getDishesController = async (req: Request<ParamsDictionary, GetDishesResponse>, res: Response) => {
+export const getDishesController = async (req: Request<ParamsDictionary>, res: Response) => {
   const result = await dishesService.getDishes()
   res.json({
     message: DISHES_MESSAGE.DISHES_FETCHED,
@@ -26,7 +19,7 @@ export const getDishesController = async (req: Request<ParamsDictionary, GetDish
   })
 }
 
-export const getDishController = async (req: Request<GetDishParam, GetDishResponse>, res: Response) => {
+export const getDishController = async (req: Request<GetDishParam>, res: Response) => {
   const result = req.dish
   res.json({
     message: DISHES_MESSAGE.DISH_FETCHED,
@@ -35,7 +28,7 @@ export const getDishController = async (req: Request<GetDishParam, GetDishRespon
 }
 
 export const createDishController = async (
-  req: Request<ParamsDictionary, CreateDishResponse, CreateDishReqBody>,
+  req: Request<ParamsDictionary, unknown, CreateDishReqBody>,
   res: Response
 ) => {
   const result = await dishesService.createDish(req.body)
@@ -46,7 +39,7 @@ export const createDishController = async (
 }
 
 export const updateDishController = async (
-  req: Request<UpdateDishParam, UpdateDishResponse, UpdateDishReqBody>,
+  req: Request<UpdateDishParam, unknown, UpdateDishReqBody>,
   res: Response
 ) => {
   const result = await dishesService.updateDish(req.params.dishId, req.body)
@@ -62,7 +55,7 @@ export const updateDishController = async (
   })
 }
 
-export const deleteDishController = async (req: Request<DeleteDishParam, DeleteDishResponse>, res: Response) => {
+export const deleteDishController = async (req: Request<DeleteDishParam>, res: Response) => {
   const result = await dishesService.deleteDish(req.params.dishId)
   if (!result) {
     res.status(HTTP_STATUS.NOT_FOUND).json({

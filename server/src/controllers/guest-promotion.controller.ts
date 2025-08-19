@@ -9,18 +9,10 @@ import {
   GuestPromotionReqParams,
   UsedPromotionReqBody
 } from '~/models/requests/GuestPromotion.request'
-import { DeleteGuestLoyaltyResponse } from '~/models/response/GuestLoyalty.response'
-import {
-  CreateGuestPromotionResponse,
-  GetGuestPromotionByGuestId,
-  UsedPromotionResponse
-} from '~/models/response/GuestPromotion.response'
+
 import guestPromotionService from '~/services/guest-promotion.service'
 
-export const getGuestPromotionByGuestIdController = async (
-  req: Request<GuestPromotionReqParams, GetGuestPromotionByGuestId>,
-  res: Response
-) => {
+export const getGuestPromotionByGuestIdController = async (req: Request<GuestPromotionReqParams>, res: Response) => {
   const result = req.guestPromotions
 
   res.json({
@@ -30,7 +22,7 @@ export const getGuestPromotionByGuestIdController = async (
 }
 
 export const getGuestPromotionByPhoneController = async (
-  req: Request<GuestPromotionByPhoneReqParams, GetGuestPromotionByGuestId>,
+  req: Request<GuestPromotionByPhoneReqParams>,
   res: Response
 ) => {
   const { guestPhone } = req.params
@@ -48,7 +40,7 @@ export const getGuestPromotionByPhoneController = async (
 }
 
 export const createGuestPromotionController = async (
-  req: Request<ParamsDictionary, CreateGuestPromotionResponse, CreateGuestPromotionReqBody>,
+  req: Request<ParamsDictionary, unknown, CreateGuestPromotionReqBody>,
   res: Response
 ) => {
   const result = await guestPromotionService.createGuestPromotion(req.body)
@@ -60,7 +52,7 @@ export const createGuestPromotionController = async (
 }
 
 export const usedPromotionController = async (
-  req: Request<ParamsDictionary, UsedPromotionResponse, UsedPromotionReqBody>,
+  req: Request<ParamsDictionary, unknown, UsedPromotionReqBody>,
   res: Response
 ) => {
   const { guest_id, promotion_id } = req.body
@@ -80,7 +72,7 @@ export const usedPromotionController = async (
 }
 
 export const deleteGuestPromotionController = async (
-  req: Request<ParamsDictionary, DeleteGuestLoyaltyResponse, DeleteGuestPromotionReqBody>,
+  req: Request<ParamsDictionary, unknown, DeleteGuestPromotionReqBody>,
   res: Response
 ) => {
   const { guest_id, promotion_id } = req.body

@@ -1,4 +1,4 @@
-import { query, Request, Response } from 'express'
+import { Request, Response } from 'express'
 import { ParamsDictionary } from 'express-serve-static-core'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { ORDERS_MESSAGE } from '~/constants/messages'
@@ -11,17 +11,11 @@ import {
   PayGuestOrdersReqBody,
   UpdateOrderReqBody
 } from '~/models/requests/Order.request'
-import {
-  CreateOrderResponse,
-  GetOrdersResponse,
-  PayGuestOrdersResponse,
-  UpdateOrderResponse
-} from '~/models/response/Order.response'
 import ordersService from '~/services/orders.service'
 import socketService from '~/utils/socket'
 
 export const createOrdersController = async (
-  req: Request<ParamsDictionary, CreateOrderResponse, CreateOrdersReqBody>,
+  req: Request<ParamsDictionary, unknown, CreateOrdersReqBody>,
   res: Response
 ) => {
   const { account_id } = req.decoded_authorization as TokenPayload
@@ -40,7 +34,7 @@ export const createOrdersController = async (
 }
 
 export const getOrdersController = async (
-  req: Request<ParamsDictionary, GetOrdersResponse, unknown, GetOrdersQueryParams>,
+  req: Request<ParamsDictionary, unknown, unknown, GetOrdersQueryParams>,
   res: Response
 ) => {
   const orders = await ordersService.getOrders(req.query)
@@ -50,7 +44,7 @@ export const getOrdersController = async (
   })
 }
 
-export const getOrderDetailController = async (req: Request<OrderParam, GetOrdersResponse>, res: Response) => {
+export const getOrderDetailController = async (req: Request<OrderParam>, res: Response) => {
   const order = await ordersService.getOrderDetail(req.params.order_id)
 
   res.status(HTTP_STATUS.OK).json({
@@ -59,10 +53,7 @@ export const getOrderDetailController = async (req: Request<OrderParam, GetOrder
   })
 }
 
-export const updateOrderController = async (
-  req: Request<OrderParam, UpdateOrderResponse, UpdateOrderReqBody>,
-  res: Response
-) => {
+export const updateOrderController = async (req: Request<OrderParam, unknown, UpdateOrderReqBody>, res: Response) => {
   const { account_id } = req.decoded_authorization as TokenPayload
 
   const { socketId, order } = await ordersService.updateOrder(req.params.order_id, {
@@ -84,7 +75,7 @@ export const updateOrderController = async (
 }
 
 export const payOrdersController = async (
-  req: Request<ParamsDictionary, PayGuestOrdersResponse, PayGuestOrdersReqBody>,
+  req: Request<ParamsDictionary, unknown, PayGuestOrdersReqBody>,
   res: Response
 ) => {
   const { account_id } = req.decoded_authorization as TokenPayload

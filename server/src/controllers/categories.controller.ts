@@ -8,19 +8,9 @@ import {
   GetCategoryParam,
   UpdateCategoryReqBody
 } from '~/models/requests/Category.request'
-import {
-  CreateCategoryResponse,
-  DeleteCategoryResponse,
-  GetCategoriesWithDishCountResponse,
-  GetCategoryResponse,
-  UpdateCategoryResponse
-} from '~/models/response/Category.response'
 import categoryService from '~/services/categories.service'
 
-export const getCategoriesController = async (
-  req: Request<ParamsDictionary, GetCategoriesWithDishCountResponse>,
-  res: Response
-) => {
+export const getCategoriesController = async (req: Request<ParamsDictionary>, res: Response) => {
   const categories = await categoryService.getAllCategories()
   res.json({
     message: CATEGORIES_MESSAGE.CATEGORIES_FETCHED,
@@ -28,7 +18,7 @@ export const getCategoriesController = async (
   })
 }
 
-export const getCategoryController = async (req: Request<GetCategoryParam, GetCategoryResponse>, res: Response) => {
+export const getCategoryController = async (req: Request<GetCategoryParam>, res: Response) => {
   const result = req.category
 
   res.json({
@@ -38,7 +28,7 @@ export const getCategoryController = async (req: Request<GetCategoryParam, GetCa
 }
 
 export const createCategoryController = async (
-  req: Request<ParamsDictionary, CreateCategoryResponse, CreateCategoryReqBody>,
+  req: Request<ParamsDictionary, unknown, CreateCategoryReqBody>,
   res: Response
 ) => {
   const categoryData = req.body
@@ -51,7 +41,7 @@ export const createCategoryController = async (
 }
 
 export const updateCategoryController = async (
-  req: Request<GetCategoryParam, UpdateCategoryResponse, UpdateCategoryReqBody>,
+  req: Request<GetCategoryParam, unknown, UpdateCategoryReqBody>,
   res: Response
 ) => {
   const { categoryId } = req.params
@@ -64,10 +54,7 @@ export const updateCategoryController = async (
   })
 }
 
-export const deleteCategoryController = async (
-  req: Request<DeleteCategoryParam, DeleteCategoryResponse>,
-  res: Response
-) => {
+export const deleteCategoryController = async (req: Request<DeleteCategoryParam>, res: Response) => {
   const { categoryId } = req.params
   await categoryService.deleteCategory(categoryId)
 

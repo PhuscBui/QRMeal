@@ -6,9 +6,8 @@ import { ObjectId } from 'mongodb'
 import authService from '~/services/auth.service'
 import { USERS_MESSAGES } from '~/constants/messages'
 import { TokenPayload } from '~/models/requests/Account.request'
-import { AuthResponse, LogoutResponse } from '~/models/response/Auth.response'
 
-export const loginController = async (req: Request<ParamsDictionary, AuthResponse, LoginReqBody>, res: Response) => {
+export const loginController = async (req: Request<ParamsDictionary, unknown, LoginReqBody>, res: Response) => {
   const user = req.user as Account
   const user_id = user._id as ObjectId
   const result = await authService.login(user_id.toString(), user.role)
@@ -26,17 +25,14 @@ export const loginController = async (req: Request<ParamsDictionary, AuthRespons
   })
 }
 
-export const logoutController = async (
-  req: Request<ParamsDictionary, LogoutResponse, LogoutReqBody>,
-  res: Response
-) => {
+export const logoutController = async (req: Request<ParamsDictionary, unknown, LogoutReqBody>, res: Response) => {
   const { refresh_token } = req.body
   const result = await authService.logout(refresh_token)
   res.json(result)
 }
 
 export const refreshTokenController = async (
-  req: Request<ParamsDictionary, AuthResponse, RefreshTokenReqBody>,
+  req: Request<ParamsDictionary, unknown, RefreshTokenReqBody>,
   res: Response
 ) => {
   const { refresh_token } = req.body

@@ -2,20 +2,18 @@ import { Request, Response } from 'express'
 import { ParamsDictionary } from 'express-serve-static-core'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { TABLES_MESSAGES } from '~/constants/messages'
-import { TokenPayload } from '~/models/requests/Account.request'
-import { CancelReservationReqBody, CreateTableReqBody, ReserveTableReqBody, TableParams, UpdateTableReqBody } from '~/models/requests/Table.request'
 import {
-  CancelReservationResponse,
-  CreateTableResponse,
-  DeleteTableResponse,
-  GetTablesResponse,
-  ReserveTableResponse,
-  UpdateTableResponse
-} from '~/models/response/Table.response'
+  CancelReservationReqBody,
+  CreateTableReqBody,
+  ReserveTableReqBody,
+  TableParams,
+  UpdateTableReqBody
+} from '~/models/requests/Table.request'
+
 import tablesService from '~/services/tables.service'
 
 export const createTableController = async (
-  req: Request<ParamsDictionary, CreateTableResponse, CreateTableReqBody>,
+  req: Request<ParamsDictionary, unknown, CreateTableReqBody>,
   res: Response
 ) => {
   const payload = req.body
@@ -26,7 +24,7 @@ export const createTableController = async (
   })
 }
 
-export const getTablesController = async (req: Request<ParamsDictionary, GetTablesResponse>, res: Response) => {
+export const getTablesController = async (req: Request<ParamsDictionary>, res: Response) => {
   const tables = await tablesService.getTables()
   res.json({
     message: TABLES_MESSAGES.TABLES_FETCHED,
@@ -34,7 +32,7 @@ export const getTablesController = async (req: Request<ParamsDictionary, GetTabl
   })
 }
 
-export const getTableController = async (req: Request<TableParams, GetTablesResponse>, res: Response) => {
+export const getTableController = async (req: Request<TableParams>, res: Response) => {
   const table = await tablesService.getTable(Number(req.params.number))
   if (!table) {
     res.status(HTTP_STATUS.NOT_FOUND).json({
@@ -48,10 +46,7 @@ export const getTableController = async (req: Request<TableParams, GetTablesResp
   })
 }
 
-export const updateTableController = async (
-  req: Request<TableParams, UpdateTableResponse, UpdateTableReqBody>,
-  res: Response
-) => {
+export const updateTableController = async (req: Request<TableParams, unknown, UpdateTableReqBody>, res: Response) => {
   const table = await tablesService.updateTable(Number(req.params.number), req.body)
   if (!table) {
     res.status(HTTP_STATUS.NOT_FOUND).json({
@@ -65,7 +60,7 @@ export const updateTableController = async (
   })
 }
 
-export const deleteTableController = async (req: Request<TableParams, DeleteTableResponse>, res: Response) => {
+export const deleteTableController = async (req: Request<TableParams>, res: Response) => {
   const result = await tablesService.deleteTable(Number(req.params.number))
   if (!result) {
     res.status(HTTP_STATUS.NOT_FOUND).json({
@@ -78,7 +73,7 @@ export const deleteTableController = async (req: Request<TableParams, DeleteTabl
   })
 }
 
-export const reserveTableController = async (req: Request<ParamsDictionary, ReserveTableResponse, ReserveTableReqBody>, res: Response) => {
+export const reserveTableController = async (req: Request<ParamsDictionary, ReserveTableReqBody>, res: Response) => {
   const table = await tablesService.reserveTable(req.body)
   res.json({
     message: TABLES_MESSAGES.TABLE_RESERVED,
@@ -86,7 +81,10 @@ export const reserveTableController = async (req: Request<ParamsDictionary, Rese
   })
 }
 
-export const cancelReservationController = async (req: Request<ParamsDictionary, CancelReservationResponse, CancelReservationReqBody>, res: Response) => {
+export const cancelReservationController = async (
+  req: Request<ParamsDictionary, CancelReservationReqBody>,
+  res: Response
+) => {
   const table = await tablesService.cancelReservation(req.body)
   res.json({
     message: TABLES_MESSAGES.TABLE_RESERVED,

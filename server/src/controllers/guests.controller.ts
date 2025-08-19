@@ -5,7 +5,6 @@ import { ORDERS_MESSAGE, TABLES_MESSAGES, USERS_MESSAGES } from '~/constants/mes
 import { ManagerRoom, Role, TableStatus } from '~/constants/type'
 import { TokenPayload } from '~/models/requests/Account.request'
 import { GuestCreateOrdersReqBody, GuestLoginReqBody, GuestLogoutReqBody } from '~/models/requests/Guest.request'
-import { GuestCreateOrdersResponse, GuestLoginResponse, GuestLogoutResponse } from '~/models/response/Guest.response'
 import Guest from '~/models/schemas/Guest.schema'
 import GuestLoyalty from '~/models/schemas/GuestLoyalty.schema'
 import databaseService from '~/services/databases.service'
@@ -13,7 +12,7 @@ import guestsService from '~/services/guests.service'
 import socketService from '~/utils/socket'
 
 export const loginGuestController = async (
-  req: Request<ParamsDictionary, GuestLoginResponse, GuestLoginReqBody>,
+  req: Request<ParamsDictionary, unknown, GuestLoginReqBody>,
   res: Response
 ) => {
   const { token, table_number, name, phone } = req.body
@@ -69,7 +68,7 @@ export const loginGuestController = async (
 }
 
 export const logoutGuestController = async (
-  req: Request<ParamsDictionary, GuestLogoutResponse, GuestLogoutReqBody>,
+  req: Request<ParamsDictionary, unknown, GuestLogoutReqBody>,
   res: Response
 ) => {
   const { refresh_token } = req.body
@@ -88,7 +87,7 @@ export const refreshTokenGuestController = async (req: Request, res: Response) =
 }
 
 export const guestCreateOrderController = async (
-  req: Request<ParamsDictionary, GuestCreateOrdersResponse, GuestCreateOrdersReqBody>,
+  req: Request<ParamsDictionary, unknown, GuestCreateOrdersReqBody>,
   res: Response
 ) => {
   const { account_id } = req.decoded_authorization as TokenPayload

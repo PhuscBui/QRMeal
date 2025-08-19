@@ -5,6 +5,7 @@ import { TABLES_MESSAGES, USERS_MESSAGES } from '~/constants/messages'
 import { Role, TableStatus } from '~/constants/type'
 import {
   ChangePasswordReqBody,
+  CreateCustomerReqBody,
   CreateEmployeeReqBody,
   CreateGuestReqBody,
   DeleteEmployeeParam,
@@ -18,23 +19,13 @@ import {
 } from '~/models/requests/Account.request'
 import accountsService from '~/services/accounts.service'
 import { ParamsDictionary } from 'express-serve-static-core'
-import {
-  ChangePasswordResponse,
-  CreateEmployeeResponse,
-  CreateGuestResponse,
-  DeleteEmployeeResponse,
-  GetEmployeeResponse,
-  GetEmployeesResponse,
-  GetGuestResponse,
-  UpdateEmployeeResponse,
-  UpdateMeResponse
-} from '~/models/response/Account.response'
 import databaseService from '~/services/databases.service'
 
 export const initOwnerAccount = async () => {
   if ((await accountsService.getAccountCount()) === 0) {
     await accountsService.createAccount({
       name: 'Owner',
+      phone: envConfig.initialPhoneOwner,
       email: envConfig.initialEmailOwner,
       password: envConfig.initialPasswordOwner,
       confirm_password: envConfig.initialPasswordOwner,
@@ -47,7 +38,7 @@ export const initOwnerAccount = async () => {
 }
 
 export const createEmployeeController = async (
-  req: Request<ParamsDictionary, CreateEmployeeResponse, CreateEmployeeReqBody>,
+  req: Request<ParamsDictionary, unknown, CreateEmployeeReqBody>,
   res: Response,
   next: NextFunction
 ) => {
@@ -68,7 +59,7 @@ export const createEmployeeController = async (
   })
 }
 
-export const getAccountsController = async (req: Request<ParamsDictionary, GetEmployeesResponse>, res: Response) => {
+export const getAccountsController = async (req: Request<ParamsDictionary>, res: Response) => {
   const accounts = await accountsService.getAccounts()
   res.status(HTTP_STATUS.OK).json({
     message: USERS_MESSAGES.ACCOUNTS_FETCHED,
@@ -76,10 +67,7 @@ export const getAccountsController = async (req: Request<ParamsDictionary, GetEm
   })
 }
 
-export const getEmployeeAccountController = async (
-  req: Request<GetEmployeeParam, GetEmployeeResponse>,
-  res: Response
-) => {
+export const getEmployeeAccountController = async (req: Request<GetEmployeeParam>, res: Response) => {
   const account = await accountsService.getAccountById(req.params.id)
 
   if (!account) {
@@ -95,7 +83,7 @@ export const getEmployeeAccountController = async (
 }
 
 export const updateEmployeeController = async (
-  req: Request<UpdateEmployeeParam, UpdateEmployeeResponse, UpdateEmployeeReqBody>,
+  req: Request<UpdateEmployeeParam, unknown, UpdateEmployeeReqBody>,
   res: Response
 ) => {
   const account = await accountsService.getAccountById(req.params.id)
@@ -114,10 +102,7 @@ export const updateEmployeeController = async (
   })
 }
 
-export const deleteEmployeeController = async (
-  req: Request<DeleteEmployeeParam, DeleteEmployeeResponse>,
-  res: Response
-) => {
+export const deleteEmployeeController = async (req: Request<DeleteEmployeeParam>, res: Response) => {
   const account = await accountsService.getAccountById(req.params.id)
 
   if (!account) {
@@ -149,10 +134,7 @@ export const getMeController = async (req: Request, res: Response) => {
   })
 }
 
-export const updateMeController = async (
-  req: Request<ParamsDictionary, UpdateMeResponse, UpdateMeReqBody>,
-  res: Response
-) => {
+export const updateMeController = async (req: Request<ParamsDictionary, unknown, UpdateMeReqBody>, res: Response) => {
   const { account_id } = req.decoded_authorization as TokenPayload
   const body = req.body
   console.log('body', body)
@@ -164,7 +146,7 @@ export const updateMeController = async (
 }
 
 export const changePasswordController = async (
-  req: Request<ParamsDictionary, ChangePasswordResponse, ChangePasswordReqBody>,
+  req: Request<ParamsDictionary, unknown, ChangePasswordReqBody>,
   res: Response
 ) => {
   const { account_id } = req.decoded_authorization as TokenPayload
@@ -174,7 +156,7 @@ export const changePasswordController = async (
 }
 
 export const createGuestController = async (
-  req: Request<ParamsDictionary, CreateGuestResponse, CreateGuestReqBody>,
+  req: Request<ParamsDictionary, unknown, CreateGuestReqBody>,
   res: Response
 ) => {
   const tableNumber = req.body.table_number
@@ -207,7 +189,7 @@ export const createGuestController = async (
   })
 }
 
-export const getGuestsController = async (req: Request<GetGuestParam, GetGuestResponse>, res: Response) => {
+export const getGuestsController = async (req: Request<GetGuestParam>, res: Response) => {
   const guests = await accountsService.getGuests(
     req.query.fromDate as string | undefined,
     req.query.toDate as string | undefined
@@ -218,10 +200,21 @@ export const getGuestsController = async (req: Request<GetGuestParam, GetGuestRe
   })
 }
 
-export const getGuestByIdController = async (req: Request<GetGuestByIdParam, GetGuestResponse>, res: Response) => {
+export const getGuestByIdController = async (req: Request<GetGuestByIdParam>, res: Response) => {
   const guest = await accountsService.getGuestById(req.params.id)
   res.status(HTTP_STATUS.OK).json({
     message: USERS_MESSAGES.GET_GUEST_SUCCESS,
     result: guest
+  })
+}
+
+export const createCustomerController = async (
+  req: Request<ParamsDictionary, unknown, CreateCustomerReqBody>,
+  res: Response
+) => {
+  const result = await accountsService.createCustomer(req.body)
+  res.status(HTTP_STATUS.CREATED).json({
+    message: USERS_MESSAGES.ACCOUNT_CREATED,
+    result
   })
 }
