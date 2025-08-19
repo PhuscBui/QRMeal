@@ -49,8 +49,13 @@ const menuItems: {
     role: [Role.Guest]
   },
   {
-    title: 'Login',
+    title: 'Login by Employee',
     href: '/login',
+    hideWhenLogin: true
+  },
+  {
+    title: 'Login by Customer',
+    href: '/customer/login',
     hideWhenLogin: true
   },
   {
@@ -77,7 +82,7 @@ export default function NavItems({ className }: { className?: string }) {
       setRole()
       disconnectSocket()
       router.push('/')
-    } catch (error: any) {
+    } catch (error: unknown) {
       handleErrorApi({
         error
       })

@@ -183,3 +183,30 @@ export const CreateGuestRes = z.object({
 })
 
 export type CreateGuestResType = z.TypeOf<typeof CreateGuestRes>
+
+export const CreateCustomerBody = z
+  .object({
+    name: z.string().trim().min(2).max(256),
+    phone: z.string().min(10).max(11),
+    email: z.string().email(),
+    avatar: z.string().url().optional(),
+    date_of_birth: z.date(),
+    password: z.string().min(6).max(100),
+    confirm_password: z.string().min(6).max(100)
+  })
+  .strict()
+  .superRefine(({ confirm_password, password }, ctx) => {
+    if (confirm_password !== password) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Passwords do not match',
+        path: ['confirm_password']
+      })
+    }
+  })
+
+export type CreateCustomerBodyType = z.TypeOf<typeof CreateCustomerBody>
+
+export const CreateCustomerRes = AccountRes
+
+export type CreateCustomerResType = z.TypeOf<typeof CreateCustomerRes>

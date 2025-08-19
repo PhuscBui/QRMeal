@@ -291,6 +291,22 @@ class AccountsService {
   }
 
   async createCustomer(payload: CreateCustomerReqBody) {
+    const { email, phone } = payload
+
+    const emailExists = await this.checkEmailExist(email)
+    if (emailExists)
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.EMAIL_ALREADY_EXISTS,
+        status: HTTP_STATUS.BAD_REQUEST
+      })
+
+    const phoneExists = await this.checkPhoneExist(phone)
+    if (phoneExists)
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.PHONE_ALREADY_EXISTS,
+        status: HTTP_STATUS.BAD_REQUEST
+      })
+
     const result = await databaseService.accounts.insertOne(
       new Account({
         ...payload,
