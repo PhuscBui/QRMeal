@@ -2,8 +2,9 @@ import { ObjectId } from 'mongodb'
 
 interface DishReviewType {
   _id?: ObjectId
-  guest_id: ObjectId
   dish_id: ObjectId
+  author_id: ObjectId
+  author_type: string
   rating: number
   comment?: string
   created_at?: Date
@@ -12,7 +13,8 @@ interface DishReviewType {
 
 export default class DishReview {
   _id?: ObjectId
-  guest_id: ObjectId
+  author_id: ObjectId
+  author_type: string
   dish_id: ObjectId
   rating: number
   comment?: string
@@ -22,7 +24,8 @@ export default class DishReview {
   constructor(dishReview: DishReviewType) {
     const date = new Date()
     this._id = dishReview._id
-    this.guest_id = dishReview.guest_id
+    this.author_id = dishReview.author_id
+    this.author_type = dishReview.author_type
     this.dish_id = dishReview.dish_id
     this.rating = dishReview.rating
     this.comment = dishReview.comment

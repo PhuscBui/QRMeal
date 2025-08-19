@@ -3,6 +3,7 @@ import { envConfig } from '~/config'
 import Account from '~/models/schemas/Account.schema'
 import Category from '~/models/schemas/Category.schema'
 import Dish from '~/models/schemas/Dish.schema'
+import DishReview from '~/models/schemas/DishReview.schema'
 import DishSnapshot from '~/models/schemas/DishSnapshot.schema'
 import Guest from '~/models/schemas/Guest.schema'
 import GuestLoyalty from '~/models/schemas/GuestLoyalty.schema'
@@ -87,6 +88,10 @@ class DatabaseService {
 
   get categories(): Collection<Category> {
     return this.db.collection(envConfig.dbCategoriesCollection)
+  }
+
+  get dishReviews(): Collection<DishReview> {
+    return this.db.collection(envConfig.dbDishReviewsCollection)
   }
 
   get clientInstance(): MongoClient {

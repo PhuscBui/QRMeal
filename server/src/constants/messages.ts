@@ -49,6 +49,12 @@ export const USERS_MESSAGES = {
   USER_LOGIN_FAILED: 'User login failed',
   USER_LOGOUT_SUCCESS: 'User logout success',
 
+  PHONE_IS_VALID: 'Phone is not valid',
+  PHONE_IS_REQUIRED: 'Phone is required',
+  PHONE_LENGTH_MUST_BE_FROM_10_TO_11: 'Phone length must be from 10 to 11',
+  PHONE_MUST_BE_A_STRING: 'Phone must be a string',
+  PHONE_ALREADY_EXISTS: 'Phone already exists',
+
   ORDER_CREATE_SUCCESS: 'Order create success'
 } as const
 
@@ -287,3 +293,33 @@ export const CATEGORIES_MESSAGE = {
   CATEGORY_DESCRIPTION_IS_INVALID: 'Category description is invalid',
   CATEGORY_DESCRIPTION_LENGTH_MUST_BE_GREATER_THAN_0: 'Category description length must be greater than 0'
 } as const
+
+export const DISH_REVIEWS_MESSAGE = {
+  DISH_REVIEW_ALREADY_EXISTS: 'Dish review already exists',
+  DISH_REVIEW_NOT_AUTHORIZED: 'Dish review not authorized',
+  REVIEW_ID_IS_REQUIRED: 'Review ID is required',
+  REVIEW_ID_MUST_BE_A_STRING: 'Review ID must be a string',
+  REVIEW_ID_IS_INVALID: 'Review ID is invalid',
+  COMMENT_LENGTH_MUST_BE_LESS_THAN_500: 'Comment length must be less than 500 characters',
+  RATING_MUST_BE_GREATER_THAN_0: 'Rating must be greater than 0',
+  RATING_LENGTH_MUST_BE_GREATER_THAN_0: 'Rating length must be greater than 0',
+  DISH_REVIEW_WITH_GUEST_INFO_FETCHED: 'Dish review with guest info fetched',
+  DISH_REVIEWS_STATS_FETCHED: 'Dish reviews stats fetched',
+  DISH_REVIEW_NOT_FOUND: 'Dish review not found',
+  DISH_REVIEW_CREATED: 'Dish review created',
+  DISH_REVIEW_UPDATED: 'Dish review updated',
+  DISH_REVIEW_DELETED: 'Dish review deleted',
+  DISH_REVIEW_FETCHED: 'Dish review fetched',
+  DISH_REVIEWS_FETCHED: 'Dish reviews fetched',
+  GUEST_ID_IS_REQUIRED: 'Guest ID is required',
+  GUEST_ID_MUST_BE_A_STRING: 'Guest ID must be a string',
+  GUEST_ID_IS_INVALID: 'Guest ID is invalid',
+  DISH_ID_IS_REQUIRED: 'Dish ID is required',
+  DISH_ID_MUST_BE_A_STRING: 'Dish ID must be a string',
+  DISH_ID_IS_INVALID: 'Dish ID is invalid',
+  RATING_IS_REQUIRED: 'Rating is required',
+  RATING_MUST_BE_A_NUMBER: 'Rating must be a number',
+  RATING_MUST_BE_BETWEEN_1_AND_5: 'Rating must be between 1 and 5',
+  COMMENT_MUST_BE_A_STRING: 'Comment must be a string',
+  COMMENT_LENGTH_MUST_BE_GREATER_THAN_0: 'Comment length must be greater than 0'
+}

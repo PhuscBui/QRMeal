@@ -33,6 +33,7 @@ export const envConfig = {
   dbStaffCollection: process.env.MONGODB_STAFF_COLLECTION as string,
   dbTranslationsCollection: process.env.MONGODB_TRANSLATIONS_COLLECTION as string,
 
+  initialPhoneOwner: process.env.INITIAL_PHONE_OWNER as string,
   initialEmailOwner: process.env.INITIAL_EMAIL_OWNER as string,
   initialPasswordOwner: process.env.INITIAL_PASSWORD_OWNER as string,
   initialDateOfBirthOwner: process.env.INITIAL_DATE_OF_BIRTH_OWNER as string,

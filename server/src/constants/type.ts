@@ -8,7 +8,8 @@ export const TokenType = {
 export const Role = {
   Owner: 'Owner',
   Employee: 'Employee',
-  Guest: 'Guest'
+  Guest: 'Guest',
+  Customer: 'Customer'
 } as const
 
 export const RoleValues = [Role.Owner, Role.Employee, Role.Guest] as const
@@ -60,3 +61,10 @@ export const PromotionTypeValues = [
   PromotionType.Percent,
   PromotionType.FreeItem
 ] as const
+
+export const AuthorType = {
+  Customer: 'Customer',
+  Guest: 'Guest'
+} as const
+
+export const AuthorTypeValues = [AuthorType.Customer, AuthorType.Guest] as const
