@@ -45,6 +45,7 @@ export default function EditEmployee({
     resolver: zodResolver(UpdateEmployeeAccountBody),
     defaultValues: {
       name: '',
+      phone: '',
       email: '',
       avatar: undefined,
       date_of_birth: undefined,
@@ -60,12 +61,13 @@ export default function EditEmployee({
 
   useEffect(() => {
     if (data) {
-      const { name, avatar, email, date_of_birth } = data.payload.result
+      const { name, avatar, email, date_of_birth, phone } = data.payload.result
       form.reset({
         name,
         avatar: avatar || undefined,
         email,
         date_of_birth: date_of_birth ? new Date(date_of_birth) : undefined,
+        phone,
         change_password: form.getValues('change_password'),
         password: '',
         confirm_password: form.getValues('confirm_password') || ''
@@ -75,18 +77,25 @@ export default function EditEmployee({
 
   useEffect(() => {
     if (form.getValues('change_password') === false) {
-      form.setValue('password', undefined)
-      form.setValue('confirm_password', undefined)
+      form.setValue('password', '')
+      form.setValue('confirm_password', '')
     }
   }, [form])
 
   const onSubmit = async (values: UpdateEmployeeAccountBodyType) => {
+    console.log('onSubmit', values)
     if (updateAccountMutation.isPending) return
     try {
       let body: UpdateEmployeeAccountBodyType & { id: string } = {
         id: id as string,
         ...values
       }
+
+      if (!values.change_password) {
+        delete body.password
+        delete body.confirm_password
+      }
+
       if (file) {
         const formData = new FormData()
         formData.append('image', file)
@@ -236,6 +245,24 @@ export default function EditEmployee({
 
               <FormField
                 control={form.control}
+                name='phone'
+                render={({ field }) => (
+                  <FormItem>
+                    <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
+                      <Label htmlFor='phone' className='text-sm font-bold'>
+                        Phone
+                      </Label>
+                      <div className='col-span-3 w-full space-y-2'>
+                        <Input id='phone' className='w-full' {...field} />
+                        <FormMessage />
+                      </div>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name='email'
                 render={({ field }) => (
                   <FormItem>
@@ -251,6 +278,7 @@ export default function EditEmployee({
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name='change_password'
@@ -263,10 +291,11 @@ export default function EditEmployee({
                           checked={field.value}
                           onCheckedChange={() => {
                             field.onChange(!field.value)
-                            form.setValue('password', undefined)
-                            form.setValue('confirm_password', undefined)
+                            form.setValue('password', '')
+                            form.setValue('confirm_password', '')
                           }}
                         />
+
                         <FormMessage />
                       </div>
                     </div>

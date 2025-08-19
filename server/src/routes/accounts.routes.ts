@@ -111,7 +111,7 @@ accountsRouter.put(
   '/me',
   accessTokenValidator,
   updateMeValidator,
-  filterMiddleware<UpdateMeReqBody>(['name', 'avatar', 'date_of_birth']),
+  filterMiddleware<UpdateMeReqBody>(['name', 'avatar', 'date_of_birth', 'email', 'phone']),
   wrapRequestHandler(updateMeController)
 )
 

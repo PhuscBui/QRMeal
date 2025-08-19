@@ -6,7 +6,6 @@ import { COMMON_MESSAGES, USERS_MESSAGES } from '~/constants/messages'
 import { Role } from '~/constants/type'
 import { ErrorWithStatus } from '~/models/Error'
 import { TokenPayload } from '~/models/requests/Account.request'
-import accountsService from '~/services/accounts.service'
 import databaseService from '~/services/databases.service'
 import { hashPassword } from '~/utils/crypto'
 import { validate } from '~/utils/validation'
@@ -105,16 +104,7 @@ const phoneSchema: ParamSchema = {
     options: { min: 10, max: 11 },
     errorMessage: USERS_MESSAGES.PHONE_LENGTH_MUST_BE_FROM_10_TO_11
   },
-  trim: true,
-  custom: {
-    options: async (value) => {
-      const result = await accountsService.checkPhoneExist(value)
-      if (result) {
-        return Promise.reject(new Error(USERS_MESSAGES.PHONE_ALREADY_EXISTS))
-      }
-      return Promise.resolve()
-    }
-  }
+  trim: true
 }
 
 const emailSchema: ParamSchema = {
@@ -124,16 +114,7 @@ const emailSchema: ParamSchema = {
   notEmpty: {
     errorMessage: USERS_MESSAGES.EMAIL_IS_REQUIRED
   },
-  trim: true,
-  custom: {
-    options: async (value) => {
-      const result = await accountsService.checkEmailExist(value)
-      if (result) {
-        return Promise.reject(new Error(USERS_MESSAGES.EMAIL_ALREADY_EXISTS))
-      }
-      return Promise.resolve()
-    }
-  }
+  trim: true
 }
 
 export const createEmployeeValidator = validate(

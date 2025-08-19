@@ -1,6 +1,8 @@
 import { ObjectId } from 'mongodb'
+import HTTP_STATUS from '~/constants/httpStatus'
 import { USERS_MESSAGES } from '~/constants/messages'
 import { Role } from '~/constants/type'
+import { ErrorWithStatus } from '~/models/Error'
 import {
   CreateCustomerReqBody,
   CreateEmployeeReqBody,
@@ -24,6 +26,16 @@ class AccountsService {
     return Boolean(result)
   }
 
+  async checkEmailExistForUpdate(email: string, id: string) {
+    const account = await databaseService.accounts.findOne({ email })
+    return !!(account && account._id.toString() !== id)
+  }
+
+  async checkPhoneExistForUpdate(phone: string, id: string) {
+    const account = await databaseService.accounts.findOne({ phone })
+    return !!(account && account._id.toString() !== id)
+  }
+
   async getAccountCount() {
     return await databaseService.accounts.countDocuments()
   }
@@ -34,6 +46,20 @@ class AccountsService {
   }
 
   async createAccount(payload: CreateEmployeeReqBody) {
+    const emailExists = await this.checkEmailExist(payload.email)
+    if (emailExists)
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.EMAIL_ALREADY_EXISTS,
+        status: HTTP_STATUS.BAD_REQUEST
+      })
+
+    const phoneExists = await this.checkPhoneExist(payload.phone)
+    if (phoneExists)
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.PHONE_ALREADY_EXISTS,
+        status: HTTP_STATUS.BAD_REQUEST
+      })
+
     const result = await databaseService.accounts.insertOne(
       new Account({
         ...payload,
@@ -80,6 +106,24 @@ class AccountsService {
   }
 
   async updateAccount(id: string, payload: UpdateEmployeeReqBody) {
+    if (payload.email) {
+      const emailExists = await this.checkEmailExistForUpdate(payload.email, id)
+      if (emailExists)
+        throw new ErrorWithStatus({
+          message: USERS_MESSAGES.EMAIL_ALREADY_EXISTS,
+          status: HTTP_STATUS.BAD_REQUEST
+        })
+    }
+
+    if (payload.phone) {
+      const phoneExists = await this.checkPhoneExistForUpdate(payload.phone, id)
+      if (phoneExists)
+        throw new ErrorWithStatus({
+          message: USERS_MESSAGES.PHONE_ALREADY_EXISTS,
+          status: HTTP_STATUS.BAD_REQUEST
+        })
+    }
+
     const _payload = payload.date_of_birth ? { ...payload, date_of_birth: new Date(payload.date_of_birth) } : payload
     if (_payload.change_password) {
       _payload.password = hashPassword(_payload.password as string)
@@ -143,6 +187,24 @@ class AccountsService {
   }
 
   async updateMe(id: string, payload: UpdateMeReqBody) {
+    if (payload.email) {
+      const emailExists = await this.checkEmailExistForUpdate(payload.email, id)
+      if (emailExists)
+        throw new ErrorWithStatus({
+          message: USERS_MESSAGES.EMAIL_ALREADY_EXISTS,
+          status: HTTP_STATUS.BAD_REQUEST
+        })
+    }
+
+    if (payload.phone) {
+      const phoneExists = await this.checkPhoneExistForUpdate(payload.phone, id)
+      if (phoneExists)
+        throw new ErrorWithStatus({
+          message: USERS_MESSAGES.PHONE_ALREADY_EXISTS,
+          status: HTTP_STATUS.BAD_REQUEST
+        })
+    }
+
     const _payload = payload.date_of_birth ? { ...payload, date_of_birth: new Date(payload.date_of_birth) } : payload
     const result = await databaseService.accounts.findOneAndUpdate(
       {

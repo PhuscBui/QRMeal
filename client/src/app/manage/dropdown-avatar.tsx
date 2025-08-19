@@ -1,75 +1,67 @@
-"use client";
+'use client'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { useLogoutMutation } from "@/queries/useAuth";
-import { handleErrorApi } from "@/lib/utils";
-import { useRouter } from "next/navigation";
-import { useAccountMe } from "@/queries/useAccount";
-import { useAppContext } from "@/components/app-provider";
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+import { useLogoutMutation } from '@/queries/useAuth'
+import { handleErrorApi } from '@/lib/utils'
+import { useRouter } from 'next/navigation'
+import { useAccountMe } from '@/queries/useAccount'
+import { useAppContext } from '@/components/app-provider'
 
 export default function DropdownAvatar() {
-  const logoutMutation = useLogoutMutation();
-  const router = useRouter();
-  const { data } = useAccountMe();
-  const { setRole, disconnectSocket } = useAppContext();
-  const account = data?.payload.result;
+  const logoutMutation = useLogoutMutation()
+  const router = useRouter()
+  const { data } = useAccountMe()
+  const { setRole, disconnectSocket } = useAppContext()
+  const account = data?.payload.result
   const logout = async () => {
-    if (logoutMutation.isPending) return;
+    if (logoutMutation.isPending) return
     try {
-      await logoutMutation.mutateAsync();
-      setRole();
-      disconnectSocket();
-      router.push("/");
-    } catch (error: any) {
+      await logoutMutation.mutateAsync()
+      setRole()
+      disconnectSocket()
+      router.push('/')
+    } catch (error: unknown) {
       handleErrorApi({
-        error,
-      });
+        error
+      })
     }
-  };
+  }
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          className="overflow-hidden rounded-full"
-        >
+        <Button variant='outline' size='icon' className='overflow-hidden rounded-full'>
           <Avatar>
             <AvatarImage
               src={
-                account?.avatar
-                  ? account?.avatar
-                  : `https://api.dicebear.com/9.x/initials/svg?seed=${account?.name}`
+                account?.avatar ? account?.avatar : `https://api.dicebear.com/9.x/initials/svg?seed=${account?.name}`
               }
               alt={account?.name}
             />
-            <AvatarFallback>
-              {account?.name.slice(0, 2).toUpperCase()}
-            </AvatarFallback>
+            <AvatarFallback>{account?.name.slice(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align='end'>
         <DropdownMenuLabel>{account?.name}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href={"/manage/setting"} className="cursor-pointer">
-            Cài đặt
+          <Link href={'/manage/setting'} className='cursor-pointer'>
+            Settings
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>Hỗ trợ</DropdownMenuItem>
+        <DropdownMenuItem>Support</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={logout}>Đăng xuất</DropdownMenuItem>
+        <DropdownMenuItem onClick={logout}>Log out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  )
 }

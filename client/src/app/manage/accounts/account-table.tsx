@@ -1,6 +1,6 @@
-"use client";
+'use client'
 
-import { CaretSortIcon } from "@radix-ui/react-icons";
+import { CaretSortIcon } from '@radix-ui/react-icons'
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -11,28 +11,18 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+  useReactTable
+} from '@tanstack/react-table'
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button'
 
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  AccountListResType,
-  AccountType,
-} from "@/schemaValidations/account.schema";
-import AddEmployee from "@/app/manage/accounts/add-employee";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import EditEmployee from "@/app/manage/accounts/edit-employee";
-import { createContext, useContext, useEffect, useState } from "react";
+import { Input } from '@/components/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { AccountListResType, AccountType } from '@/schemaValidations/account.schema'
+import AddEmployee from '@/app/manage/accounts/add-employee'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import EditEmployee from '@/app/manage/accounts/edit-employee'
+import { createContext, useContext, useEffect, useState } from 'react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,175 +31,149 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { useSearchParams } from "next/navigation";
-import AutoPagination from "@/components/auto-pagination";
-import {
-  useDeleteAccountMutation,
-  useGetAccountList,
-} from "@/queries/useAccount";
-import { toast } from "sonner";
-import { handleErrorApi } from "@/lib/utils";
-import { Pen, Trash } from "lucide-react";
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog'
+import { useSearchParams } from 'next/navigation'
+import AutoPagination from '@/components/auto-pagination'
+import { useDeleteAccountMutation, useGetAccountList } from '@/queries/useAccount'
+import { toast } from 'sonner'
+import { handleErrorApi } from '@/lib/utils'
+import { Pen, Trash } from 'lucide-react'
 
-type AccountItem = AccountListResType["result"][0];
+type AccountItem = AccountListResType['result'][0]
 
 const AccountTableContext = createContext<{
-  setEmployeeIdEdit: (value: string) => void;
-  employeeIdEdit: string | undefined;
-  employeeDelete: AccountItem | null;
-  setEmployeeDelete: (value: AccountItem | null) => void;
+  setEmployeeIdEdit: (value: string) => void
+  employeeIdEdit: string | undefined
+  employeeDelete: AccountItem | null
+  setEmployeeDelete: (value: AccountItem | null) => void
 }>({
   setEmployeeIdEdit: () => {},
   employeeIdEdit: undefined,
   employeeDelete: null,
-  setEmployeeDelete: () => {},
-});
+  setEmployeeDelete: () => {}
+})
 
 export const columns: ColumnDef<AccountType>[] = [
   {
-    accessorKey: "index",
-    header: "No.",
-    cell: ({ row }) => <div>{row.index + 1}</div>,
+    accessorKey: 'index',
+    header: 'No.',
+    cell: ({ row }) => <div>{row.index + 1}</div>
   },
   {
-    accessorKey: "_id",
-    header: "ID",
+    accessorKey: '_id',
+    header: 'ID'
   },
   {
-    accessorKey: "avatar",
-    header: "Avatar",
+    accessorKey: 'avatar',
+    header: 'Avatar',
     cell: ({ row }) => (
       <div>
-        <Avatar className="aspect-square w-[100px] h-[100px] rounded-md object-cover">
-          <AvatarImage src={row.getValue("avatar") || undefined} />
-          <AvatarFallback className="rounded-none">
+        <Avatar className='aspect-square w-[100px] h-[100px] rounded-md object-cover'>
+          <AvatarImage src={row.getValue('avatar') || undefined} />
+          <AvatarFallback className='rounded-none'>
             {row.original.name
-              .split(" ")
+              .split(' ')
               .map((name) => name[0])
-              .join("") || "U"}
+              .join('') || 'U'}
           </AvatarFallback>
         </Avatar>
       </div>
-    ),
+    )
   },
   {
-    accessorKey: "name",
-    header: "Name",
-    cell: ({ row }) => <div className="capitalize">{row.getValue("name")}</div>,
+    accessorKey: 'name',
+    header: 'Name',
+    cell: ({ row }) => <div className='capitalize'>{row.getValue('name')}</div>
   },
   {
-    accessorKey: "email",
+    accessorKey: 'phone',
+    header: 'Phone',
+    cell: ({ row }) => <div>{row.getValue('phone')}</div>
+  },
+  {
+    accessorKey: 'email',
     header: ({ column }) => {
       return (
         <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="font-bold"
+          variant='ghost'
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          className='font-bold'
         >
           Email
-          <CaretSortIcon className="ml-2 h-4 w-4" />
+          <CaretSortIcon className='ml-2 h-4 w-4' />
         </Button>
-      );
-    },
+      )
+    }
   },
   {
-    accessorKey: "date_of_birth",
-    header: "Date of Birth",
+    accessorKey: 'date_of_birth',
+    header: 'Date of Birth',
     cell: ({ row }) => {
-      const rawDate = row.getValue("date_of_birth");
-      const formattedDate = new Date(rawDate as string).toLocaleDateString(
-        "vi-VN",
-        {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        }
-      );
-      return <div>{formattedDate}</div>;
-    },
+      const rawDate = row.getValue('date_of_birth')
+      const formattedDate = new Date(rawDate as string).toLocaleDateString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      })
+      return <div>{formattedDate}</div>
+    }
   },
   {
-    id: "actions",
+    id: 'actions',
     enableHiding: false,
     cell: function Actions({ row }) {
-      const { setEmployeeIdEdit, setEmployeeDelete } =
-        useContext(AccountTableContext);
+      const { setEmployeeIdEdit, setEmployeeDelete } = useContext(AccountTableContext)
       const openEditEmployee = () => {
-        setEmployeeIdEdit(row.original._id);
-      };
+        setEmployeeIdEdit(row.original._id)
+      }
 
       const openDeleteEmployee = () => {
-        setEmployeeDelete(row.original);
-      };
+        setEmployeeDelete(row.original)
+      }
       return (
-        // <DropdownMenu>
-        //   <DropdownMenuTrigger asChild>
-        //     <Button variant="ghost" className="h-8 w-8 p-0">
-        //       <span className="sr-only">Open menu</span>
-        //       <DotsHorizontalIcon className="h-4 w-4" />
-        //     </Button>
-        //   </DropdownMenuTrigger>
-        //   <DropdownMenuContent align="end">
-        //     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-        //     <DropdownMenuSeparator />
-        //     <DropdownMenuItem onClick={openEditEmployee}>Edit</DropdownMenuItem>
-        //     <DropdownMenuItem onClick={openDeleteEmployee}>
-        //       Delete
-        //     </DropdownMenuItem>
-        //   </DropdownMenuContent>
-        // </DropdownMenu>
-        <div className="flex gap-2">
-          <Button
-            variant="default"
-            className="h-8 w-8 p-0"
-            onClick={openEditEmployee}
-          >
-            <Pen className="h-4 w-4" />
+        <div className='flex gap-2'>
+          <Button variant='default' className='h-8 w-8 p-0' onClick={openEditEmployee}>
+            <Pen className='h-4 w-4' />
           </Button>
-          <Button
-            variant="destructive"
-            className="h-8 w-8 p-0"
-            onClick={openDeleteEmployee}
-          >
-            <Trash className="h-4 w-4" />
+          <Button variant='destructive' className='h-8 w-8 p-0' onClick={openDeleteEmployee}>
+            <Trash className='h-4 w-4' />
           </Button>
         </div>
-      );
-    },
-  },
-];
+      )
+    }
+  }
+]
 
 function AlertDialogDeleteAccount({
   employeeDelete,
-  setEmployeeDelete,
+  setEmployeeDelete
 }: {
-  employeeDelete: AccountItem | null;
-  setEmployeeDelete: (value: AccountItem | null) => void;
+  employeeDelete: AccountItem | null
+  setEmployeeDelete: (value: AccountItem | null) => void
 }) {
-  const { mutateAsync } = useDeleteAccountMutation();
+  const { mutateAsync } = useDeleteAccountMutation()
   const deleteAccount = async () => {
     if (employeeDelete) {
       try {
-        const result = await mutateAsync(employeeDelete._id);
-        setEmployeeDelete(null);
-        toast("Success", {
-          description: result.payload.message,
-        });
+        const result = await mutateAsync(employeeDelete._id)
+        setEmployeeDelete(null)
+        toast('Success', {
+          description: result.payload.message
+        })
       } catch (error) {
         handleErrorApi({
-          error,
-        });
+          error
+        })
       }
     }
-  };
+  }
   return (
     <AlertDialog
       open={Boolean(employeeDelete)}
       onOpenChange={(value) => {
         if (!value) {
-          setEmployeeDelete(null);
+          setEmployeeDelete(null)
         }
       }}
     >
@@ -217,44 +181,39 @@ function AlertDialogDeleteAccount({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Employee</AlertDialogTitle>
           <AlertDialogDescription>
-            Account{" "}
-            <span className="bg-foreground text-primary-foreground rounded p-1">
-              {employeeDelete?.name}
-            </span>{" "}
+            Account <span className='bg-foreground text-primary-foreground rounded p-1'>{employeeDelete?.name}</span>{' '}
             will be deleted. You can&apos;t undo this action.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={deleteAccount}>
-            Continue
-          </AlertDialogAction>
+          <AlertDialogAction onClick={deleteAccount}>Continue</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  );
+  )
 }
 // Số lượng item trên 1 trang
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 10
 export default function AccountTable() {
-  const searchParam = useSearchParams();
-  const page = searchParam.get("page") ? Number(searchParam.get("page")) : 1;
-  const pageIndex = page - 1;
+  const searchParam = useSearchParams()
+  const page = searchParam.get('page') ? Number(searchParam.get('page')) : 1
+  const pageIndex = page - 1
   // const params = Object.fromEntries(searchParam.entries())
-  const [employeeIdEdit, setEmployeeIdEdit] = useState<string | undefined>();
-  const [employeeDelete, setEmployeeDelete] = useState<AccountItem | null>(
-    null
-  );
-  const accountListQuery = useGetAccountList();
-  const data = accountListQuery.data?.payload.result ?? [];
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = useState({});
+  const [employeeIdEdit, setEmployeeIdEdit] = useState<string | undefined>()
+  const [employeeDelete, setEmployeeDelete] = useState<AccountItem | null>(null)
+  const accountListQuery = useGetAccountList()
+  const data = accountListQuery.data?.payload.result ?? []
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    _id: false
+  })
+  const [rowSelection, setRowSelection] = useState({})
   const [pagination, setPagination] = useState({
     pageIndex, // Gía trị mặc định ban đầu, không có ý nghĩa khi data được fetch bất đồng bộ
-    pageSize: PAGE_SIZE, //default page size
-  });
+    pageSize: PAGE_SIZE //default page size
+  })
 
   const table = useReactTable({
     data,
@@ -274,16 +233,16 @@ export default function AccountTable() {
       columnFilters,
       columnVisibility,
       rowSelection,
-      pagination,
-    },
-  });
+      pagination
+    }
+  })
 
   useEffect(() => {
     table.setPagination({
       pageIndex,
-      pageSize: PAGE_SIZE,
-    });
-  }, [table, pageIndex]);
+      pageSize: PAGE_SIZE
+    })
+  }, [table, pageIndex])
 
   return (
     <AccountTableContext.Provider
@@ -291,33 +250,24 @@ export default function AccountTable() {
         employeeIdEdit,
         setEmployeeIdEdit,
         employeeDelete,
-        setEmployeeDelete,
+        setEmployeeDelete
       }}
     >
-      <div className="w-full">
-        <EditEmployee
-          id={employeeIdEdit}
-          setId={setEmployeeIdEdit}
-          onSubmitSuccess={() => {}}
-        />
-        <AlertDialogDeleteAccount
-          employeeDelete={employeeDelete}
-          setEmployeeDelete={setEmployeeDelete}
-        />
-        <div className="flex items-center py-4">
+      <div className='w-full'>
+        <EditEmployee id={employeeIdEdit} setId={setEmployeeIdEdit} onSubmitSuccess={() => {}} />
+        <AlertDialogDeleteAccount employeeDelete={employeeDelete} setEmployeeDelete={setEmployeeDelete} />
+        <div className='flex items-center py-4'>
           <Input
-            placeholder="Filter emails..."
-            value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("email")?.setFilterValue(event.target.value)
-            }
-            className="max-w-sm"
+            placeholder='Filter emails...'
+            value={(table.getColumn('email')?.getFilterValue() as string) ?? ''}
+            onChange={(event) => table.getColumn('email')?.setFilterValue(event.target.value)}
+            className='max-w-sm'
           />
-          <div className="ml-auto flex items-center gap-2">
+          <div className='ml-auto flex items-center gap-2'>
             <AddEmployee />
           </div>
         </div>
-        <div className="rounded-md border">
+        <div className='rounded-md border'>
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -325,14 +275,9 @@ export default function AccountTable() {
                   {headerGroup.headers.map((header) => {
                     return (
                       <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
+                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                       </TableHead>
-                    );
+                    )
                   })}
                 </TableRow>
               ))}
@@ -340,26 +285,15 @@ export default function AccountTable() {
             <TableBody>
               {table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                  >
+                  <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
+                      <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
+                  <TableCell colSpan={columns.length} className='h-24 text-center'>
                     No results.
                   </TableCell>
                 </TableRow>
@@ -367,20 +301,19 @@ export default function AccountTable() {
             </TableBody>
           </Table>
         </div>
-        <div className="flex items-center justify-end space-x-2 py-4">
-          <div className="text-xs text-muted-foreground py-4 flex-1 ">
-            Display <strong>{table.getPaginationRowModel().rows.length}</strong>{" "}
-            of <strong>{data.length}</strong> items
+        <div className='flex items-center justify-end space-x-2 py-4'>
+          <div className='text-xs text-muted-foreground py-4 flex-1 '>
+            Display <strong>{table.getPaginationRowModel().rows.length}</strong> of <strong>{data.length}</strong> items
           </div>
           <div>
             <AutoPagination
               page={table.getState().pagination.pageIndex + 1}
               pageSize={table.getPageCount()}
-              pathname="/manage/accounts"
+              pathname='/manage/accounts'
             />
           </div>
         </div>
       </div>
     </AccountTableContext.Provider>
-  );
+  )
 }

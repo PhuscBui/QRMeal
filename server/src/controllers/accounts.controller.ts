@@ -137,7 +137,6 @@ export const getMeController = async (req: Request, res: Response) => {
 export const updateMeController = async (req: Request<ParamsDictionary, unknown, UpdateMeReqBody>, res: Response) => {
   const { account_id } = req.decoded_authorization as TokenPayload
   const body = req.body
-  console.log('body', body)
   const result = await accountsService.updateMe(account_id, body)
   res.json({
     message: USERS_MESSAGES.UPDATE_ME_SUCCESS,
