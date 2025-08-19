@@ -2,6 +2,7 @@ import { ObjectId } from 'mongodb'
 import { USERS_MESSAGES } from '~/constants/messages'
 import { Role } from '~/constants/type'
 import {
+  CreateCustomerReqBody,
   CreateEmployeeReqBody,
   CreateGuestReqBody,
   UpdateEmployeeReqBody,
@@ -15,6 +16,11 @@ import { hashPassword } from '~/utils/crypto'
 class AccountsService {
   async checkEmailExist(email: string) {
     const result = await databaseService.accounts.findOne({ email })
+    return Boolean(result)
+  }
+
+  async checkPhoneExist(phone: string) {
+    const result = await databaseService.accounts.findOne({ phone })
     return Boolean(result)
   }
 
@@ -84,6 +90,7 @@ class AccountsService {
         {
           $set: {
             name: _payload.name,
+            phone: _payload.phone,
             email: _payload.email,
             avatar: _payload.avatar || '',
             date_of_birth: _payload.date_of_birth as Date,
@@ -107,6 +114,7 @@ class AccountsService {
       {
         $set: {
           name: _payload.name,
+          phone: _payload.phone,
           email: _payload.email,
           avatar: _payload.avatar || '',
           date_of_birth: _payload.date_of_birth as Date
@@ -218,6 +226,28 @@ class AccountsService {
   async getGuestById(id: string) {
     const guest = await databaseService.guests.findOne({ _id: new ObjectId(id) })
     return guest
+  }
+
+  async createCustomer(payload: CreateCustomerReqBody) {
+    const result = await databaseService.accounts.insertOne(
+      new Account({
+        ...payload,
+        role: Role.Customer,
+        phone: payload.phone,
+        owner_id: null,
+        password: hashPassword(payload.password),
+        date_of_birth: new Date(payload.date_of_birth)
+      })
+    )
+    const user_id = result.insertedId.toString()
+    return await databaseService.accounts.findOne(
+      { _id: new ObjectId(user_id) },
+      {
+        projection: {
+          password: 0
+        }
+      }
+    )
   }
 }
 

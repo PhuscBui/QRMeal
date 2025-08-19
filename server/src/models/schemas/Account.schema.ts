@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb'
 interface AccountType {
   _id?: ObjectId
   name: string
+  phone: string
   email: string
   password: string
   avatar?: string
@@ -16,6 +17,7 @@ interface AccountType {
 export default class Account {
   _id?: ObjectId
   name: string
+  phone: string
   email: string
   password: string
   avatar?: string
@@ -29,6 +31,7 @@ export default class Account {
     const date = new Date()
     this._id = account._id
     this.name = account.name
+    this.phone = account.phone
     this.email = account.email
     this.password = account.password
     this.avatar = account.avatar || ''

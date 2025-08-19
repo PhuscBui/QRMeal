@@ -3,9 +3,19 @@ import { ParamsDictionary } from 'express-serve-static-core'
 
 export interface CreateEmployeeReqBody {
   name: string
+  phone: string
   email: string
   role: string
   owner_id: string
+  password: string
+  confirm_password: string
+  date_of_birth: string
+}
+
+export interface CreateCustomerReqBody {
+  name: string
+  phone: string
+  email: string
   password: string
   confirm_password: string
   date_of_birth: string
@@ -24,6 +34,7 @@ export interface DeleteEmployeeParam extends ParamsDictionary {
 
 export interface UpdateEmployeeReqBody {
   name: string
+  phone: string
   email: string
   avatar?: string
   date_of_birth?: string

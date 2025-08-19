@@ -94,28 +94,54 @@ const dateOfBirthSchema: ParamSchema = {
   }
 }
 
+const phoneSchema: ParamSchema = {
+  notEmpty: {
+    errorMessage: USERS_MESSAGES.PHONE_IS_REQUIRED
+  },
+  isString: {
+    errorMessage: USERS_MESSAGES.PHONE_MUST_BE_A_STRING
+  },
+  isLength: {
+    options: { min: 10, max: 11 },
+    errorMessage: USERS_MESSAGES.PHONE_LENGTH_MUST_BE_FROM_10_TO_11
+  },
+  trim: true,
+  custom: {
+    options: async (value) => {
+      const result = await accountsService.checkPhoneExist(value)
+      if (result) {
+        return Promise.reject(new Error(USERS_MESSAGES.PHONE_ALREADY_EXISTS))
+      }
+      return Promise.resolve()
+    }
+  }
+}
+
+const emailSchema: ParamSchema = {
+  isEmail: {
+    errorMessage: USERS_MESSAGES.EMAIL_IS_VALID
+  },
+  notEmpty: {
+    errorMessage: USERS_MESSAGES.EMAIL_IS_REQUIRED
+  },
+  trim: true,
+  custom: {
+    options: async (value) => {
+      const result = await accountsService.checkEmailExist(value)
+      if (result) {
+        return Promise.reject(new Error(USERS_MESSAGES.EMAIL_ALREADY_EXISTS))
+      }
+      return Promise.resolve()
+    }
+  }
+}
+
 export const createEmployeeValidator = validate(
   checkSchema(
     {
       name: nameSchema,
-      email: {
-        isEmail: {
-          errorMessage: USERS_MESSAGES.EMAIL_IS_VALID
-        },
-        notEmpty: {
-          errorMessage: USERS_MESSAGES.EMAIL_IS_REQUIRED
-        },
-        trim: true,
-        custom: {
-          options: async (value) => {
-            const result = await accountsService.checkEmailExist(value)
-            if (result) {
-              return Promise.reject(new Error(USERS_MESSAGES.EMAIL_ALREADY_EXISTS))
-            }
-            return Promise.resolve()
-          }
-        }
-      },
+      phone: phoneSchema,
+      email: emailSchema,
       password: passwordSchema,
       confirm_password: confirmPasswordSchema,
       date_of_birth: dateOfBirthSchema
@@ -129,24 +155,8 @@ export const updateEmployeeValidator = validate(
   checkSchema(
     {
       name: nameSchema,
-      email: {
-        isEmail: {
-          errorMessage: USERS_MESSAGES.EMAIL_IS_VALID
-        },
-        notEmpty: {
-          errorMessage: USERS_MESSAGES.EMAIL_IS_REQUIRED
-        },
-        trim: true,
-        custom: {
-          options: async (value, { req }) => {
-            const result = await databaseService.accounts.findOne({ email: value })
-            if (result && req.params && result._id.toString() !== req.params.id) {
-              return Promise.reject(new Error(USERS_MESSAGES.EMAIL_ALREADY_EXISTS))
-            }
-            return Promise.resolve()
-          }
-        }
-      },
+      phone: phoneSchema,
+      email: emailSchema,
       avatar: imageSchema,
       password: {
         optional: true,
@@ -196,6 +206,16 @@ export const updateMeValidator = validate(
         optional: true,
         notEmpty: undefined
       },
+      phone: {
+        ...phoneSchema,
+        optional: true,
+        notEmpty: undefined
+      },
+      email: {
+        ...emailSchema,
+        optional: true,
+        notEmpty: undefined
+      },
       date_of_birth: {
         ...dateOfBirthSchema,
         optional: true
@@ -236,4 +256,15 @@ export const changePasswordValidator = validate(
     },
     ['body']
   )
+)
+
+export const createCustomerValidator = validate(
+  checkSchema({
+    name: nameSchema,
+    email: emailSchema,
+    phone: phoneSchema,
+    password: passwordSchema,
+    confirm_password: confirmPasswordSchema,
+    date_of_birth: dateOfBirthSchema
+  })
 )

@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { GetDashboardQueryParams } from '~/models/requests/Dashboard.request'
 import databaseService from '~/services/databases.service'
-import { ObjectId } from 'mongodb'
 
 class DashboardService {
   private createDateMatchCondition(fromDate?: string, toDate?: string) {
@@ -19,30 +19,21 @@ class DashboardService {
 
   private async getTotalRevenue(matchCondition: any) {
     const result = await databaseService.revenues
-      .aggregate([
-        { $match: matchCondition },
-        { $group: { _id: null, total: { $sum: '$total_amount' } } }
-      ])
+      .aggregate([{ $match: matchCondition }, { $group: { _id: null, total: { $sum: '$total_amount' } } }])
       .toArray()
     return result[0]?.total || 0
   }
 
   private async getTotalOrders(matchCondition: any) {
     const result = await databaseService.orders
-      .aggregate([
-        { $match: matchCondition },
-        { $group: { _id: null, count: { $sum: 1 } } }
-      ])
+      .aggregate([{ $match: matchCondition }, { $group: { _id: null, count: { $sum: 1 } } }])
       .toArray()
     return result[0]?.count || 0
   }
 
   private async getNewCustomers(matchCondition: any) {
     const result = await databaseService.guests
-      .aggregate([
-        { $match: matchCondition },
-        { $group: { _id: null, count: { $sum: 1 } } }
-      ])
+      .aggregate([{ $match: matchCondition }, { $group: { _id: null, count: { $sum: 1 } } }])
       .toArray()
     return result[0]?.count || 0
   }
@@ -50,74 +41,80 @@ class DashboardService {
   private async getTimeStats(matchCondition: any) {
     const [orders, revenues, visitors] = await Promise.all([
       // Get orders by date
-      databaseService.orders.aggregate([
-        { $match: matchCondition },
-        {
-          $group: {
-            _id: {
-              $dateToString: { format: '%Y-%m-%d', date: '$created_at' }
-            },
-            orders: { $sum: 1 }
+      databaseService.orders
+        .aggregate([
+          { $match: matchCondition },
+          {
+            $group: {
+              _id: {
+                $dateToString: { format: '%Y-%m-%d', date: '$created_at' }
+              },
+              orders: { $sum: 1 }
+            }
+          },
+          { $sort: { _id: 1 } },
+          {
+            $project: {
+              _id: 0,
+              date: '$_id',
+              orders: 1
+            }
           }
-        },
-        { $sort: { _id: 1 } },
-        {
-          $project: {
-            _id: 0,
-            date: '$_id',
-            orders: 1
-          }
-        }
-      ]).toArray(),
+        ])
+        .toArray(),
 
       // Get revenues by date
-      databaseService.revenues.aggregate([
-        { $match: matchCondition },
-        {
-          $group: {
-            _id: {
-              $dateToString: { format: '%Y-%m-%d', date: '$created_at' }
-            },
-            revenue: { $sum: '$total_amount' }
+      databaseService.revenues
+        .aggregate([
+          { $match: matchCondition },
+          {
+            $group: {
+              _id: {
+                $dateToString: { format: '%Y-%m-%d', date: '$created_at' }
+              },
+              revenue: { $sum: '$total_amount' }
+            }
+          },
+          { $sort: { _id: 1 } },
+          {
+            $project: {
+              _id: 0,
+              date: '$_id',
+              revenue: 1
+            }
           }
-        },
-        { $sort: { _id: 1 } },
-        {
-          $project: {
-            _id: 0,
-            date: '$_id',
-            revenue: 1
-          }
-        }
-      ]).toArray(),
+        ])
+        .toArray(),
 
       // Get visitors by date
-      databaseService.guests.aggregate([
-        { $match: matchCondition },
-        {
-          $group: {
-            _id: {
-              $dateToString: { format: '%Y-%m-%d', date: '$created_at' }
-            },
-            visitors: { $sum: 1 }
+      databaseService.guests
+        .aggregate([
+          { $match: matchCondition },
+          {
+            $group: {
+              _id: {
+                $dateToString: { format: '%Y-%m-%d', date: '$created_at' }
+              },
+              visitors: { $sum: 1 }
+            }
+          },
+          { $sort: { _id: 1 } },
+          {
+            $project: {
+              _id: 0,
+              date: '$_id',
+              visitors: 1
+            }
           }
-        },
-        { $sort: { _id: 1 } },
-        {
-          $project: {
-            _id: 0,
-            date: '$_id',
-            visitors: 1
-          }
-        }
-      ]).toArray()
+        ])
+        .toArray()
     ])
 
     // Merge the stats by date
     const dateMap = new Map()
-    
-    ;[orders, revenues, visitors].forEach(statArray => {
-      statArray.forEach(stat => {
+
+    ;[orders, revenues, visitors].forEach((statArray) => {
+      statArray.forEach((stat) => {
         if (!dateMap.has(stat.date)) {
           dateMap.set(stat.date, { date: stat.date, orders: 0, revenue: 0, visitors: 0 })
         }
@@ -148,14 +145,7 @@ class DashboardService {
   async getIndicators(query: GetDashboardQueryParams) {
     const matchCondition = this.createDateMatchCondition(query.fromDate, query.toDate)
 
-    const [
-      totalRevenue,
-      totalOrders,
-      newCustomers,
-      activeAccounts,
-      timeStats,
-      qrCodes
-    ] = await Promise.all([
+    const [totalRevenue, totalOrders, newCustomers, activeAccounts, timeStats, qrCodes] = await Promise.all([
       this.getTotalRevenue(matchCondition),
       this.getTotalOrders(matchCondition),
       this.getNewCustomers(matchCondition),
@@ -179,4 +169,4 @@ class DashboardService {
 }
 
 const dashboardService = new DashboardService()
-export default dashboardService 
+export default dashboardService

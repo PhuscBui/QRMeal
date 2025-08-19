@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import {
   changePasswordController,
+  createCustomerController,
   createEmployeeController,
   createGuestController,
   deleteEmployeeController,
@@ -14,6 +15,7 @@ import {
 } from '~/controllers/accounts.controller'
 import {
   changePasswordValidator,
+  createCustomerValidator,
   createEmployeeValidator,
   isAdminValidator,
   isEmployeeValidator,
@@ -148,5 +150,13 @@ accountsRouter.get('/guests', accessTokenValidator, isEmployeeValidator, wrapReq
  * Method: GET
  */
 accountsRouter.get('/guests/:id', accessTokenValidator, wrapRequestHandler(getGuestByIdController))
+
+/**
+ * Description. Create customer account
+ * Path:  /customers
+ * Method: POST
+ * Request: Body : CustomerBody
+ */
+accountsRouter.post('/customers', createCustomerValidator, wrapRequestHandler(createCustomerController))
 
 export default accountsRouter
