@@ -49,6 +49,26 @@ const menuItems: {
     role: [Role.Guest]
   },
   {
+    title: 'Booking',
+    href: '/customer/booking',
+    role: [Role.Customer]
+  },
+  {
+    title: 'Promotions',
+    href: '/customer/promotions',
+    role: [Role.Customer]
+  },
+  {
+    title: 'Menu',
+    href: '/customer/menu',
+    role: [Role.Customer]
+  },
+  {
+    title: 'Orders',
+    href: '/customer/orders',
+    role: [Role.Customer]
+  },
+  {
     title: 'Login by Employee',
     href: '/login',
     hideWhenLogin: true

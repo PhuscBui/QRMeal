@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
-import { TimePickerDemo } from '@/app/(public)/booking/time-picker'
+import { TimePickerDemo } from '@/app/(public)/booking-tables/time-picker'
 import { useReserveTableMutation } from '@/queries/useTable'
 import {
   Dialog,
