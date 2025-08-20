@@ -2,8 +2,7 @@ import { ObjectId } from 'mongodb'
 
 interface OrderType {
   _id?: ObjectId
-  guest_id: ObjectId | null
-  table_number: number | null
+  order_group_id: ObjectId
   dish_snapshot_id: ObjectId | null
   quantity: number
   order_handler_id: ObjectId | null
@@ -14,8 +13,7 @@ interface OrderType {
 
 export default class Order {
   _id?: ObjectId
-  guest_id: ObjectId | null
-  table_number: number | null
+  order_group_id: ObjectId
   dish_snapshot_id: ObjectId | null
   quantity: number
   order_handler_id: ObjectId | null
@@ -26,8 +24,7 @@ export default class Order {
   constructor(order: OrderType) {
     const date = new Date()
     this._id = order._id
-    this.guest_id = order.guest_id
-    this.table_number = order.table_number
+    this.order_group_id = order.order_group_id
     this.dish_snapshot_id = order.dish_snapshot_id
     this.quantity = order.quantity
     this.order_handler_id = order.order_handler_id

@@ -37,6 +37,7 @@ export const envConfig = {
   initialEmailOwner: process.env.INITIAL_EMAIL_OWNER as string,
   initialPasswordOwner: process.env.INITIAL_PASSWORD_OWNER as string,
   initialDateOfBirthOwner: process.env.INITIAL_DATE_OF_BIRTH_OWNER as string,
+  initialShipperInfo: process.env.INITIAL_SHIPPER_INFO as string,
 
   passwordSecret: process.env.PASSWORD_SECRET as string,
   jwtSecret: process.env.JWT_SECRET as string,

@@ -2,34 +2,43 @@ import { Request, Response } from 'express'
 import { ParamsDictionary } from 'express-serve-static-core'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { ORDERS_MESSAGE } from '~/constants/messages'
-import { ManagerRoom } from '~/constants/type'
+import { ManagerRoom, Role } from '~/constants/type'
 import { TokenPayload } from '~/models/requests/Account.request'
 import {
-  CreateOrdersReqBody,
+  CreateOrderGroupReqBody,
   GetOrdersQueryParams,
+  OrderGroupParam,
   OrderParam,
-  PayGuestOrdersReqBody,
-  UpdateOrderReqBody
+  PayOrdersReqBody,
+  UpdateOrderReqBody,
+  UpdateDeliveryStatusReqBody
 } from '~/models/requests/Order.request'
 import ordersService from '~/services/orders.service'
 import socketService from '~/utils/socket'
 
-export const createOrdersController = async (
-  req: Request<ParamsDictionary, unknown, CreateOrdersReqBody>,
+export const createOrderGroupController = async (
+  req: Request<ParamsDictionary, unknown, CreateOrderGroupReqBody>,
   res: Response
 ) => {
-  const { account_id } = req.decoded_authorization as TokenPayload
+  const { account_id, role } = req.decoded_authorization as TokenPayload
 
-  const { socketId, orders } = await ordersService.createOrders(account_id, req.body)
+  if (role === Role.Customer) {
+    req.body.customer_id = account_id
+  }
+
+  const { socketId, orderGroup, orders } = await ordersService.createOrderGroup(account_id, req.body)
+
+  const eventData = { orderGroup, orders }
 
   if (socketId) {
-    socketService.getIO().to(ManagerRoom).to(socketId).emit('new-order', orders)
+    socketService.getIO().to(ManagerRoom).to(socketId).emit('new-order', eventData)
   } else {
-    socketService.emitToRoom(ManagerRoom, 'new-order', orders)
+    socketService.emitToRoom(ManagerRoom, 'new-order', eventData)
   }
+
   res.status(HTTP_STATUS.CREATED).json({
     message: ORDERS_MESSAGE.ORDER_CREATE_SUCCESS,
-    result: orders
+    result: eventData
   })
 }
 
@@ -37,19 +46,19 @@ export const getOrdersController = async (
   req: Request<ParamsDictionary, unknown, unknown, GetOrdersQueryParams>,
   res: Response
 ) => {
-  const orders = await ordersService.getOrders(req.query)
+  const orderGroups = await ordersService.getOrders(req.query)
   res.status(HTTP_STATUS.OK).json({
     message: ORDERS_MESSAGE.ORDER_GET_SUCCESS,
-    result: orders
+    result: orderGroups
   })
 }
 
-export const getOrderDetailController = async (req: Request<OrderParam>, res: Response) => {
-  const order = await ordersService.getOrderDetail(req.params.order_id)
+export const getOrderGroupDetailController = async (req: Request<OrderGroupParam>, res: Response) => {
+  const orderGroup = await ordersService.getOrderGroupDetail(req.params.order_group_id)
 
   res.status(HTTP_STATUS.OK).json({
     message: ORDERS_MESSAGE.ORDER_GET_SUCCESS,
-    result: order
+    result: orderGroup
   })
 }
 
@@ -64,31 +73,63 @@ export const updateOrderController = async (req: Request<OrderParam, unknown, Up
   if (socketId) {
     socketService.getIO().to(ManagerRoom).to(socketId).emit('update-order', order)
   } else {
-    console.log('emit to room')
     socketService.emitToRoom(ManagerRoom, 'update-order', order)
   }
 
   res.status(HTTP_STATUS.OK).json({
-    message: ORDERS_MESSAGE.ORDER_GET_SUCCESS,
+    message: ORDERS_MESSAGE.ORDER_UPDATE_SUCCESS,
     result: order
   })
 }
 
-export const payOrdersController = async (
-  req: Request<ParamsDictionary, unknown, PayGuestOrdersReqBody>,
-  res: Response
-) => {
+export const payOrdersController = async (req: Request<ParamsDictionary, unknown, PayOrdersReqBody>, res: Response) => {
   const { account_id } = req.decoded_authorization as TokenPayload
-  const { socketId, orders } = await ordersService.payOrders(req.body.guestId, account_id)
+  const { customer_id, guest_id, is_customer = false } = req.body
+
+  if (!customer_id && !guest_id) {
+    res.status(HTTP_STATUS.BAD_REQUEST).json({
+      message: ORDERS_MESSAGE.CUSTOMER_OR_GUEST_REQUIRED
+    })
+    return
+  }
+
+  const customerOrGuestId = customer_id || guest_id!
+  const { socketId, orderGroups } = await ordersService.payOrders(customerOrGuestId, account_id, is_customer)
 
   if (socketId) {
-    socketService.getIO().to(socketId).to(ManagerRoom).emit('payment', orders)
+    socketService.getIO().to(socketId).to(ManagerRoom).emit('payment', orderGroups)
   } else {
-    socketService.emitToRoom(ManagerRoom, 'payment', orders)
+    socketService.emitToRoom(ManagerRoom, 'payment', orderGroups)
   }
 
   res.status(HTTP_STATUS.OK).json({
     message: ORDERS_MESSAGE.ORDER_PAY_SUCCESS,
-    result: orders
+    result: orderGroups
+  })
+}
+
+export const updateDeliveryStatusController = async (
+  req: Request<OrderGroupParam, unknown, UpdateDeliveryStatusReqBody>,
+  res: Response
+) => {
+  const { delivery_status, shipper_info, estimated_time } = req.body
+  const estimatedTimeDate = estimated_time ? new Date(estimated_time) : undefined
+
+  const { socketId, orderGroup } = await ordersService.updateDeliveryStatus(
+    req.params.order_group_id,
+    delivery_status,
+    shipper_info,
+    estimatedTimeDate
+  )
+
+  if (socketId) {
+    socketService.getIO().to(socketId).to(ManagerRoom).emit('delivery-status-update', orderGroup)
+  } else {
+    socketService.emitToRoom(ManagerRoom, 'delivery-status-update', orderGroup)
+  }
+
+  res.status(HTTP_STATUS.OK).json({
+    message: ORDERS_MESSAGE.DELIVERY_STATUS_UPDATE_SUCCESS,
+    result: orderGroup
   })
 }

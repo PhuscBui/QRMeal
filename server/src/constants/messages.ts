@@ -112,7 +112,8 @@ export const TABLES_MESSAGES = {
   TABLE_IS_RESERVED_PLEASE_CHOOSE_ANOTHER_TABLE: 'Table is reserved, please choose another table',
   RESERVATION_TIME_IS_REQUIRED: 'Reservation time is required',
   NOTE_MUST_BE_A_STRING: 'Note must be a string',
-  GUEST_ID_IS_REQUIRED: 'Guest ID is required'
+  GUEST_ID_IS_REQUIRED: 'Guest ID is required',
+  TABLE_IS_OCCUPIED_PLEASE_CHOOSE_ANOTHER_TABLE: 'Table is occupied, please choose another table'
 } as const
 
 export const COMMON_MESSAGES = {
@@ -136,12 +137,19 @@ export const COMMON_MESSAGES = {
 } as const
 
 export const ORDERS_MESSAGE = {
+  DELIVERY_STATUS_UPDATE_SUCCESS: 'Delivery status update success',
+  ORDER_UPDATE_SUCCESS: 'Order update success',
   ORDER_CREATE_SUCCESS: 'Order create success',
   ORDER_NOT_FOUND: 'Order not found',
   ORDER_GET_SUCCESS: 'Order get success',
   NO_ORDERS_TO_PAY: 'No orders to pay',
   ORDER_PAY_SUCCESS: 'Order pay success',
-  GUEST_NOT_FOUND: 'Guest not found'
+  GUEST_NOT_FOUND: 'Guest not found',
+  CUSTOMER_NOT_FOUND: 'Customer not found',
+  CUSTOMER_OR_GUEST_REQUIRED: 'Either customer_id or guest_id is required',
+  DELIVERY_INFO_REQUIRED: 'Delivery information is required',
+  ORDER_GROUP_NOT_FOUND: 'Order group not found',
+  ORDER_IS_NOT_DELIVERY: 'Order is not a delivery order'
 } as const
 
 export const PROMOTIONS_MESSAGE = {
@@ -161,7 +169,7 @@ export const PROMOTIONS_MESSAGE = {
   DISCOUNT_TYPE_IS_REQUIRED: 'Discount type is required',
   DISCOUNT_TYPE_MUST_BE_A_STRING: 'Discount type must be a string',
   DISCOUNT_TYPE_LENGTH_MUST_BE_GREATER_THAN_0: 'Discount type length must be greater than 0',
-  DISCOUNT_TYPE_MUST_BE_DISCOUNT_OR_LOYALTYPOINTS_OR_FREEITEM_OR_PERCENT:
+  DISCOUNT_TYPE_MUST_BE_DISCOUNT_OR_LOYALTY_POINTS_OR_FREE_ITEM_OR_PERCENT:
     'Discount type must be discount, loyalty points or free item or percent',
   DISCOUNT_VALUE_IS_REQUIRED: 'Discount value is required',
   DISCOUNT_VALUE_MUST_BE_A_NUMBER: 'Discount value must be a number',

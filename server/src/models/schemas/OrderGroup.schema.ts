@@ -2,26 +2,29 @@ import { ObjectId } from 'mongodb'
 
 interface OrderGroupType {
   _id?: ObjectId
-  guest_id: ObjectId
-  table_number?: string
-  order_type: 'dine_in' | 'takeaway' | 'delivery'
-  status: 'pending' | 'preparing' | 'completed' | 'canceled'
+  customer_id?: ObjectId | null
+  guest_id?: ObjectId | null
+  table_number?: number | null
+  order_type: string
+  status: string
   created_at?: Date
   updated_at?: Date
 }
 
 export default class OrderGroup {
   _id?: ObjectId
-  guest_id: ObjectId
-  table_number?: string
-  order_type: 'dine_in' | 'takeaway' | 'delivery'
-  status: 'pending' | 'preparing' | 'completed' | 'canceled'
+  customer_id?: ObjectId | null
+  guest_id?: ObjectId | null
+  table_number?: number | null
+  order_type: string
+  status: string
   created_at?: Date
   updated_at?: Date
 
   constructor(orderGroup: OrderGroupType) {
     const date = new Date()
     this._id = orderGroup._id
+    this.customer_id = orderGroup.customer_id
     this.guest_id = orderGroup.guest_id
     this.table_number = orderGroup.table_number
     this.order_type = orderGroup.order_type

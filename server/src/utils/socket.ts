@@ -21,7 +21,7 @@ class SocketService {
   }
 
   public async initialize(httpServer: ServerHttp, corsOrigin: string = envConfig.clientUrl): Promise<void> {
-    console.log('🚀 Initializing WebSocket Server...') // Thêm log kiểm tra
+    console.log('🚀 Initializing WebSocket Server...')
     this.io = new Server(httpServer, {
       cors: {
         origin: corsOrigin
@@ -32,7 +32,7 @@ class SocketService {
     this.io.use(async (socket: Socket, next) => {
       const { Authorization } = socket.handshake.auth
       if (!Authorization) {
-        return next(new Error('Authorization không hợp lệ'))
+        return next(new Error('Invalid authorization'))
       }
 
       const accessToken = Authorization.split(' ')[1]
@@ -48,6 +48,18 @@ class SocketService {
           // Handle guest socket connection
           await databaseService.sockets.updateOne(
             { guest_id: new ObjectId(account_id) },
+            {
+              $set: {
+                socketId: socket.id,
+                updatedAt: new Date()
+              }
+            },
+            { upsert: true }
+          )
+        } else if (role === Role.Customer) {
+          // Handle customer socket connection
+          await databaseService.sockets.updateOne(
+            { customer_id: new ObjectId(account_id) },
             {
               $set: {
                 socketId: socket.id,
@@ -75,6 +87,7 @@ class SocketService {
 
         // Attach decoded token to socket for future use
         socket.handshake.auth.decodedAccessToken = decodedAccessToken
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         return next(error)
       }

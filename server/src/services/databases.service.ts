@@ -2,6 +2,7 @@ import { Collection, Db, MongoClient } from 'mongodb'
 import { envConfig } from '~/config'
 import Account from '~/models/schemas/Account.schema'
 import Category from '~/models/schemas/Category.schema'
+import Delivery from '~/models/schemas/Delivery.schema'
 import Dish from '~/models/schemas/Dish.schema'
 import DishReview from '~/models/schemas/DishReview.schema'
 import DishSnapshot from '~/models/schemas/DishSnapshot.schema'
@@ -9,6 +10,7 @@ import Guest from '~/models/schemas/Guest.schema'
 import GuestLoyalty from '~/models/schemas/GuestLoyalty.schema'
 import GuestPromotion from '~/models/schemas/GuestPromotion.schema'
 import Order from '~/models/schemas/Order.schema'
+import OrderGroup from '~/models/schemas/OrderGroup.schema'
 import Promotion from '~/models/schemas/Promotion.schema'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import Revenue from '~/models/schemas/Revenue.schema'
@@ -92,6 +94,14 @@ class DatabaseService {
 
   get dishReviews(): Collection<DishReview> {
     return this.db.collection(envConfig.dbDishReviewsCollection)
+  }
+
+  get deliveries(): Collection<Delivery> {
+    return this.db.collection(envConfig.dbDeliveriesCollection)
+  }
+
+  get orderGroups(): Collection<OrderGroup> {
+    return this.db.collection(envConfig.dbOrderGroupsCollection)
   }
 
   get clientInstance(): MongoClient {

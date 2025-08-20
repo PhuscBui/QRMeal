@@ -6,7 +6,7 @@ interface DeliveryType {
   address: string
   receiver_name: string
   receiver_phone: string
-  delivery_status: 'preparing' | 'shipping' | 'delivered' | 'canceled'
+  delivery_status: string
   shipper_info?: string
   estimated_time?: Date
   created_at?: Date
@@ -19,7 +19,7 @@ export default class Delivery {
   address: string
   receiver_name: string
   receiver_phone: string
-  delivery_status: 'preparing' | 'shipping' | 'delivered' | 'canceled'
+  delivery_status: string
   shipper_info?: string
   estimated_time?: Date
   created_at?: Date
