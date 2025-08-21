@@ -352,6 +352,18 @@ class GuestsService {
         },
         {
           $unwind: {
+            path: '$delivery',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $unwind: {
+            path: '$guest',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $unwind: {
             path: '$orders',
             preserveNullAndEmptyArrays: false
           }

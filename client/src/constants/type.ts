@@ -12,7 +12,7 @@ export const Role = {
   Customer: 'Customer'
 } as const
 
-export const RoleValues = [Role.Owner, Role.Employee, Role.Guest, Role.Customer] as const
+export const RoleValues = [Role.Owner, Role.Employee, Role.Guest] as const
 
 export const DishStatus = {
   Available: 'Available',
@@ -24,6 +24,7 @@ export const DishStatusValues = [DishStatus.Available, DishStatus.Unavailable, D
 
 export const TableStatus = {
   Available: 'Available',
+  Occupied: 'Occupied',
   Hidden: 'Hidden',
   Reserved: 'Reserved'
 } as const
@@ -33,17 +34,17 @@ export const TableStatusValues = [TableStatus.Available, TableStatus.Hidden, Tab
 export const OrderStatus = {
   Pending: 'Pending',
   Processing: 'Processing',
-  Rejected: 'Rejected',
   Delivered: 'Delivered',
-  Paid: 'Paid'
+  Paid: 'Paid',
+  Cancelled: 'Cancelled'
 } as const
 
 export const OrderStatusValues = [
   OrderStatus.Pending,
   OrderStatus.Processing,
-  OrderStatus.Rejected,
   OrderStatus.Delivered,
-  OrderStatus.Paid
+  OrderStatus.Paid,
+  OrderStatus.Cancelled
 ] as const
 
 export const ManagerRoom = 'manager' as const
@@ -60,4 +61,33 @@ export const PromotionTypeValues = [
   PromotionType.LoyaltyPoints,
   PromotionType.Percent,
   PromotionType.FreeItem
+] as const
+
+export const AuthorType = {
+  Customer: 'Customer',
+  Guest: 'Guest'
+} as const
+
+export const AuthorTypeValues = [AuthorType.Customer, AuthorType.Guest] as const
+
+export const OrderType = {
+  Takeaway: 'take-away',
+  Delivery: 'delivery',
+  DineIn: 'dine-in'
+} as const
+
+export const OrderTypeValues = [OrderType.Takeaway, OrderType.Delivery, OrderType.DineIn] as const
+
+export const DeliveryStatus = {
+  Pending: 'Pending',
+  Shipping: 'Shipping',
+  Delivered: 'Delivered',
+  Canceled: 'Canceled'
+} as const
+
+export const DeliveryStatusValues = [
+  DeliveryStatus.Pending,
+  DeliveryStatus.Shipping,
+  DeliveryStatus.Delivered,
+  DeliveryStatus.Canceled
 ] as const

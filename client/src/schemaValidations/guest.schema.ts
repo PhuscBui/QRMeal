@@ -1,5 +1,5 @@
 import { RoleValues } from '@/constants/type'
-import { OrderSchema } from '@/schemaValidations/order.schema'
+import { OrderGroupSchema, OrderSchema } from '@/schemaValidations/order.schema'
 import z from 'zod'
 
 const phoneRegex = new RegExp(/^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/)
@@ -45,12 +45,26 @@ export type GuestCreateOrdersBodyType = z.TypeOf<typeof GuestCreateOrdersBody>
 
 export const GuestCreateOrdersRes = z.object({
   message: z.string(),
-  result: z.array(OrderSchema)
+  result: z.object({
+    orderGroup: OrderGroupSchema.omit({
+      orders: true,
+      created_at: true,
+      updated_at: true,
+      table: true,
+      guest: true,
+      customer: true,
+      customer_id: true
+    }),
+    orders: z.array(OrderSchema)
+  })
 })
 
 export type GuestCreateOrdersResType = z.TypeOf<typeof GuestCreateOrdersRes>
 
-export const GuestGetOrdersRes = GuestCreateOrdersRes
+export const GuestGetOrdersRes = z.object({
+  message: z.string(),
+  result: z.array(OrderGroupSchema)
+})
 
 export type GuestGetOrdersResType = z.TypeOf<typeof GuestGetOrdersRes>
 

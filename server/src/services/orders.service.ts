@@ -203,16 +203,7 @@ class OrdersService {
                   as: 'order_handler'
                 }
               },
-              { $unwind: { path: '$order_handler', preserveNullAndEmptyArrays: true } },
-              {
-                $lookup: {
-                  from: 'order_groups',
-                  localField: 'order_group_id',
-                  foreignField: '_id',
-                  as: 'order_group'
-                }
-              },
-              { $unwind: '$order_group' }
+              { $unwind: { path: '$order_handler', preserveNullAndEmptyArrays: true } }
             ],
             { session }
           )
@@ -306,11 +297,23 @@ class OrdersService {
           }
         },
         {
+          $unwind: {
+            path: '$delivery',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
           $lookup: {
-            from: 'customers',
+            from: 'accounts',
             localField: 'customer_id',
             foreignField: '_id',
             as: 'customer'
+          }
+        },
+        {
+          $unwind: {
+            path: '$customer',
+            preserveNullAndEmptyArrays: true
           }
         },
         {
@@ -319,6 +322,12 @@ class OrdersService {
             localField: 'guest_id',
             foreignField: '_id',
             as: 'guest'
+          }
+        },
+        {
+          $unwind: {
+            path: '$guest',
+            preserveNullAndEmptyArrays: true
           }
         },
         {
@@ -371,8 +380,7 @@ class OrdersService {
         {
           $project: {
             customer: {
-              refresh_token: 0,
-              refresh_token_exp: 0
+              password: 0
             },
             guest: {
               refresh_token: 0,
@@ -673,10 +681,16 @@ class OrdersService {
         { $unwind: '$order_group' },
         {
           $lookup: {
-            from: 'customers',
+            from: 'accounts',
             localField: 'order_group.customer_id',
             foreignField: '_id',
             as: 'customer'
+          }
+        },
+        {
+          $unwind: {
+            path: '$customer',
+            preserveNullAndEmptyArrays: true
           }
         },
         {
@@ -688,10 +702,15 @@ class OrdersService {
           }
         },
         {
+          $unwind: {
+            path: '$guest',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
           $project: {
             customer: {
-              refresh_token: 0,
-              refresh_token_exp: 0
+              password: 0
             },
             guest: {
               refresh_token: 0,

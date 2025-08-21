@@ -22,7 +22,7 @@ ordersRouter.get('', accessTokenValidator, wrapRequestHandler(getOrdersControlle
 ordersRouter.get('/group/:order_group_id', accessTokenValidator, wrapRequestHandler(getOrderGroupDetailController))
 
 // Update individual order
-ordersRouter.put('/order/:order_id', accessTokenValidator, wrapRequestHandler(updateOrderController))
+ordersRouter.put('/:order_id', accessTokenValidator, wrapRequestHandler(updateOrderController))
 
 // Pay orders for a customer or guest
 ordersRouter.post('/pay', accessTokenValidator, wrapRequestHandler(payOrdersController))
