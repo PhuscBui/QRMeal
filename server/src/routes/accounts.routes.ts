@@ -6,6 +6,7 @@ import {
   createGuestController,
   deleteEmployeeController,
   getAccountsController,
+  getCustomersController,
   getEmployeeAccountController,
   getGuestByIdController,
   getGuestsController,
@@ -158,5 +159,12 @@ accountsRouter.get('/guests/:id', accessTokenValidator, wrapRequestHandler(getGu
  * Request: Body : CustomerBody
  */
 accountsRouter.post('/customers', createCustomerValidator, wrapRequestHandler(createCustomerController))
+
+/**
+ * Description. Get all customers
+ * Path:  /customers
+ * Method: GET
+ */
+accountsRouter.get('/customers', accessTokenValidator, isEmployeeValidator, wrapRequestHandler(getCustomersController))
 
 export default accountsRouter

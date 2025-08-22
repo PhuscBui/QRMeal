@@ -1,9 +1,15 @@
 import { ObjectId } from 'mongodb'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { TABLES_MESSAGES } from '~/constants/messages'
-import { TableStatus } from '~/constants/type'
+import { Role, TableStatus } from '~/constants/type'
 import { ErrorWithStatus } from '~/models/Error'
-import { CancelReservationReqBody, CreateTableReqBody, ReserveTableReqBody, UpdateTableReqBody } from '~/models/requests/Table.request'
+import {
+  CancelReservationReqBody,
+  CreateTableReqBody,
+  ReserveTableReqBody,
+  UpdateStatusTableReqBody,
+  UpdateTableReqBody
+} from '~/models/requests/Table.request'
 import { Table } from '~/models/schemas/Table.schema'
 import { TableReservation } from '~/models/schemas/TableReservation.schema'
 import databaseService from '~/services/databases.service'
@@ -39,7 +45,6 @@ class TablesService {
   }
 
   async updateTable(number: number, payload: UpdateTableReqBody) {
-    console.log(payload);
     if (payload.changeToken) {
       const token = randomId()
       const [table] = await Promise.all([
@@ -104,11 +109,24 @@ class TablesService {
         status: HTTP_STATUS.BAD_REQUEST
       })
     }
-    const reservation = new TableReservation({
-      guest_id: new ObjectId(payload.guest_id),
-      reservation_time: payload.reservation_time,
-      note: payload.note
-    })
+
+    let reservation: TableReservation | null = null
+    if (payload.is_customer) {
+      reservation = new TableReservation({
+        customer_id: new ObjectId(payload.customer_id),
+        reservation_time: payload.reservation_time,
+        note: payload.note,
+        is_customer: true
+      })
+    } else {
+      reservation = new TableReservation({
+        guest_id: new ObjectId(payload.guest_id),
+        reservation_time: payload.reservation_time,
+        note: payload.note,
+        is_customer: false
+      })
+    }
+
     const result = await databaseService.tables.findOneAndUpdate(
       { number: payload.table_number, token: payload.token },
       { $set: { reservation, status: TableStatus.Reserved }, $currentDate: { updated_at: true } },
@@ -117,7 +135,7 @@ class TablesService {
     return result
   }
 
-  async cancelReservation(payload: CancelReservationReqBody) {
+  async cancelReservation(payload: CancelReservationReqBody, account_id: string, role: string) {
     const table = await databaseService.tables.findOne({ number: payload.table_number, token: payload.token })
     if (!table) {
       throw new ErrorWithStatus({
@@ -126,7 +144,33 @@ class TablesService {
       })
     }
 
-    if (table.reservation?.guest_id.toString() !== payload.guest_id) {
+    if (!table.reservation) {
+      throw new ErrorWithStatus({
+        message: TABLES_MESSAGES.TABLE_NOT_RESERVED,
+        status: HTTP_STATUS.BAD_REQUEST
+      })
+    }
+
+    if (
+      table.reservation.is_customer &&
+      table.reservation.customer_id &&
+      table.reservation.customer_id.toString() !== account_id &&
+      role !== Role.Employee &&
+      role !== Role.Owner
+    ) {
+      throw new ErrorWithStatus({
+        message: TABLES_MESSAGES.YOU_ARE_NOT_ALLOWED_TO_CANCEL_THIS_RESERVATION,
+        status: HTTP_STATUS.BAD_REQUEST
+      })
+    }
+
+    if (
+      !table.reservation.is_customer &&
+      table.reservation.guest_id &&
+      table.reservation.guest_id.toString() !== account_id &&
+      role !== Role.Employee &&
+      role !== Role.Owner
+    ) {
       throw new ErrorWithStatus({
         message: TABLES_MESSAGES.YOU_ARE_NOT_ALLOWED_TO_CANCEL_THIS_RESERVATION,
         status: HTTP_STATUS.BAD_REQUEST
@@ -136,6 +180,41 @@ class TablesService {
     return await databaseService.tables.findOneAndUpdate(
       { number: payload.table_number, token: payload.token },
       { $set: { reservation: null, status: TableStatus.Available }, $currentDate: { updated_at: true } },
+      { returnDocument: 'after' }
+    )
+  }
+
+  async updateStatusTable(account_id: string, role: string, number: number, payload: UpdateStatusTableReqBody) {
+    const table = await databaseService.tables.findOne({ number })
+
+    if (
+      table?.reservation &&
+      table?.reservation?.customer_id?.toString() !== account_id &&
+      table?.reservation?.guest_id?.toString() !== account_id &&
+      role !== Role.Employee &&
+      role !== Role.Owner
+    ) {
+      throw new ErrorWithStatus({
+        message: TABLES_MESSAGES.YOU_ARE_NOT_ALLOWED_TO_UPDATE_THIS_TABLE_STATUS,
+        status: HTTP_STATUS.BAD_REQUEST
+      })
+    }
+
+    if (!table) {
+      throw new ErrorWithStatus({
+        message: TABLES_MESSAGES.TABLE_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
+    }
+    if (table.status === payload.status) {
+      throw new ErrorWithStatus({
+        message: TABLES_MESSAGES.TABLE_STATUS_NOT_CHANGED,
+        status: HTTP_STATUS.BAD_REQUEST
+      })
+    }
+    return await databaseService.tables.findOneAndUpdate(
+      { number },
+      { $set: { status: payload.status, reservation: null }, $currentDate: { updated_at: true } },
       { returnDocument: 'after' }
     )
   }

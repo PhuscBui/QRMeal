@@ -164,7 +164,10 @@ class GuestsService {
       })
     }
 
-    if (table.status === TableStatus.Reserved && table.reservation?.guest_id.toString() !== guest._id.toString()) {
+    if (
+      table.status === TableStatus.Reserved &&
+      (!table.reservation?.guest_id || table.reservation.guest_id.toString() !== guest._id.toString())
+    ) {
       throw new ErrorWithStatus({
         message: TABLES_MESSAGES.TABLE_IS_RESERVED_PLEASE_CHOOSE_ANOTHER_TABLE,
         status: HTTP_STATUS.BAD_REQUEST
@@ -175,6 +178,13 @@ class GuestsService {
 
     try {
       session.startTransaction()
+
+      // Update table status
+      await databaseService.tables.updateOne(
+        { number: guest.table_number },
+        { $set: { status: TableStatus.Occupied, reservation: null }, $currentDate: { updated_at: true } },
+        { session }
+      )
 
       // Create order group for the guest
       const orderGroup = await databaseService.orderGroups.insertOne(
@@ -262,33 +272,7 @@ class GuestsService {
                   as: 'order_handler'
                 }
               },
-              { $unwind: { path: '$order_handler', preserveNullAndEmptyArrays: true } },
-              {
-                $lookup: {
-                  from: 'order_groups',
-                  localField: 'order_group_id',
-                  foreignField: '_id',
-                  as: 'order_group'
-                }
-              },
-              { $unwind: '$order_group' },
-              {
-                $lookup: {
-                  from: 'guests',
-                  localField: 'order_group.guest_id',
-                  foreignField: '_id',
-                  as: 'guest'
-                }
-              },
-              { $unwind: '$guest' },
-              {
-                $project: {
-                  guest: {
-                    refresh_token: 0,
-                    refresh_token_exp: 0
-                  }
-                }
-              }
+              { $unwind: { path: '$order_handler', preserveNullAndEmptyArrays: true } }
             ],
             { session }
           )
@@ -305,7 +289,16 @@ class GuestsService {
           guest_id: new ObjectId(account_id),
           table_number: guest.table_number,
           order_type: OrderType.DineIn,
-          status: OrderStatus.Pending
+          status: OrderStatus.Pending,
+          guest: {
+            _id: guest._id,
+            name: guest.name,
+            phone: guest.phone,
+            table_number: guest.table_number,
+            role: guest.role,
+            create_at: guest.created_at,
+            update_at: guest.updated_at
+          }
         },
         orders: ordersResult
       }

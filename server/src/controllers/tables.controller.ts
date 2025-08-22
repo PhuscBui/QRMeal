@@ -2,11 +2,13 @@ import { Request, Response } from 'express'
 import { ParamsDictionary } from 'express-serve-static-core'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { TABLES_MESSAGES } from '~/constants/messages'
+import { TokenPayload } from '~/models/requests/Account.request'
 import {
   CancelReservationReqBody,
   CreateTableReqBody,
   ReserveTableReqBody,
   TableParams,
+  UpdateStatusTableReqBody,
   UpdateTableReqBody
 } from '~/models/requests/Table.request'
 
@@ -73,7 +75,10 @@ export const deleteTableController = async (req: Request<TableParams>, res: Resp
   })
 }
 
-export const reserveTableController = async (req: Request<ParamsDictionary, ReserveTableReqBody>, res: Response) => {
+export const reserveTableController = async (
+  req: Request<ParamsDictionary, unknown, ReserveTableReqBody>,
+  res: Response
+) => {
   const table = await tablesService.reserveTable(req.body)
   res.json({
     message: TABLES_MESSAGES.TABLE_RESERVED,
@@ -82,12 +87,31 @@ export const reserveTableController = async (req: Request<ParamsDictionary, Rese
 }
 
 export const cancelReservationController = async (
-  req: Request<ParamsDictionary, CancelReservationReqBody>,
+  req: Request<ParamsDictionary, unknown, CancelReservationReqBody>,
   res: Response
 ) => {
-  const table = await tablesService.cancelReservation(req.body)
+  const { account_id, role } = req.decoded_authorization as TokenPayload
+  const table = await tablesService.cancelReservation(req.body, account_id, role)
   res.json({
     message: TABLES_MESSAGES.TABLE_RESERVED,
+    result: table
+  })
+}
+
+export const updateStatusTableController = async (
+  req: Request<TableParams, unknown, UpdateStatusTableReqBody>,
+  res: Response
+) => {
+  const { account_id, role } = req.decoded_authorization as TokenPayload
+  const table = await tablesService.updateStatusTable(account_id, role, Number(req.params.number), req.body)
+  if (!table) {
+    res.status(HTTP_STATUS.NOT_FOUND).json({
+      message: TABLES_MESSAGES.TABLE_NOT_FOUND
+    })
+    return
+  }
+  res.json({
+    message: TABLES_MESSAGES.TABLE_UPDATED,
     result: table
   })
 }

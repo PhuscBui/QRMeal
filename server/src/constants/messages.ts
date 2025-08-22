@@ -85,6 +85,9 @@ export const DISHES_MESSAGE = {
 } as const
 
 export const TABLES_MESSAGES = {
+  TABLE_NOT_RESERVED: 'Table not reserved',
+  YOU_ARE_NOT_ALLOWED_TO_UPDATE_THIS_TABLE_STATUS: 'You are not allowed to update this table status',
+  TABLE_STATUS_NOT_CHANGED: 'Table status not changed',
   YOU_ARE_NOT_ALLOWED_TO_CANCEL_THIS_RESERVATION: 'You are not allowed to cancel this reservation',
   TABLE_NOT_ASSIGNED: 'Table not assigned',
   TABLE_NOT_FOUND: 'Table not found',
@@ -105,7 +108,8 @@ export const TABLES_MESSAGES = {
   TABLE_STATUS_IS_REQUIRED: 'Table status is required',
   TABLE_STATUS_MUST_BE_A_STRING: 'Table status must be a string',
   TABLE_STATUS_LENGTH_MUST_BE_GREATER_THAN_0: 'Table status length must be greater than 0',
-  TABLE_STATUS_MUST_BE_AVAILABLE_OR_HIDDEN_OR_RESERVED: 'Table status must be available, hidden or reserved',
+  TABLE_STATUS_MUST_BE_AVAILABLE_OR_HIDDEN_OR_RESERVED_OR_OCCUPIED:
+    'Table status must be available, hidden or reserved or occupied',
   TABLE_NUMBER_IS_EXISTS: 'Table number is exists',
   CHANGE_TOKEN_MUST_BE_A_BOOLEAN: 'Change token must be a boolean',
   TABLE_IS_HIDDEN_PLEASE_CHOOSE_ANOTHER_TABLE: 'Table is hidden, please choose another table',

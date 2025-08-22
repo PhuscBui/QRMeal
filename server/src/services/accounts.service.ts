@@ -327,6 +327,18 @@ class AccountsService {
       }
     )
   }
+
+  async getCustomers() {
+    const customers = await databaseService.accounts.find(
+      { role: Role.Customer },
+      {
+        projection: {
+          password: 0
+        }
+      }
+    )
+    return customers.toArray()
+  }
 }
 
 const accountsService = new AccountsService()

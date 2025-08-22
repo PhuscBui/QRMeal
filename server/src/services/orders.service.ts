@@ -212,6 +212,14 @@ class OrdersService {
         ordersRecord.push(completeOrder[0])
       }
 
+      if (tableNumber) {
+        await databaseService.tables.updateOne(
+          { number: tableNumber },
+          { $set: { status: TableStatus.Occupied, reservation: null }, $currentDate: { updated_at: true } },
+          { session }
+        )
+      }
+
       await session.commitTransaction()
 
       // Find socket record for notification
@@ -456,6 +464,13 @@ class OrdersService {
       // Get updated order groups with complete information
       const orderGroupsResult = await this.getOrderGroupsByIds(orderGroups.map((og) => og._id))
 
+      if (orderGroupsResult[0].table_number) {
+        await databaseService.tables.updateOne(
+          { number: orderGroupsResult[0].table_number },
+          { $set: { status: TableStatus.Occupied, reservation: null }, $currentDate: { updated_at: true } },
+          { session }
+        )
+      }
       const socketRecord = isCustomer
         ? await databaseService.sockets.findOne({ customer_id: new ObjectId(customerOrGuestId) })
         : await databaseService.sockets.findOne({ guest_id: new ObjectId(customerOrGuestId) })

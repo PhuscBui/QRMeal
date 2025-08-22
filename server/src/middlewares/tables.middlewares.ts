@@ -1,6 +1,6 @@
 import { checkSchema, ParamSchema } from 'express-validator'
 
-import { COMMON_MESSAGES, GUEST_MESSAGE, TABLES_MESSAGES, USERS_MESSAGES } from '~/constants/messages'
+import { TABLES_MESSAGES } from '~/constants/messages'
 import { TableStatusValues } from '~/constants/type'
 import tablesService from '~/services/tables.service'
 import { validate } from '~/utils/validation'
@@ -31,7 +31,7 @@ const statusSchema: ParamSchema = {
   },
   isIn: {
     options: [TableStatusValues],
-    errorMessage: TABLES_MESSAGES.TABLE_STATUS_MUST_BE_AVAILABLE_OR_HIDDEN_OR_RESERVED
+    errorMessage: TABLES_MESSAGES.TABLE_STATUS_MUST_BE_AVAILABLE_OR_HIDDEN_OR_RESERVED_OR_OCCUPIED
   }
 }
 
@@ -120,7 +120,16 @@ export const reserveTableValidator = validate(
         isString: {
           errorMessage: TABLES_MESSAGES.NOTE_MUST_BE_A_STRING
         }
-      },
+      }
+    },
+    ['body']
+  )
+)
+
+export const updateStatusTableValidator = validate(
+  checkSchema(
+    {
+      status: statusSchema
     },
     ['body']
   )

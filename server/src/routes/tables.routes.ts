@@ -6,6 +6,7 @@ import {
   getTableController,
   getTablesController,
   reserveTableController,
+  updateStatusTableController,
   updateTableController
 } from '~/controllers/tables.controller'
 import { isAdminValidator, isEmployeeValidator } from '~/middlewares/account.middlewares'
@@ -86,6 +87,18 @@ tablesRouter.post('/reserve', accessTokenValidator, reserveTableValidator, wrapR
  */
 tablesRouter.post('/cancel-reservation', wrapRequestHandler(cancelReservationController))
 
-
+/**
+ * Description. Update table status
+ * Path:  /:number/status
+ * Method: PATCH
+ * Request: Params : number
+ * Request: Body : status
+ */
+tablesRouter.patch(
+  '/:number/status',
+  accessTokenValidator,
+  isEmployeeValidator,
+  wrapRequestHandler(updateStatusTableController)
+)
 
 export default tablesRouter

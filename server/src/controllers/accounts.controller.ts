@@ -217,3 +217,11 @@ export const createCustomerController = async (
     result
   })
 }
+
+export const getCustomersController = async (req: Request, res: Response) => {
+  const customers = await accountsService.getCustomers()
+  res.status(HTTP_STATUS.OK).json({
+    message: USERS_MESSAGES.ACCOUNTS_FETCHED,
+    result: customers
+  })
+}
