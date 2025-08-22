@@ -457,8 +457,8 @@ class OrdersService {
       const orderGroupsResult = await this.getOrderGroupsByIds(orderGroups.map((og) => og._id))
 
       const socketRecord = isCustomer
-        ? await databaseService.sockets.findOne({ customerId: new ObjectId(customerOrGuestId) })
-        : await databaseService.sockets.findOne({ guestId: new ObjectId(customerOrGuestId) })
+        ? await databaseService.sockets.findOne({ customer_id: new ObjectId(customerOrGuestId) })
+        : await databaseService.sockets.findOne({ guest_id: new ObjectId(customerOrGuestId) })
 
       return {
         orderGroups: orderGroupsResult,
@@ -490,6 +490,12 @@ class OrdersService {
             localField: '_id',
             foreignField: 'order_group_id',
             as: 'delivery'
+          }
+        },
+        {
+          $unwind: {
+            path: '$delivery',
+            preserveNullAndEmptyArrays: true
           }
         },
         {
@@ -724,8 +730,8 @@ class OrdersService {
     // Find socket record for notification
     const orderGroup = updatedOrder[0].order_group
     const socketRecord = orderGroup.customer_id
-      ? await databaseService.sockets.findOne({ customerId: orderGroup.customer_id })
-      : await databaseService.sockets.findOne({ guestId: new ObjectId(orderGroup.guest_id) })
+      ? await databaseService.sockets.findOne({ customer_id: orderGroup.customer_id })
+      : await databaseService.sockets.findOne({ guest_id: orderGroup.guest_id })
 
     return {
       order: updatedOrder[0],
@@ -768,8 +774,8 @@ class OrdersService {
 
     // Find socket record for notification
     const socketRecord = updatedOrderGroup.customer_id
-      ? await databaseService.sockets.findOne({ customerId: updatedOrderGroup.customer_id })
-      : await databaseService.sockets.findOne({ guestId: new ObjectId(updatedOrderGroup.guest_id) })
+      ? await databaseService.sockets.findOne({ customer_id: updatedOrderGroup.customer_id })
+      : await databaseService.sockets.findOne({ guest_id: updatedOrderGroup.guest_id })
 
     return {
       orderGroup: updatedOrderGroup,
@@ -798,8 +804,14 @@ class OrdersService {
           }
         },
         {
+          $unwind: {
+            path: '$delivery',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
           $lookup: {
-            from: 'customers',
+            from: 'accounts',
             localField: 'customer_id',
             foreignField: '_id',
             as: 'customer'
@@ -811,6 +823,18 @@ class OrdersService {
             localField: 'guest_id',
             foreignField: '_id',
             as: 'guest'
+          }
+        },
+        {
+          $unwind: {
+            path: '$customer',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $unwind: {
+            path: '$guest',
+            preserveNullAndEmptyArrays: true
           }
         },
         {
