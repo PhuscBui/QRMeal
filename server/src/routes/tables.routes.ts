@@ -12,7 +12,12 @@ import {
 import { isAdminValidator, isEmployeeValidator } from '~/middlewares/account.middlewares'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import { filterMiddleware } from '~/middlewares/common.middlewares'
-import { createTableValidator, reserveTableValidator, updateTableValidator } from '~/middlewares/tables.middlewares'
+import {
+  createTableValidator,
+  reserveTableValidator,
+  updateStatusTableValidator,
+  updateTableValidator
+} from '~/middlewares/tables.middlewares'
 import { UpdateTableReqBody } from '~/models/requests/Table.request'
 import { wrapRequestHandler } from '~/utils/handlers'
 
@@ -85,7 +90,7 @@ tablesRouter.post('/reserve', accessTokenValidator, reserveTableValidator, wrapR
  * Method: POST
  * Request: Body : Table
  */
-tablesRouter.post('/cancel-reservation', wrapRequestHandler(cancelReservationController))
+tablesRouter.post('/cancel-reservation', accessTokenValidator, wrapRequestHandler(cancelReservationController))
 
 /**
  * Description. Update table status
@@ -97,7 +102,7 @@ tablesRouter.post('/cancel-reservation', wrapRequestHandler(cancelReservationCon
 tablesRouter.patch(
   '/:number/status',
   accessTokenValidator,
-  isEmployeeValidator,
+  updateStatusTableValidator,
   wrapRequestHandler(updateStatusTableController)
 )
 

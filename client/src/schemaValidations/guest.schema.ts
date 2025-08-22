@@ -51,7 +51,6 @@ export const GuestCreateOrdersRes = z.object({
       created_at: true,
       updated_at: true,
       table: true,
-      guest: true,
       customer: true,
       customer_id: true
     }),

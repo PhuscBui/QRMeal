@@ -229,7 +229,7 @@ export const formatDateTimeToTimeString = (date: string | Date) => {
 export const OrderStatusIcon = {
   [OrderStatus.Pending]: Loader,
   [OrderStatus.Processing]: CookingPot,
-  [OrderStatus.Rejected]: BookX,
+  [OrderStatus.Cancelled]: BookX,
   [OrderStatus.Delivered]: Truck,
   [OrderStatus.Paid]: HandCoins
 }

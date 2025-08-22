@@ -1,72 +1,172 @@
-"use client";
+'use client'
 
-import { useCancelReservationMutation, useGetTableQuery } from "@/queries/useTable";
-import { format } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import Loader from "@/components/loader";
-import { useGetGuestByIdQuery } from "@/queries/useAccount";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { useCancelReservationMutation, useGetTableQuery } from '@/queries/useTable'
+import { format } from 'date-fns'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
+import Loader from '@/components/loader'
+import { useGetGuestByIdQuery, useGetCustomerByIdQuery } from '@/queries/useAccount'
+import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Calendar, Clock, User, Phone, MessageSquare, Mail } from 'lucide-react'
+import { handleErrorApi } from '@/lib/utils'
 
 export default function ReservationDetail({ tableNumber }: { tableNumber: number }) {
-  const { data, isLoading, error } = useGetTableQuery({ id: tableNumber, enabled: !!tableNumber });
-  const table = data?.payload.result;
-  const reservation = table?.reservation;
-  const { data: guestData } = useGetGuestByIdQuery(reservation?.guest_id || '');
-  const guest = guestData?.payload.result;
+  const { data, isLoading, error } = useGetTableQuery({ id: tableNumber, enabled: !!tableNumber })
+  const table = data?.payload.result
+  const reservation = table?.reservation
 
-  const cancelReservation = useCancelReservationMutation();
+  // Fetch guest data if it's a guest reservation
+  const { data: guestData } = useGetGuestByIdQuery({
+    id: reservation?.guest_id || '',
+    enabled: !!reservation?.guest_id && !reservation?.is_customer
+  })
+
+  // Fetch customer data if it's a customer reservation
+  const { data: customerData } = useGetCustomerByIdQuery({
+    id: reservation?.customer_id || '',
+    enabled: !!reservation?.customer_id && !!reservation?.is_customer
+  })
+
+  const guest = guestData?.payload.result
+  const customer = customerData?.payload.result
+  const cancelReservation = useCancelReservationMutation()
 
   const handleCancelReservation = async () => {
-     await cancelReservation.mutateAsync({ 
-        guest_id: reservation?.guest_id || '',
-        table_number: table?.number || 0,
-        token: table?.token || '',
-     });
+    if (!table || !reservation) return
 
-     toast.success('Reservation cancelled successfully');
+    try {
+      await cancelReservation.mutateAsync({
+        table_number: table.number,
+        token: table.token
+      })
+
+      toast.success('Reservation cancelled successfully')
+    } catch (error) {
+      handleErrorApi({
+        error,
+        setError: () => {}
+      })
+    }
   }
 
-  if (isLoading ) return <Loader />;
-  if (error) return <div className="text-red-500">Failed to load reservation details.</div>;
+  if (isLoading) return <Loader />
+  if (error) return <div className='text-red-500'>Failed to load reservation details.</div>
+
   if (!reservation || !reservation.reservation_time) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>No Reservation</CardTitle>
-          <CardDescription>This table currently has no reservation.</CardDescription>
+          <CardDescription>Table {tableNumber} currently has no reservation.</CardDescription>
         </CardHeader>
       </Card>
-    );
+    )
+  }
+
+  // Determine if it's a customer or guest reservation
+  const isCustomer = reservation.is_customer && customer
+  const person = isCustomer ? customer : guest
+
+  if (!person) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Loading Reservation...</CardTitle>
+          <CardDescription>Fetching reservation details...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Loader />
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Reservation Details</CardTitle>
-        <CardDescription>Table Number: {table?.number}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        <div>
-          <span className="font-semibold">Reservation Time:</span> {format(new Date(reservation.reservation_time), "dd/MM/yyyy HH:mm")}
-        </div>
-        <div className="flex flex-col gap-2">
-         <span>  <span className="font-semibold">Guest:</span> {guest?.name} </span>
-         <span>  <span className="font-semibold">Phone:</span> {guest?.phone} </span>
-        </div>
-        {reservation.note && (
+        <div className='flex items-center justify-between'>
           <div>
-            <span className="font-semibold">Note:</span> {reservation.note}
+            <CardTitle className='flex items-center gap-2'>
+              <Calendar className='w-5 h-5' />
+              Reservation Details
+            </CardTitle>
+            <CardDescription className='mt-2'>Table {table?.number}</CardDescription>
+          </div>
+          <Badge variant={isCustomer ? 'default' : 'secondary'}>{isCustomer ? 'Customer' : 'Guest'}</Badge>
+        </div>
+      </CardHeader>
+
+      <CardContent className='space-y-4'>
+        {/* Person Information */}
+        <div className='flex items-center space-x-3 p-3 bg-gray-50 rounded-lg'>
+          <Avatar className='w-12 h-12'>
+            <AvatarImage src={isCustomer ? customer.avatar || undefined : undefined} alt={person.name} />
+            <AvatarFallback>
+              {person.name
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className='flex-1'>
+            <div className='flex items-center gap-2'>
+              <User className='w-4 h-4 text-gray-500' />
+              <span className='font-semibold'>{person.name}</span>
+            </div>
+            {person.phone && (
+              <div className='flex items-center gap-2 text-sm text-gray-600'>
+                <Phone className='w-3 h-3' />
+                <span>{person.phone}</span>
+              </div>
+            )}
+            {isCustomer && customer.email && (
+              <div className='flex items-center gap-2 text-sm text-gray-600'>
+                <Mail className='w-3 h-3' />
+                <span> {customer.email}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Reservation Time */}
+        <div className='flex items-center gap-3 p-3 border rounded-lg'>
+          <Clock className='w-5 h-5 text-blue-500' />
+          <div>
+            <div className='font-semibold'>Reservation Time</div>
+            <div className='text-sm text-gray-600'>
+              {format(new Date(reservation.reservation_time), "EEEE, dd MMMM yyyy 'at' HH:mm")}
+            </div>
+          </div>
+        </div>
+
+        {/* Special Note */}
+        {reservation.note && (
+          <div className='flex items-start gap-3 p-3 border rounded-lg'>
+            <MessageSquare className='w-5 h-5 text-green-500 mt-0.5' />
+            <div className='flex-1'>
+              <div className='font-semibold'>Special Requests</div>
+              <div className='text-sm text-gray-600 mt-1'>{reservation.note}</div>
+            </div>
           </div>
         )}
+
+        {/* Additional Customer Info */}
+        {isCustomer && <div className='text-xs text-gray-500 bg-blue-50 p-2 rounded'>Customer ID: {customer._id}</div>}
       </CardContent>
-      <CardFooter>
-        <Button variant={"destructive"} onClick={handleCancelReservation}
+
+      <CardFooter className='flex gap-2'>
+        <Button
+          variant='destructive'
+          onClick={handleCancelReservation}
           disabled={cancelReservation.isPending}
+          className='flex-1'
         >
           {cancelReservation.isPending ? 'Cancelling...' : 'Cancel Reservation'}
         </Button>
       </CardFooter>
     </Card>
-  );
+  )
 }

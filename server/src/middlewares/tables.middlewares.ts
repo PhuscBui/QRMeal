@@ -105,11 +105,6 @@ export const reserveTableValidator = validate(
           }
         }
       },
-      guest_id: {
-        notEmpty: {
-          errorMessage: TABLES_MESSAGES.GUEST_ID_IS_REQUIRED
-        }
-      },
       reservation_time: {
         notEmpty: {
           errorMessage: TABLES_MESSAGES.RESERVATION_TIME_IS_REQUIRED

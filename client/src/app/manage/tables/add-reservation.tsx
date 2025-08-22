@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { handleErrorApi } from '@/lib/utils'
 import { ReserveTableBody, type ReserveTableBodyType } from '@/schemaValidations/table.schema'
-import { CalendarIcon } from 'lucide-react'
+import { CalendarIcon, X } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
@@ -26,13 +26,22 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@/components/ui/dialog'
-import { CreateGuestBody, CreateGuestBodyType } from '@/schemaValidations/account.schema'
+import { CreateGuestBody, CreateGuestBodyType, GetListCustomersResType } from '@/schemaValidations/account.schema'
 import { useCreateGuestMutation } from '@/queries/useAccount'
+import CustomersDialog from '@/app/manage/orders/customers-dialog'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useState } from 'react'
+import { Switch } from '@/components/ui/switch'
+
+type CustomerItem = GetListCustomersResType['result'][0]
 
 function AddReservationForm({ tableNumber, token }: { tableNumber: number; token: string }) {
   const router = useRouter()
   const reserveMutation = useReserveTableMutation()
   const createGuestMutation = useCreateGuestMutation()
+
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerItem | null>(null)
+  const [isCustomerMode, setIsCustomerMode] = useState(false)
 
   const form = useForm<CreateGuestBodyType & ReserveTableBodyType>({
     resolver: zodResolver(CreateGuestBody.merge(ReserveTableBody)),
@@ -41,26 +50,63 @@ function AddReservationForm({ tableNumber, token }: { tableNumber: number; token
       phone: '',
       table_number: tableNumber,
       token: token,
-      guest_id: '',
+      guest_id: undefined,
+      customer_id: undefined,
+      is_customer: false,
       reservation_time: new Date(),
       note: ''
     }
   })
 
+  const handleCustomerSelect = (customer: CustomerItem) => {
+    setSelectedCustomer(customer)
+    form.setValue('name', customer.name)
+    form.setValue('phone', customer.phone || '')
+    form.setValue('customer_id', customer._id)
+    form.setValue('is_customer', true)
+  }
+
+  const handleRemoveCustomer = () => {
+    setSelectedCustomer(null)
+    form.setValue('name', '')
+    form.setValue('phone', '')
+    form.setValue('customer_id', undefined)
+    form.setValue('is_customer', false)
+  }
+
+  const handleModeChange = (checked: boolean) => {
+    setIsCustomerMode(checked)
+    if (!checked) {
+      handleRemoveCustomer()
+    }
+    form.setValue('is_customer', checked)
+  }
+
   const onSubmit = async (data: CreateGuestBodyType & ReserveTableBodyType) => {
     try {
-      const result = await createGuestMutation.mutateAsync({
-        name: data.name,
-        phone: data.phone,
-        table_number: data.table_number
-      })
+      let guestId = data.guest_id
+      let customerId = data.customer_id
 
-      const guest = result.payload.result
+      if (isCustomerMode && selectedCustomer) {
+        // Reservation for existing customer
+        customerId = selectedCustomer._id
+      } else if (!isCustomerMode) {
+        // Create new guest
+        const result = await createGuestMutation.mutateAsync({
+          name: data.name,
+          phone: data.phone,
+          table_number: data.table_number
+        })
+        guestId = result.payload.result._id
+        customerId = undefined
+      }
 
       await reserveMutation.mutateAsync({
-        guest_id: guest._id,
+        guest_id: guestId,
+        customer_id: customerId,
         table_number: data.table_number,
         token: data.token,
+        is_customer: isCustomerMode,
         reservation_time: data.reservation_time,
         note: data.note
       })
@@ -79,42 +125,98 @@ function AddReservationForm({ tableNumber, token }: { tableNumber: number; token
     <Form {...form}>
       <form className='space-y-4' noValidate onSubmit={form.handleSubmit(onSubmit)}>
         <div className='grid gap-4'>
-          <div className='grid grid-cols-2 gap-4'>
-            <FormField
-              control={form.control}
-              name='name'
-              render={({ field }) => (
-                <FormItem>
-                  <Label className='text-sm font-medium' htmlFor='name'>
-                    Guest Name
-                  </Label>
-                  <Input id='name' type='text' placeholder='Enter guest name' className='mt-1.5' required {...field} />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name='phone'
-              render={({ field }) => (
-                <FormItem>
-                  <Label className='text-sm font-medium' htmlFor='phone'>
-                    Phone Number
-                  </Label>
-                  <Input
-                    id='phone'
-                    type='tel'
-                    placeholder='Enter phone number'
-                    className='mt-1.5'
-                    required
-                    {...field}
-                  />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          {/* Customer/Guest Mode Switch */}
+          <div className='flex items-center space-x-2'>
+            <Switch id='customer-mode' checked={isCustomerMode} onCheckedChange={handleModeChange} />
+            <Label htmlFor='customer-mode' className='text-sm font-medium'>
+              Book for existing customer
+            </Label>
           </div>
+
+          {/* Customer Selection Section */}
+          {isCustomerMode && (
+            <div className='border rounded-lg p-4 bg-gray-50'>
+              {selectedCustomer ? (
+                <div className='flex items-center justify-between'>
+                  <div className='flex items-center space-x-3'>
+                    <Avatar className='w-10 h-10'>
+                      <AvatarImage src={selectedCustomer.avatar || undefined} alt={selectedCustomer.name} />
+                      <AvatarFallback>
+                        {selectedCustomer.name
+                          .split(' ')
+                          .map((n) => n[0])
+                          .join('')
+                          .toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className='font-medium'>{selectedCustomer.name}</p>
+                      <p className='text-sm text-gray-600'>
+                        {selectedCustomer.email} • {selectedCustomer.phone}
+                      </p>
+                    </div>
+                  </div>
+                  <Button type='button' variant='ghost' size='sm' onClick={handleRemoveCustomer}>
+                    <X className='w-4 h-4' />
+                  </Button>
+                </div>
+              ) : (
+                <div className='text-center py-4'>
+                  <p className='text-sm text-gray-600 mb-3'>No customer selected</p>
+                  <CustomersDialog onChoose={handleCustomerSelect} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Guest Details Section - Show only when not in customer mode or no customer selected */}
+          {(!isCustomerMode || !selectedCustomer) && (
+            <div className='grid grid-cols-2 gap-4'>
+              <FormField
+                control={form.control}
+                name='name'
+                render={({ field }) => (
+                  <FormItem>
+                    <Label className='text-sm font-medium' htmlFor='name'>
+                      {isCustomerMode ? 'Customer Name' : 'Guest Name'}
+                    </Label>
+                    <Input
+                      id='name'
+                      type='text'
+                      placeholder={isCustomerMode ? 'Select customer above' : 'Enter guest name'}
+                      className='mt-1.5'
+                      required
+                      disabled={isCustomerMode && !!selectedCustomer}
+                      {...field}
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='phone'
+                render={({ field }) => (
+                  <FormItem>
+                    <Label className='text-sm font-medium' htmlFor='phone'>
+                      Phone Number
+                    </Label>
+                    <Input
+                      id='phone'
+                      type='tel'
+                      placeholder={isCustomerMode ? 'Select customer above' : 'Enter phone number'}
+                      className='mt-1.5'
+                      required
+                      disabled={isCustomerMode && !!selectedCustomer}
+                      {...field}
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          )}
 
           <FormField
             control={form.control}
@@ -183,7 +285,11 @@ function AddReservationForm({ tableNumber, token }: { tableNumber: number; token
             <Button
               type='submit'
               className='flex-1'
-              disabled={createGuestMutation.isPending || reserveMutation.isPending}
+              disabled={
+                createGuestMutation.isPending ||
+                reserveMutation.isPending ||
+                (isCustomerMode && !selectedCustomer && !form.getValues('name'))
+              }
             >
               {createGuestMutation.isPending || reserveMutation.isPending ? 'Adding Reservation...' : 'Add Reservation'}
             </Button>
@@ -206,7 +312,9 @@ export default function AddReservationDialog({ tableNumber, token }: { tableNumb
       <DialogContent className='sm:max-w-[600px]'>
         <DialogHeader>
           <DialogTitle>Add New Reservation for Table {tableNumber}</DialogTitle>
-          <DialogDescription>Fill in the guest details and reservation information.</DialogDescription>
+          <DialogDescription>
+            Choose to create a reservation for a new guest or select an existing customer.
+          </DialogDescription>
         </DialogHeader>
         <AddReservationForm tableNumber={tableNumber} token={token} />
       </DialogContent>

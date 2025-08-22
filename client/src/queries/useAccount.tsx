@@ -87,15 +87,31 @@ export const useCreateGuestMutation = () => {
   })
 }
 
-export const useGetGuestByIdQuery = (id: string) => {
+export const useGetGuestByIdQuery = ({ id, enabled }: { id: string; enabled: boolean }) => {
   return useQuery({
     queryKey: ['guests', id],
-    queryFn: () => accountApiRequest.getGuestById(id)
+    queryFn: () => accountApiRequest.getGuestById(id),
+    enabled
   })
 }
 
 export const useCreateCustomerMutation = () => {
   return useMutation({
     mutationFn: accountApiRequest.createCustomer
+  })
+}
+
+export const useGetCustomersQuery = () => {
+  return useQuery({
+    queryKey: ['customers'],
+    queryFn: accountApiRequest.getCustomers
+  })
+}
+
+export const useGetCustomerByIdQuery = ({ id, enabled }: { id: string; enabled: boolean }) => {
+  return useQuery({
+    queryKey: ['customers', id],
+    queryFn: () => accountApiRequest.getCustomerById(id),
+    enabled
   })
 }

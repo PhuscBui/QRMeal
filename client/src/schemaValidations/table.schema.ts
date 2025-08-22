@@ -1,19 +1,21 @@
-import { TableStatusValues } from "@/constants/type";
-import z from "zod";
+import { TableStatusValues } from '@/constants/type'
+import z from 'zod'
 
 export const CreateTableBody = z.object({
   number: z.coerce.number().positive(),
   capacity: z.coerce.number().positive(),
   status: z.enum(TableStatusValues).optional(),
-  location: z.string(),
-});
+  location: z.string()
+})
 
-export type CreateTableBodyType = z.TypeOf<typeof CreateTableBody>;
+export type CreateTableBodyType = z.TypeOf<typeof CreateTableBody>
 
 export const ReservationSchema = z.object({
-  guest_id: z.string(),
+  guest_id: z.string().nullable(),
+  customer_id: z.string().nullable(),
+  is_customer: z.boolean().optional(),
   reservation_time: z.date(),
-  note: z.string().optional(),
+  note: z.string().optional()
 })
 
 export const TableSchema = z.object({
@@ -25,49 +27,50 @@ export const TableSchema = z.object({
   location: z.string(),
   reservation: ReservationSchema,
   created_at: z.date(),
-  updated_at: z.date(),
-});
+  updated_at: z.date()
+})
 
 export const TableRes = z.object({
   result: TableSchema,
-  message: z.string(),
-});
+  message: z.string()
+})
 
-export type TableResType = z.TypeOf<typeof TableRes>;
+export type TableResType = z.TypeOf<typeof TableRes>
 
 export const TableListRes = z.object({
   result: z.array(TableSchema),
-  message: z.string(),
-});
+  message: z.string()
+})
 
-export type TableListResType = z.TypeOf<typeof TableListRes>;
+export type TableListResType = z.TypeOf<typeof TableListRes>
 
 export const UpdateTableBody = z.object({
   changeToken: z.boolean(),
   capacity: z.coerce.number().positive(),
   status: z.enum(TableStatusValues).optional(),
-  location: z.string(),
-});
-export type UpdateTableBodyType = z.TypeOf<typeof UpdateTableBody>;
+  location: z.string()
+})
+export type UpdateTableBodyType = z.TypeOf<typeof UpdateTableBody>
 export const TableParams = z.object({
-  number: z.coerce.number(),
-});
-export type TableParamsType = z.TypeOf<typeof TableParams>;
+  number: z.coerce.number()
+})
+export type TableParamsType = z.TypeOf<typeof TableParams>
 
 export const ReserveTableBody = z.object({
   table_number: z.coerce.number(),
   token: z.string(),
-  guest_id: z.string(),
+  guest_id: z.string().optional(),
+  customer_id: z.string().optional(),
+  is_customer: z.boolean().optional(),
   reservation_time: z.date(),
-  note: z.string().optional(),
-});
+  note: z.string().optional()
+})
 
-export type ReserveTableBodyType = z.TypeOf<typeof ReserveTableBody>;
+export type ReserveTableBodyType = z.TypeOf<typeof ReserveTableBody>
 
 export const CancelReservationBody = z.object({
   table_number: z.coerce.number(),
-  token: z.string(),
-  guest_id: z.string(),
-});
+  token: z.string()
+})
 
-export type CancelReservationBodyType = z.TypeOf<typeof CancelReservationBody>;
+export type CancelReservationBodyType = z.TypeOf<typeof CancelReservationBody>

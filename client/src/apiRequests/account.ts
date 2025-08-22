@@ -9,6 +9,7 @@ import {
   CreateGuestBodyType,
   CreateGuestResType,
   GetGuestListQueryParamsType,
+  GetListCustomersResType,
   GetListGuestsResType,
   UpdateEmployeeAccountBodyType,
   UpdateMeBodyType
@@ -42,7 +43,9 @@ const accountApiRequest = {
     ),
   createGuest: (body: CreateGuestBodyType) => http.post<CreateGuestResType>(`${prefix}/guests`, body),
   getGuestById: (id: string) => http.get<CreateGuestResType>(`${prefix}/guests/${id}`),
-  createCustomer: (body: CreateCustomerBodyType) => http.post<CreateCustomerResType>(`${prefix}/customers`, body)
+  createCustomer: (body: CreateCustomerBodyType) => http.post<CreateCustomerResType>(`${prefix}/customers`, body),
+  getCustomers: () => http.get<GetListCustomersResType>(`${prefix}/customers`),
+  getCustomerById: (id: string) => http.get<AccountResType>(`${prefix}/detail/${id}`)
 }
 
 export default accountApiRequest

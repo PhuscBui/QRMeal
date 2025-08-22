@@ -8,7 +8,9 @@ export const AccountSchema = z.object({
   email: z.string(),
   role: z.string(),
   avatar: z.string().nullable(),
-  date_of_birth: z.date().nullable()
+  date_of_birth: z.date().nullable(),
+  create_at: z.date(),
+  update_at: z.date()
 })
 
 export type AccountType = z.TypeOf<typeof AccountSchema>
@@ -210,3 +212,10 @@ export type CreateCustomerBodyType = z.TypeOf<typeof CreateCustomerBody>
 export const CreateCustomerRes = AccountRes
 
 export type CreateCustomerResType = z.TypeOf<typeof CreateCustomerRes>
+
+export const GetListCustomersRes = z.object({
+  result: z.array(AccountSchema),
+  message: z.string()
+})
+
+export type GetListCustomersResType = z.TypeOf<typeof GetListCustomersRes>

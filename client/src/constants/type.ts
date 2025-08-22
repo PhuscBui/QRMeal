@@ -12,7 +12,7 @@ export const Role = {
   Customer: 'Customer'
 } as const
 
-export const RoleValues = [Role.Owner, Role.Employee, Role.Guest] as const
+export const RoleValues = [Role.Owner, Role.Employee, Role.Guest, Role.Customer] as const
 
 export const DishStatus = {
   Available: 'Available',
@@ -29,7 +29,12 @@ export const TableStatus = {
   Reserved: 'Reserved'
 } as const
 
-export const TableStatusValues = [TableStatus.Available, TableStatus.Hidden, TableStatus.Reserved] as const
+export const TableStatusValues = [
+  TableStatus.Available,
+  TableStatus.Occupied,
+  TableStatus.Hidden,
+  TableStatus.Reserved
+] as const
 
 export const OrderStatus = {
   Pending: 'Pending',
