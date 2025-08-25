@@ -165,7 +165,8 @@ export const CreateGuestBody = z
   .object({
     name: z.string().trim().min(2).max(256),
     phone: z.string().min(10).max(11),
-    table_number: z.number()
+    table_number: z.number(),
+    token: z.string()
   })
   .strict()
 

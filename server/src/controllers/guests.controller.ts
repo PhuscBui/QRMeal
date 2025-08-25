@@ -36,7 +36,7 @@ export const loginGuestController = async (
     await databaseService.guests.insertOne(
       new Guest({
         name: name,
-        phone: phone,
+        phone: phone || null,
         table_number: table_number,
         role: Role.Guest
       })
@@ -44,7 +44,7 @@ export const loginGuestController = async (
     await databaseService.guest_loyalties.findOne({ guest_phone: phone })
   ])
 
-  if (!existedPhone) {
+  if (!existedPhone && phone) {
     await databaseService.guest_loyalties.insertOne(
       new GuestLoyalty({
         guest_phone: phone,

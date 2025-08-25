@@ -9,6 +9,7 @@ interface TableType {
   token: string
   location: string
   reservation: TableReservation | null
+  current_customer_id?: ObjectId | null
   created_at?: Date
   updated_at?: Date
 }
@@ -21,6 +22,7 @@ export class Table {
   token: string
   location: string
   reservation: TableReservation | null
+  current_customer_id?: ObjectId | null
   created_at: Date
   updated_at: Date
 
@@ -33,6 +35,7 @@ export class Table {
     this.token = table.token
     this.location = table.location
     this.reservation = table.reservation || null
+    this.current_customer_id = table.current_customer_id || null
     this.created_at = table.created_at || date
     this.updated_at = table.updated_at || date
   }

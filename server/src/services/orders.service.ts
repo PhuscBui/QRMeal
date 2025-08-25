@@ -55,6 +55,8 @@ class OrdersService {
 
     // Validate table for dine-in orders
     if (order_type === OrderType.DineIn && tableNumber) {
+      const guest = await databaseService.guests.findOne({ _id: guest_id ? new ObjectId(guest_id) : undefined })
+
       const table = await databaseService.tables.findOne({ number: tableNumber })
       if (!table) {
         throw new ErrorWithStatus({
@@ -70,7 +72,11 @@ class OrdersService {
         })
       }
 
-      if (table.status === TableStatus.Occupied) {
+      if (
+        table.status === TableStatus.Occupied &&
+        guest?.table_number !== tableNumber &&
+        table.current_customer_id?.toString() !== customer_id
+      ) {
         throw new ErrorWithStatus({
           message: TABLES_MESSAGES.TABLE_IS_OCCUPIED_PLEASE_CHOOSE_ANOTHER_TABLE,
           status: HTTP_STATUS.BAD_REQUEST
@@ -215,7 +221,10 @@ class OrdersService {
       if (tableNumber) {
         await databaseService.tables.updateOne(
           { number: tableNumber },
-          { $set: { status: TableStatus.Occupied, reservation: null }, $currentDate: { updated_at: true } },
+          {
+            $set: { status: TableStatus.Occupied, reservation: null, current_customer_id: new ObjectId(customer_id) },
+            $currentDate: { updated_at: true }
+          },
           { session }
         )
       }

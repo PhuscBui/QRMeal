@@ -26,6 +26,7 @@ export const TableSchema = z.object({
   token: z.string(),
   location: z.string(),
   reservation: ReservationSchema,
+  current_customer_id: z.string().nullable().optional(),
   created_at: z.date(),
   updated_at: z.date()
 })

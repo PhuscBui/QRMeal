@@ -184,9 +184,7 @@ export const CreateOrderGroupRes = z.object({
       orders: true,
       created_at: true,
       updated_at: true,
-      table: true,
-      guest: true,
-      customer: true
+      table: true
     }),
     orders: z.array(OrderSchema)
   })

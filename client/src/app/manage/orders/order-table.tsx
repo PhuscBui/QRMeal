@@ -13,10 +13,10 @@ import {
 } from '@tanstack/react-table'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { GetOrdersResType, PayGuestOrdersResType, UpdateOrderResType } from '@/schemaValidations/order.schema'
+import { CreateOrderGroupResType, GetOrdersResType, UpdateOrderResType } from '@/schemaValidations/order.schema'
 import AddOrder from '@/app/manage/orders/add-order'
 import EditOrder from '@/app/manage/orders/edit-order'
-import { createContext, useEffect, useState } from 'react'
+import { createContext, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import AutoPagination from '@/components/auto-pagination'
 import { getVietnameseOrderStatus, handleErrorApi } from '@/lib/utils'
@@ -33,11 +33,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { endOfDay, format, startOfDay } from 'date-fns'
 import TableSkeleton from '@/app/manage/orders/table-skeleton'
 import { toast } from 'sonner'
-import { GuestCreateOrdersResType } from '@/schemaValidations/guest.schema'
 import { useGetOrderListQuery, useUpdateOrderMutation } from '@/queries/useOrder'
 import { useTableListQuery } from '@/queries/useTable'
 import { useAppContext } from '@/components/app-provider'
 
+// Updated context type to work with OrderGroup
 export const OrderTableContext = createContext({
   setOrderIdEdit: (value: string | undefined) => {},
   orderIdEdit: undefined as string | undefined,
@@ -55,6 +55,8 @@ export type Statics = {
   status: StatusCountObject
   table: Record<number, Record<string, StatusCountObject>>
 }
+
+// Updated types to work with OrderGroup structure
 export type OrderObjectByGuestID = Record<string, GetOrdersResType['result']>
 export type ServingGuestByTableNumber = Record<number, OrderObjectByGuestID>
 
@@ -71,25 +73,65 @@ export default function OrderTable() {
   const page = searchParam.get('page') ? Number(searchParam.get('page')) : 1
   const pageIndex = page - 1
   const [orderIdEdit, setOrderIdEdit] = useState<string | undefined>()
+
+  // FIX: Add debugging logs to check data
   const orderListQuery = useGetOrderListQuery({
     fromDate,
     toDate
   })
   const refetchOrderList = orderListQuery.refetch
-  const orderList = orderListQuery.data?.payload.result ?? []
+  const orderGroupList = useMemo(() => orderListQuery.data?.payload.result ?? [], [orderListQuery.data?.payload.result])
+
+  // FIX: Add console log to debug data structure
+  useEffect(() => {
+    console.log('Order Group List:', orderGroupList)
+    console.log(
+      'Order Groups with customers:',
+      orderGroupList.filter((group) => group.customer)
+    )
+    console.log(
+      'Order Groups with guests:',
+      orderGroupList.filter((group) => group.guest)
+    )
+  }, [orderGroupList])
+
   const tableListQuery = useTableListQuery()
   const tableList = tableListQuery.data?.payload.result ?? []
   const tableListSortedByNumber = tableList.sort((a, b) => a.number - b.number)
+
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState({})
   const [pagination, setPagination] = useState({
-    pageIndex, // Gía trị mặc định ban đầu, không có ý nghĩa khi data được fetch bất đồng bộ
-    pageSize: PAGE_SIZE //default page size
+    pageIndex,
+    pageSize: PAGE_SIZE
   })
+
   const updateOrderMutation = useUpdateOrderMutation()
-  const { statics, orderObjectByGuestId, servingGuestByTableNumber } = useOrderService(orderList)
+
+  // FIX: Enhanced orderObjectByGuestId to handle both customers and guests
+  const processOrderGroups = (orderGroups: GetOrdersResType['result']) => {
+    const orderObjectByGuestId: Record<string, GetOrdersResType['result']> = {}
+
+    orderGroups.forEach((group) => {
+      // FIX: Use both customer_id and guest_id
+      const guestId = group.customer_id || group.guest_id
+      if (guestId) {
+        if (!orderObjectByGuestId[guestId]) {
+          orderObjectByGuestId[guestId] = []
+        }
+        orderObjectByGuestId[guestId].push(group)
+      }
+    })
+
+    console.log('Processed orderObjectByGuestId:', orderObjectByGuestId)
+    return orderObjectByGuestId
+  }
+
+  const { statics, servingGuestByTableNumber } = useOrderService(orderGroupList)
+  // FIX: Use our enhanced processing function
+  const orderObjectByGuestId = processOrderGroups(orderGroupList)
 
   const changeStatus = async (body: {
     order_id: string
@@ -105,9 +147,9 @@ export default function OrderTable() {
       })
     }
   }
-  ///
+
   const table = useReactTable({
-    data: orderList,
+    data: orderGroupList,
     columns: orderTableColumns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -173,19 +215,15 @@ export default function OrderTable() {
       refetch()
     }
 
-    function onNewOrder(data: GuestCreateOrdersResType['result']) {
-      console.log(data)
-      const guest = data[0].guest
-      toast('Success', {
-        description: `${guest?.name} at table ${guest?.table_number} just placed ${data.length} order`
-      })
-      refetch()
-    }
+    function onNewOrder(data: CreateOrderGroupResType['result']) {
+      const guest = data.orderGroup.guest // FIX: Handle guest orders
+      const customer = data.orderGroup.customer // FIX: Also handle customer
+      const displayName = customer?.name || guest?.name || 'Unknown'
 
-    function onPayment(data: PayGuestOrdersResType['result']) {
-      const { guest } = data[0]
       toast('Success', {
-        description: `${guest?.name} at table ${guest?.table_number} successfully paid ${data.length} order`
+        description: `${displayName} at table ${data.orderGroup.table_number} just placed ${data.orders.length} order${
+          data.orders.length > 1 ? 's' : ''
+        }`
       })
       refetch()
     }
@@ -194,16 +232,15 @@ export default function OrderTable() {
     socket?.on('new-order', onNewOrder)
     socket?.on('connect', onConnect)
     socket?.on('disconnect', onDisconnect)
-    socket?.on('payment', onPayment)
 
     return () => {
       socket?.off('connect', onConnect)
       socket?.off('disconnect', onDisconnect)
       socket?.off('update-order', onUpdateOrder)
       socket?.off('new-order', onNewOrder)
-      socket?.off('payment', onPayment)
     }
   }, [refetchOrderList, fromDate, toDate, socket])
+
   return (
     <OrderTableContext.Provider
       value={{
@@ -215,7 +252,7 @@ export default function OrderTable() {
     >
       <div className='w-full'>
         <EditOrder id={orderIdEdit} setId={setOrderIdEdit} onSubmitSuccess={() => {}} />
-        <div className=' flex items-center'>
+        <div className='flex items-center'>
           <div className='flex flex-wrap gap-2'>
             <div className='flex items-center'>
               <span className='mr-2'>From</span>
@@ -246,10 +283,10 @@ export default function OrderTable() {
         </div>
         <div className='flex flex-wrap items-center gap-4 py-4'>
           <Input
-            placeholder='Guest name'
+            placeholder='Guest/Customer name'
             value={(table.getColumn('guestName')?.getFilterValue() as string) ?? ''}
             onChange={(event) => table.getColumn('guestName')?.setFilterValue(event.target.value)}
-            className='max-w-[120px]'
+            className='max-w-[140px]'
           />
           <Input
             placeholder='Table'
@@ -269,7 +306,7 @@ export default function OrderTable() {
                   ? getVietnameseOrderStatus(
                       table.getColumn('status')?.getFilterValue() as (typeof OrderStatusValues)[number]
                     )
-                  : 'Status'}
+                  : 'Group Status'}
                 <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
               </Button>
             </PopoverTrigger>
@@ -305,11 +342,13 @@ export default function OrderTable() {
             </PopoverContent>
           </Popover>
         </div>
+
         <OrderStatics
           statics={statics}
           tableList={tableListSortedByNumber}
           servingGuestByTableNumber={servingGuestByTableNumber}
         />
+
         {orderListQuery.isPending && <TableSkeleton />}
         {!orderListQuery.isPending && (
           <div className='rounded-md border'>
@@ -351,8 +390,8 @@ export default function OrderTable() {
         )}
         <div className='flex items-center justify-end space-x-2 py-4'>
           <div className='text-xs text-muted-foreground py-4 flex-1 '>
-            Display <strong>{table.getPaginationRowModel().rows.length}</strong> in <strong>{orderList.length}</strong>{' '}
-            results
+            Display <strong>{table.getPaginationRowModel().rows.length}</strong> in{' '}
+            <strong>{orderGroupList.length}</strong> order groups
           </div>
           <div>
             <AutoPagination

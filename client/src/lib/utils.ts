@@ -182,6 +182,8 @@ export const getTableStatus = (status: (typeof TableStatus)[keyof typeof TableSt
       return 'Available'
     case TableStatus.Reserved:
       return 'Reserved'
+    case TableStatus.Occupied:
+      return 'Occupied'
     default:
       return 'Hidden'
   }

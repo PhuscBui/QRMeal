@@ -8,7 +8,7 @@ import { TableListResType } from '@/schemaValidations/table.schema'
 import { Badge } from '@/components/ui/badge'
 import { ServingGuestByTableNumber, Statics, StatusCountObject } from '@/app/manage/orders/order-table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import OrderGuestDetail from '@/app/manage/orders/order-guest-detail'
+import OrderGuestDetail from '@/app/manage/orders/order-detail'
 
 export default function OrderStatics({
   statics,
@@ -67,7 +67,7 @@ export default function OrderStatics({
             Processing: 0,
             Delivered: 0,
             Paid: 0,
-            Rejected: 0
+            Cancelled: 0
           }
           const servingGuestCount = Object.values(servingGuestByTableNumber[tableNumber] ?? []).length
           if (tableStatics) {
@@ -85,7 +85,7 @@ export default function OrderStatics({
                 Processing: countObject.Processing + (guestStatics.Processing ?? 0),
                 Delivered: countObject.Delivered + (guestStatics.Delivered ?? 0),
                 Paid: countObject.Paid + (guestStatics.Paid ?? 0),
-                Rejected: countObject.Rejected + (guestStatics.Rejected ?? 0)
+                Cancelled: countObject.Cancelled + (guestStatics.Cancelled ?? 0)
               }
             }
           }
@@ -110,7 +110,7 @@ export default function OrderStatics({
                         <span>{servingGuestCount}</span>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent>Serving: {servingGuestCount} guests</TooltipContent>
+                    <TooltipContent>Serving: {servingGuestCount} people</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </div>
