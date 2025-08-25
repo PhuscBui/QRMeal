@@ -42,8 +42,6 @@ const orderTableColumns: ColumnDef<OrderGroup>[] = [
       // FIX: Use both customer_id and guest_id
       const guestId = row.original.customer_id || row.original.guest_id
 
-      console.log('Cell render - guestId:', guestId, 'orderObjectByGuestId keys:', Object.keys(orderObjectByGuestId))
-
       return (
         <div>
           {!displayInfo && (

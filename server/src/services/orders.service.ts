@@ -524,7 +524,7 @@ class OrdersService {
         },
         {
           $lookup: {
-            from: 'customers',
+            from: 'accounts',
             localField: 'customer_id',
             foreignField: '_id',
             as: 'customer'
@@ -550,6 +550,18 @@ class OrdersService {
           $unwind: {
             path: '$orders',
             preserveNullAndEmptyArrays: false
+          }
+        },
+        {
+          $unwind: {
+            path: '$customer',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $unwind: {
+            path: '$guest',
+            preserveNullAndEmptyArrays: true
           }
         },
         {
