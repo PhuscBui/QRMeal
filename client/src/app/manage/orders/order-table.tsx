@@ -82,19 +82,6 @@ export default function OrderTable() {
   const refetchOrderList = orderListQuery.refetch
   const orderGroupList = useMemo(() => orderListQuery.data?.payload.result ?? [], [orderListQuery.data?.payload.result])
 
-  // FIX: Add console log to debug data structure
-  useEffect(() => {
-    console.log('Order Group List:', orderGroupList)
-    console.log(
-      'Order Groups with customers:',
-      orderGroupList.filter((group) => group.customer)
-    )
-    console.log(
-      'Order Groups with guests:',
-      orderGroupList.filter((group) => group.guest)
-    )
-  }, [orderGroupList])
-
   const tableListQuery = useTableListQuery()
   const tableList = tableListQuery.data?.payload.result ?? []
   const tableListSortedByNumber = tableList.sort((a, b) => a.number - b.number)
@@ -125,7 +112,6 @@ export default function OrderTable() {
       }
     })
 
-    console.log('Processed orderObjectByGuestId:', orderObjectByGuestId)
     return orderObjectByGuestId
   }
 

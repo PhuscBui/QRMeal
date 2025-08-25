@@ -8,7 +8,7 @@ import { TableListResType } from '@/schemaValidations/table.schema'
 import { Badge } from '@/components/ui/badge'
 import { ServingGuestByTableNumber, Statics, StatusCountObject } from '@/app/manage/orders/order-table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import OrderGuestDetail from '@/app/manage/orders/order-detail'
+import OrderDetail from '@/app/manage/orders/order-detail'
 
 export default function OrderStatics({
   statics,
@@ -40,12 +40,14 @@ export default function OrderStatics({
           <div>
             {selectedServingGuest &&
               Object.keys(selectedServingGuest).map((guestId, index) => {
-                const orders = selectedServingGuest[Number(guestId)]
+                const orderGroups = selectedServingGuest[guestId] || []
+                if (orderGroups.length === 0) return null
+
                 return (
                   <div key={guestId}>
-                    <OrderGuestDetail
-                      guest={orders[0].guest}
-                      orders={orders}
+                    <OrderDetail
+                      guest={orderGroups[0].guest || orderGroups[0].customer}
+                      orders={orderGroups}
                       onPaySuccess={() => {
                         setSelectedTableNumber(0)
                       }}

@@ -119,7 +119,7 @@ export default function OrderDetail({
     try {
       const result = await payOrderMutation.mutateAsync({
         guest_id: guest._id,
-        is_customer: 'role' in guest && guest.role === 'customer'
+        is_customer: 'role' in guest && guest.role === 'Customer'
       })
       if (onPaySuccess) {
         onPaySuccess(result.payload)
@@ -169,7 +169,7 @@ export default function OrderDetail({
     return orderGroups.map((orderGroup, groupIndex) => (
       <div key={orderGroup._id} className='space-y-1'>
         <div className='font-medium text-xs text-gray-600'>
-          Order Group #{groupIndex + 1} - {orderGroup.order_type}
+          Order Group #{groupIndex + 1}
           <Badge variant='outline' className='ml-2'>
             {getVietnameseOrderStatus(orderGroup.status)}
           </Badge>
