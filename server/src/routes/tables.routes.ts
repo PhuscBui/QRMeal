@@ -99,7 +99,7 @@ tablesRouter.post('/cancel-reservation', accessTokenValidator, wrapRequestHandle
  * Request: Params : number
  * Request: Body : status
  */
-tablesRouter.patch(
+tablesRouter.put(
   '/:number/status',
   accessTokenValidator,
   updateStatusTableValidator,

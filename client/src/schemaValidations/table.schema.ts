@@ -1,4 +1,4 @@
-import { TableStatusValues } from '@/constants/type'
+import { TableStatus, TableStatusValues } from '@/constants/type'
 import z from 'zod'
 
 export const CreateTableBody = z.object({
@@ -75,3 +75,9 @@ export const CancelReservationBody = z.object({
 })
 
 export type CancelReservationBodyType = z.TypeOf<typeof CancelReservationBody>
+
+export const UpdateTableStatusBody = z.object({
+  status: z.enum([TableStatus.Available, TableStatus.Occupied, TableStatus.Hidden])
+})
+
+export type UpdateTableStatusBodyType = z.TypeOf<typeof UpdateTableStatusBody>

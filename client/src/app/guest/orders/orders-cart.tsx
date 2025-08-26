@@ -6,14 +6,25 @@ import { OrderStatus } from '@/constants/type'
 
 import { formatCurrency, getVietnameseOrderStatus } from '@/lib/utils'
 import { useGuestGetOrderListQuery } from '@/queries/useGuest'
-import { PayGuestOrdersResType, UpdateOrderResType } from '@/schemaValidations/order.schema'
+import { PayOrdersResType, UpdateOrderResType } from '@/schemaValidations/order.schema'
 import Image from 'next/image'
 import { useEffect, useMemo } from 'react'
 import { useAppContext } from '@/components/app-provider'
 
 export default function OrdersCart() {
   const { data, refetch } = useGuestGetOrderListQuery()
-  const orders = useMemo(() => data?.payload.result ?? [], [data])
+  // Thay đổi: Lấy orders từ orderGroups thay vì trực tiếp từ orders
+  const orderGroups = useMemo(() => data?.payload.result ?? [], [data])
+  const orders = useMemo(() => {
+    return orderGroups.flatMap((orderGroup) =>
+      orderGroup.orders.map((order) => ({
+        ...order,
+        order_group_id: orderGroup._id,
+        table_number: orderGroup.table_number
+      }))
+    )
+  }, [orderGroups])
+
   const { socket } = useAppContext()
   const { waitingForPaying, paid } = useMemo(() => {
     return orders.reduce(
@@ -74,18 +85,24 @@ export default function OrdersCart() {
         quantity
       } = data
       toast('Success', {
-        description: `Item ${name} (SL: ${quantity}) has just been updated to status "${getVietnameseOrderStatus(
+        description: `The item ${name} (SL: ${quantity}) has just been updated with the status "${getVietnameseOrderStatus(
           data.status
         )}"`
       })
       refetch()
     }
 
-    function onPayment(data: PayGuestOrdersResType['result']) {
-      const { guest } = data[0]
-      toast('Success', {
-        description: `${guest?.name} at table ${guest?.table_number} successfully paid ${data.length} order`
-      })
+    function onPayment(data: PayOrdersResType['result']) {
+      // Thay đổi: Xử lý dữ liệu payment theo cấu trúc mới
+      if (data.length > 0) {
+        const orderGroup = data[0]
+        const guestInfo = orderGroup.guest
+        const totalOrders = data.reduce((sum, group) => sum + group.orders.length, 0)
+
+        toast.success('Success', {
+          description: `${guestInfo?.name} at table ${guestInfo?.table_number} has successfully paid for ${totalOrders} dishes`
+        })
+      }
       refetch()
     }
 
@@ -101,45 +118,83 @@ export default function OrdersCart() {
       socket?.off('payment', onPayment)
     }
   }, [refetch, socket])
+
+  // Thêm: Hiển thị thông tin bàn nếu có
+  const currentTable = orderGroups.length > 0 ? orderGroups[0].table_number : null
+
   return (
     <>
-      {orders.map((order, index) => (
-        <div key={order._id} className='flex gap-4'>
-          <div className='text-sm font-semibold'>{index + 1}</div>
-          <div className='flex-shrink-0 relative'>
-            <Image
-              src={order.dish_snapshot.image || 'https://placehold.co/600x400'}
-              alt={order.dish_snapshot.name}
-              height={100}
-              width={100}
-              quality={100}
-              className='object-cover w-[80px] h-[80px] rounded-md'
-            />
-          </div>
-          <div className='space-y-1'>
-            <h3 className='text-sm'>{order.dish_snapshot.name}</h3>
-            <div className='text-xs font-semibold'>
-              {formatCurrency(order.dish_snapshot.price)} x <Badge className='px-1'>{order.quantity}</Badge>
-            </div>
-          </div>
-          <div className='flex-shrink-0 ml-auto flex justify-center items-center'>
-            <Badge variant={'outline'}>{getVietnameseOrderStatus(order.status)}</Badge>
-          </div>
-        </div>
-      ))}
-      {paid.quantity !== 0 && (
-        <div className='sticky bottom-0 '>
-          <div className='w-full flex space-x-4 text-xl font-semibold'>
-            <span>Paid Order · {paid.quantity} item</span>
-            <span>{formatCurrency(paid.price)}</span>
+      {/* Thêm: Hiển thị thông tin bàn */}
+      {currentTable && (
+        <div className='mb-4 p-3  rounded-lg'>
+          <div className='text-sm font-semibold'>
+            Table:{' '}
+            <Badge variant='outline' className='ml-1'>
+              {currentTable}
+            </Badge>
           </div>
         </div>
       )}
-      <div className='sticky bottom-0 '>
-        <div className='w-full flex space-x-4 text-xl font-semibold'>
-          <span>Unpaid Order · {waitingForPaying.quantity} item</span>
-          <span>{formatCurrency(waitingForPaying.price)}</span>
+
+      {/* Thêm: Nhóm orders theo order group */}
+      {orderGroups.map((orderGroup, groupIndex) => (
+        <div key={orderGroup._id} className='mb-6'>
+          <div className='text-sm font-medium text-gray-500 mb-3 border-b pb-2'>
+            Order group #{groupIndex + 1} • {new Date(orderGroup.created_at).toLocaleDateString('vi-VN')}
+            <Badge variant='outline' className='ml-2'>
+              {getVietnameseOrderStatus(orderGroup.status)}
+            </Badge>
+          </div>
+
+          {orderGroup.orders.map((order, orderIndex) => (
+            <div key={order._id} className='flex gap-4 mb-3'>
+              <div className='text-sm font-semibold'>{orderIndex + 1}</div>
+              <div className='flex-shrink-0 relative'>
+                <Image
+                  src={order.dish_snapshot.image || 'https://placehold.co/600x400'}
+                  alt={order.dish_snapshot.name}
+                  height={100}
+                  width={100}
+                  quality={100}
+                  className='object-cover w-[80px] h-[80px] rounded-md'
+                />
+              </div>
+              <div className='space-y-1'>
+                <h3 className='text-sm font-medium'>{order.dish_snapshot.name}</h3>
+                <div className='text-xs font-semibold'>
+                  {formatCurrency(order.dish_snapshot.price)} x <Badge className='px-1'>{order.quantity}</Badge>
+                </div>
+                <div className='text-xs text-gray-500'>
+                  Tổng: {formatCurrency(order.dish_snapshot.price * order.quantity)}
+                </div>
+              </div>
+              <div className='flex-shrink-0 ml-auto flex justify-center items-center'>
+                <Badge variant={order.status === OrderStatus.Paid ? 'default' : 'outline'}>
+                  {getVietnameseOrderStatus(order.status)}
+                </Badge>
+              </div>
+            </div>
+          ))}
         </div>
+      ))}
+
+      {/* Thông tin thanh toán */}
+      <div className='sticky bottom-0 border-t pt-4 space-y-2'>
+        {paid.quantity > 0 && (
+          <div className='w-full flex justify-between text-green-600 font-semibold'>
+            <span>Paid • {paid.quantity} item</span>
+            <span>{formatCurrency(paid.price)}</span>
+          </div>
+        )}
+
+        {waitingForPaying.quantity > 0 && (
+          <div className='w-full flex justify-between text-xl font-bold text-orange-600'>
+            <span>Waiting for payment • {waitingForPaying.quantity} item</span>
+            <span>{formatCurrency(waitingForPaying.price)}</span>
+          </div>
+        )}
+
+        {orders.length === 0 && <div className='text-center text-gray-500 py-8'>No orders yet</div>}
       </div>
     </>
   )

@@ -12,7 +12,8 @@ import { useEffect } from 'react'
 import { useGuestLoginMutation } from '@/queries/useGuest'
 import { useAppContext } from '@/components/app-provider'
 import { generateSocket, handleErrorApi } from '@/lib/utils'
-import { useReserveTableMutation } from '@/queries/useTable'
+import { useUpdateTableStatusMutation } from '@/queries/useTable'
+import { TableStatus } from '@/constants/type'
 
 export default function GuestLoginForm() {
   const { setRole, setSocket } = useAppContext()
@@ -20,14 +21,14 @@ export default function GuestLoginForm() {
   const params = useParams()
   const table_number = Number(params.number)
   const token = searchParams.get('token')
-  const reserveMutation = useReserveTableMutation()
+  const updateTableStatusMutation = useUpdateTableStatusMutation()
   const router = useRouter()
   const loginMutation = useGuestLoginMutation()
   const form = useForm<GuestLoginBodyType>({
     resolver: zodResolver(GuestLoginBody),
     defaultValues: {
       name: '',
-      phone: '',
+      phone: undefined,
       token: token ?? '',
       table_number
     }
@@ -45,12 +46,9 @@ export default function GuestLoginForm() {
       const result = await loginMutation.mutateAsync(values)
       setRole(result.payload.result.guest.role)
       setSocket(generateSocket(result.payload.result.access_token))
-      await reserveMutation.mutateAsync({
-        guest_id: result.payload.result.guest._id,
-        table_number: values.table_number,
-        reservation_time: new Date(),
-        note: '',
-        token: token ?? ''
+      await updateTableStatusMutation.mutateAsync({
+        id: table_number,
+        status: TableStatus.Occupied
       })
       router.push('/guest/menu')
     } catch (error) {
@@ -95,15 +93,19 @@ export default function GuestLoginForm() {
                   <FormItem>
                     <div className='grid gap-2'>
                       <Label htmlFor='phone'>Phone</Label>
-                      <Input id='phone' type='text' required {...field} />
+                      <Input id='phone' type='text' required {...field} value={field.value ?? ''} />
                       <FormMessage />
                     </div>
                   </FormItem>
                 )}
               />
 
-              <Button type='submit' className='w-full' disabled={loginMutation.isPending || reserveMutation.isPending}>
-                {loginMutation.isPending || reserveMutation.isPending ? 'Logging in...' : 'Login'}
+              <Button
+                type='submit'
+                className='w-full'
+                disabled={loginMutation.isPending || updateTableStatusMutation.isPending}
+              >
+                {loginMutation.isPending || updateTableStatusMutation.isPending ? 'Logging in...' : 'Login'}
               </Button>
             </div>
           </form>

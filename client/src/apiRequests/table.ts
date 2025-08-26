@@ -5,18 +5,20 @@ import {
   ReserveTableBodyType,
   TableListResType,
   TableResType,
-  UpdateTableBodyType
+  UpdateTableBodyType,
+  UpdateTableStatusBodyType
 } from '@/schemaValidations/table.schema'
 
 const tableApiRequest = {
   list: () => http.get<TableListResType>('tables'),
   add: (body: CreateTableBodyType) => http.post<TableResType>('tables', body),
   getTable: (id: number) => http.get<TableResType>(`tables/${id}`),
-  updateTable: (id: number, body: UpdateTableBodyType) =>
-    http.put<TableResType>(`tables/${id}`, body),
+  updateTable: (id: number, body: UpdateTableBodyType) => http.put<TableResType>(`tables/${id}`, body),
   deleteTable: (id: number) => http.delete<TableResType>(`tables/${id}`),
   reserveTable: (body: ReserveTableBodyType) => http.post<TableResType>('tables/reserve', body),
-  cancelReservation: (body: CancelReservationBodyType) => http.post<TableResType>('tables/cancel-reservation', body)
+  cancelReservation: (body: CancelReservationBodyType) => http.post<TableResType>('tables/cancel-reservation', body),
+  updateTableStatus: (id: number, body: UpdateTableStatusBodyType) =>
+    http.put<TableResType>(`tables/${id}/status`, body)
 }
 
 export default tableApiRequest

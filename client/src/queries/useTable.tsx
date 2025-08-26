@@ -1,5 +1,5 @@
 import tableApiRequest from '@/apiRequests/table'
-import { UpdateTableBodyType } from '@/schemaValidations/table.schema'
+import { UpdateTableBodyType, UpdateTableStatusBodyType } from '@/schemaValidations/table.schema'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 export const useTableListQuery = () => {
@@ -9,13 +9,7 @@ export const useTableListQuery = () => {
   })
 }
 
-export const useGetTableQuery = ({
-  id,
-  enabled
-}: {
-  id: number
-  enabled: boolean
-}) => {
+export const useGetTableQuery = ({ id, enabled }: { id: number; enabled: boolean }) => {
   return useQuery({
     queryKey: ['tables', id],
     queryFn: () => tableApiRequest.getTable(id),
@@ -39,8 +33,7 @@ export const useUpdateTableMutation = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, ...body }: UpdateTableBodyType & { id: number }) =>
-      tableApiRequest.updateTable(id, body),
+    mutationFn: ({ id, ...body }: UpdateTableBodyType & { id: number }) => tableApiRequest.updateTable(id, body),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['tables'],
@@ -87,3 +80,15 @@ export const useCancelReservationMutation = () => {
   })
 }
 
+export const useUpdateTableStatusMutation = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...body }: UpdateTableStatusBodyType & { id: number }) =>
+      tableApiRequest.updateTableStatus(id, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['tables']
+      })
+    }
+  })
+}
