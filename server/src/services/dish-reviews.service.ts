@@ -115,12 +115,12 @@ class DishReviewService {
 
     const [reviews, total] = await Promise.all([
       databaseService.dishReviews
-        .find({ guest_id: new ObjectId(guestId) })
+        .find({ author_id: new ObjectId(guestId) })
         .sort({ created_at: -1 })
         .skip(skip)
         .limit(limit)
         .toArray(),
-      databaseService.dishReviews.countDocuments({ guest_id: new ObjectId(guestId) })
+      databaseService.dishReviews.countDocuments({ author_id: new ObjectId(guestId) })
     ])
 
     return {

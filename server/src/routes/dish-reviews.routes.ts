@@ -25,7 +25,7 @@ const dishReviewsRouter = Router()
  * Method: GET
  * Response: { reviews: DishReview[] }
  */
-dishReviewsRouter.get('/:dishId/all', wrapRequestHandler(getDishReviewsByDishController))
+dishReviewsRouter.get('/dish/:dishId', wrapRequestHandler(getDishReviewsByDishController))
 
 /**
  * Description. Get a dish review by ID
@@ -89,6 +89,6 @@ dishReviewsRouter.get('/:dishId/stats', wrapRequestHandler(getDishReviewsStatsCo
  * Method: GET
  * Response: { reviews: DishReview[] }
  */
-dishReviewsRouter.get('/:guestId/guest-info', wrapRequestHandler(getDishReviewsByGuestController))
+dishReviewsRouter.get('/guest/detail', accessTokenValidator, wrapRequestHandler(getDishReviewsByGuestController))
 
 export default dishReviewsRouter

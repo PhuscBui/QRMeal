@@ -4,7 +4,6 @@ import {
   CreateDishReviewReqBody,
   GetDishReviewParam,
   GetDishReviewsByDishParam,
-  GetDishReviewsByGuestParam,
   UpdateDishReviewParam,
   UpdateDishReviewReqBody,
   DeleteDishReviewParam,
@@ -55,10 +54,11 @@ export const getDishReviewsStatsController = async (req: Request<GetDishReviewsB
 }
 
 export const getDishReviewsByGuestController = async (
-  req: Request<GetDishReviewsByGuestParam, unknown, unknown, GetDishReviewsQuery>,
+  req: Request<ParamsDictionary, unknown, unknown, GetDishReviewsQuery>,
   res: Response
 ) => {
-  const result = await dishReviewService.getDishReviewsByGuest(req.params.guestId, req.query)
+  const { account_id } = req.decoded_authorization as TokenPayload
+  const result = await dishReviewService.getDishReviewsByGuest(account_id, req.query)
   res.status(HTTP_STATUS.OK).json({
     message: DISH_REVIEWS_MESSAGE.DISH_REVIEWS_FETCHED,
     result: result
