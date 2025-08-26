@@ -13,7 +13,12 @@ import {
 } from '@tanstack/react-table'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { CreateOrderGroupResType, GetOrdersResType, UpdateOrderResType } from '@/schemaValidations/order.schema'
+import {
+  CreateOrderGroupResType,
+  GetOrdersResType,
+  PayOrdersResType,
+  UpdateOrderResType
+} from '@/schemaValidations/order.schema'
 import AddOrder from '@/app/manage/orders/add-order'
 import EditOrder from '@/app/manage/orders/edit-order'
 import { createContext, useEffect, useMemo, useState } from 'react'
@@ -214,16 +219,29 @@ export default function OrderTable() {
       refetch()
     }
 
+    function OnPayOrder(data: PayOrdersResType['result']) {
+      const guest = data[0].guest // FIX: Handle guest orders
+      const customer = data[0].customer // FIX: Also handle customer
+      const displayName = customer?.name || guest?.name || 'Unknown'
+
+      toast('Success', {
+        description: `${displayName} just paid for their order`
+      })
+      refetch()
+    }
+
     socket?.on('update-order', onUpdateOrder)
     socket?.on('new-order', onNewOrder)
     socket?.on('connect', onConnect)
     socket?.on('disconnect', onDisconnect)
+    socket?.on('payment', OnPayOrder)
 
     return () => {
       socket?.off('connect', onConnect)
       socket?.off('disconnect', onDisconnect)
       socket?.off('update-order', onUpdateOrder)
       socket?.off('new-order', onNewOrder)
+      socket?.off('payment', OnPayOrder)
     }
   }, [refetchOrderList, fromDate, toDate, socket])
 

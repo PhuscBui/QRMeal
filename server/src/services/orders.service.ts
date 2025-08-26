@@ -484,6 +484,12 @@ class OrdersService {
         ? await databaseService.sockets.findOne({ customer_id: new ObjectId(customerOrGuestId) })
         : await databaseService.sockets.findOne({ guest_id: new ObjectId(customerOrGuestId) })
 
+      await databaseService.tables.updateOne(
+        { number: orderGroupsResult[0].table_number },
+        { $set: { status: TableStatus.Available }, $currentDate: { updated_at: true } },
+        { session }
+      )
+
       return {
         orderGroups: orderGroupsResult,
         socketId: socketRecord?.socketId
@@ -690,6 +696,9 @@ class OrdersService {
       }
     )
 
+    // Update order group status based on all orders in the group
+    await this.updateOrderGroupStatus(order.order_group_id)
+
     // Get updated order with related information
     const updatedOrder = await databaseService.orders
       .aggregate([
@@ -773,6 +782,76 @@ class OrdersService {
       order: updatedOrder[0],
       socketId: socketRecord?.socketId
     }
+  }
+
+  // Helper method to update order group status
+  private async updateOrderGroupStatus(orderGroupId: ObjectId) {
+    // Get all orders in the group
+    const ordersInGroup = await databaseService.orders
+      .find({
+        order_group_id: orderGroupId
+      })
+      .toArray()
+
+    if (ordersInGroup.length === 0) return
+
+    // Calculate new order group status based on order statuses
+    const newOrderGroupStatus = this.calculateOrderGroupStatus(
+      ordersInGroup.map((o) => o.status) as Array<'Pending' | 'Processing' | 'Delivered' | 'Paid' | 'Cancelled'>
+    )
+
+    // Update order group status
+    await databaseService.orderGroups.updateOne(
+      { _id: orderGroupId },
+      {
+        $set: {
+          status: newOrderGroupStatus,
+          updated_at: new Date()
+        }
+      }
+    )
+  }
+
+  // Helper method to calculate order group status based on individual order statuses
+  private calculateOrderGroupStatus(
+    orderStatuses: Array<'Pending' | 'Processing' | 'Delivered' | 'Paid' | 'Cancelled'>
+  ): string {
+    // Order status priority based on the workflow
+    const statusPriority: Record<'Pending' | 'Processing' | 'Delivered' | 'Paid' | 'Cancelled', number> = {
+      Pending: 1,
+      Processing: 2,
+      Delivered: 3,
+      Paid: 4,
+      Cancelled: 5
+    }
+
+    if (orderStatuses.every((status) => status === 'Cancelled')) {
+      return 'Cancelled'
+    }
+
+    if (orderStatuses.every((status) => status === 'Paid')) {
+      return 'Paid'
+    }
+
+    if (orderStatuses.some((status) => status === 'Cancelled')) {
+      const nonCancelledStatuses = orderStatuses.filter((status) => status !== 'Cancelled') as Array<
+        'Pending' | 'Processing' | 'Delivered' | 'Paid'
+      >
+      if (nonCancelledStatuses.length === 0) return 'Cancelled'
+      return this.calculateOrderGroupStatus(
+        nonCancelledStatuses as Array<'Pending' | 'Processing' | 'Delivered' | 'Paid' | 'Cancelled'>
+      )
+    }
+
+    // Find the minimum status (earliest stage) among all orders
+    const minStatusPriority = Math.min(...orderStatuses.map((status) => statusPriority[status]))
+    const groupStatus = Object.keys(statusPriority).find(
+      (status) => statusPriority[status as keyof typeof statusPriority] === minStatusPriority
+    )
+
+    // Return the earliest status in the workflow
+    // The order group should be at the stage of the least progressed order
+    return groupStatus || 'Pending'
   }
 
   async updateDeliveryStatus(orderGroupId: string, deliveryStatus: string, shipperInfo?: string, estimatedTime?: Date) {

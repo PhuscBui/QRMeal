@@ -75,15 +75,6 @@ export const useOrderService = (orderList: GetOrdersResType['result']) => {
       }
     }
 
-    // DEBUG: Add logging to help troubleshoot
-    console.log('useOrderService result:', {
-      orderListLength: orderList.length,
-      orderObjectByGuestIdKeys: Object.keys(orderObjectByGuestId),
-      servingGuestByTableNumberKeys: Object.keys(servingGuestByTableNumber),
-      customersCount: orderList.filter((o) => o.customer_id).length,
-      guestsCount: orderList.filter((o) => o.guest_id).length
-    })
-
     return {
       statics,
       orderObjectByGuestId,

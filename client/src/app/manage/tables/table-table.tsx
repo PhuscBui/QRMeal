@@ -40,6 +40,7 @@ import { Pen, Trash } from 'lucide-react'
 import ReservationDetail from '@/app/manage/tables/reservation-detail'
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog'
 import AddReservationDialog from '@/app/manage/tables/add-reservation'
+import { TableStatus } from '@/constants/type'
 
 type TableItem = TableListResType['result'][0]
 
@@ -49,6 +50,9 @@ const statusBadge = (status: string) => {
   }
   if (status === 'Reserved') {
     return <span className='bg-blue-100 text-blue-800 rounded-full px-2 py-1 text-xs font-bold'>Reserved</span>
+  }
+  if (status === 'Occupied') {
+    return <span className='bg-red-100 text-red-800 rounded-full px-2 py-1 text-xs font-bold'>Occupied</span>
   }
   return <span className='bg-yellow-100 text-yellow-800 rounded-full px-2 py-1 text-xs font-bold'>Hidden</span>
 }
@@ -121,6 +125,8 @@ export const columns: ColumnDef<TableItem>[] = [
               </div>
             </DialogContent>
           </Dialog>
+        ) : row.getValue('status') === TableStatus.Occupied ? (
+          <div className='text-red-500'>Table is currently occupied</div>
         ) : (
           <AddReservationDialog tableNumber={row.original.number} token={row.original.token} />
         )}

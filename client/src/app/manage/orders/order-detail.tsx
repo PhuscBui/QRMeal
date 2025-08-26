@@ -10,23 +10,21 @@ import {
   getVietnameseOrderStatus,
   handleErrorApi
 } from '@/lib/utils'
-import { useGetGuestLoyaltyQuery, useUpdateGuestLoyaltyMutation } from '@/queries/useGuestLoyalty'
 import { useGetGuestPromotionQuery, useUsedPromotionMutation } from '@/queries/useGuestPromotion'
 import { usePayOrderMutation } from '@/queries/useOrder'
 import { usePromotionListQuery } from '@/queries/usePromotion'
 import { useCreateRevenueMutation } from '@/queries/useRevenue'
-import { useCancelReservationMutation, useGetTableQuery } from '@/queries/useTable'
 import { GuestPromotion, GuestPromotionResType } from '@/schemaValidations/guest-promotion.schema'
 import { GetOrdersResType, PayOrdersResType } from '@/schemaValidations/order.schema'
 import { PromotionResType } from '@/schemaValidations/promotion.schema'
 import { Check, X } from 'lucide-react'
 import Image from 'next/image'
 import { Fragment, useMemo } from 'react'
+import { toast } from 'sonner'
 
 // Updated types to work with OrderGroup structure
 type GuestOrCustomer = GetOrdersResType['result'][0]['guest'] | GetOrdersResType['result'][0]['customer']
 type OrderGroups = GetOrdersResType['result']
-// type IndividualOrder = GetOrdersResType['result'][0]['orders'][0]
 
 export default function OrderDetail({
   guest,
@@ -42,22 +40,11 @@ export default function OrderDetail({
     return orderGroups.flatMap((orderGroup) => orderGroup.orders)
   }, [orderGroups])
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const ordersFilterToPurchase = guest
-    ? allOrders.filter((order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Cancelled)
-    : []
-
-  const cancelReservation = useCancelReservationMutation()
-  const table = useGetTableQuery({
-    id: orderGroups[0]?.table_number as number,
-    enabled: Boolean(orderGroups[0]?.table_number)
-  })
-
-  const guestLoyalty = useGetGuestLoyaltyQuery({
-    guestPhone: guest?.phone || '',
-    enabled: Boolean(guest?.phone)
-  })
-  const updateLoyalty = useUpdateGuestLoyaltyMutation()
+  const ordersFilterToPurchase = useMemo(() => {
+    return guest
+      ? allOrders.filter((order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Cancelled)
+      : []
+  }, [guest, allOrders])
 
   const purchasedOrderFilter = guest ? allOrders.filter((order) => order.status === OrderStatus.Paid) : []
 
@@ -117,10 +104,22 @@ export default function OrderDetail({
   const pay = async () => {
     if (payOrderMutation.isPending || !guest) return
     try {
-      const result = await payOrderMutation.mutateAsync({
-        guest_id: guest._id,
-        is_customer: 'role' in guest && guest.role === 'Customer'
-      })
+      const is_customer = 'role' in guest && guest.role === 'Customer'
+      let result = null
+      if (is_customer) {
+        result = await payOrderMutation.mutateAsync({
+          customer_id: guest._id,
+          is_customer
+        })
+      } else {
+        result = await payOrderMutation.mutateAsync({
+          guest_id: guest._id,
+          is_customer
+        })
+      }
+
+      toast.success(result.payload.message)
+
       if (onPaySuccess) {
         onPaySuccess(result.payload)
       }
@@ -137,16 +136,6 @@ export default function OrderDetail({
           guest_id: guest._id,
           guest_phone: guest.phone,
           total_amount: total_amount
-        }),
-        cancelReservation.mutateAsync({
-          token: table.data?.payload.result?.token || '',
-          table_number: table.data?.payload.result?.number as number
-        }),
-        updateLoyalty.mutateAsync({
-          guestPhone: guest.phone,
-          total_spend: (guestLoyalty.data?.payload.result?.total_spend || 0) + total_amount,
-          loyalty_points: (guestLoyalty.data?.payload.result?.loyalty_points || 0) + Math.floor(total_amount / 10000),
-          visit_count: (guestLoyalty.data?.payload.result?.visit_count || 0) + 1
         }),
         await Promise.all(
           usePromotions.map((promotion) =>
