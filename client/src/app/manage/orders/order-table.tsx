@@ -17,6 +17,7 @@ import {
   CreateOrderGroupResType,
   GetOrdersResType,
   PayOrdersResType,
+  UpdateDeliveryResType,
   UpdateOrderResType
 } from '@/schemaValidations/order.schema'
 import AddOrder from '@/app/manage/orders/add-order'
@@ -230,11 +231,19 @@ export default function OrderTable() {
       refetch()
     }
 
+    function OnUpdateDeliveryStatus(data: UpdateDeliveryResType['result']) {
+      const { status, customer } = data
+
+      toast.success(`${customer}'s Order Delivery status updated to "${status}"`)
+      refetch()
+    }
+
     socket?.on('update-order', onUpdateOrder)
     socket?.on('new-order', onNewOrder)
     socket?.on('connect', onConnect)
     socket?.on('disconnect', onDisconnect)
     socket?.on('payment', OnPayOrder)
+    socket?.on('delivery-status-update', OnUpdateDeliveryStatus)
 
     return () => {
       socket?.off('connect', onConnect)
@@ -242,6 +251,7 @@ export default function OrderTable() {
       socket?.off('update-order', onUpdateOrder)
       socket?.off('new-order', onNewOrder)
       socket?.off('payment', OnPayOrder)
+      socket?.off('delivery-status-update', OnUpdateDeliveryStatus)
     }
   }, [refetchOrderList, fromDate, toDate, socket])
 

@@ -87,12 +87,12 @@ export const DeliveryStatus = {
   Pending: 'Pending',
   Shipping: 'Shipping',
   Delivered: 'Delivered',
-  Canceled: 'Canceled'
+  Cancelled: 'Cancelled'
 } as const
 
 export const DeliveryStatusValues = [
   DeliveryStatus.Pending,
   DeliveryStatus.Shipping,
   DeliveryStatus.Delivered,
-  DeliveryStatus.Canceled
+  DeliveryStatus.Cancelled
 ] as const

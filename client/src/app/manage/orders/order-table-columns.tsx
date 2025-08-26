@@ -8,12 +8,12 @@ import { useContext } from 'react'
 import { formatCurrency, formatDateTimeToLocaleString, getVietnameseOrderStatus, simpleMatchText } from '@/lib/utils'
 import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
-import { DeliveryStatus, OrderStatus, OrderStatusValues } from '@/constants/type'
+import { OrderStatus, OrderStatusValues } from '@/constants/type'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { OrderTableContext } from '@/app/manage/orders/order-table'
-import { Clock, Eye, MapPin, Package, Pen, Phone, Truck, User } from 'lucide-react'
 import OrderDetail from '@/app/manage/orders/order-detail'
-import { Separator } from '@radix-ui/react-dropdown-menu'
+import { DeliveryInfoComponent } from '@/app/manage/orders/delivery-info'
+import { Pen } from 'lucide-react'
 
 type OrderGroup = GetOrdersResType['result'][0]
 
@@ -167,110 +167,9 @@ const orderTableColumns: ColumnDef<OrderGroup>[] = [
     id: 'deliveryInfo',
     header: 'Delivery',
     cell: ({ row }) => {
-      const delivery = row.original.delivery
-      const getStatusColor = (status: string) => {
-        switch (status) {
-          case DeliveryStatus.Delivered:
-            return 'bg-green-100 text-green-800 border-green-200'
-          case DeliveryStatus.Shipping:
-            return 'bg-blue-100 text-blue-800 border-blue-200'
-          case DeliveryStatus.Pending:
-            return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-          case DeliveryStatus.Canceled:
-            return 'bg-red-100 text-red-800 border-red-200'
-          default:
-            return 'bg-gray-100 text-gray-800 border-gray-200'
-        }
-      }
-      if (!delivery) return <span className='text-gray-400'>N/A</span>
-
-      return (
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant='outline' size='sm' className='gap-2'>
-              <Eye className='h-4 w-4' />
-              View Details
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className='w-80 p-0'>
-            <div className='p-4'>
-              {/* Header */}
-              <div className='flex items-center gap-2 mb-4'>
-                <Package className='h-5 w-5 text-blue-600' />
-                <h3 className='font-semibold text-lg'>Delivery Details</h3>
-              </div>
-
-              {/* Status Badge */}
-              <div className='mb-4'>
-                <Badge variant='outline' className={`${getStatusColor(delivery.delivery_status)} font-medium`}>
-                  {delivery.delivery_status}
-                </Badge>
-              </div>
-
-              <div className='space-y-4'>
-                {/* Address */}
-                <div className='flex items-start gap-3'>
-                  <MapPin className='h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0' />
-                  <div className='flex-1'>
-                    <p className='text-sm font-medium text-gray-700'>Delivery Address</p>
-                    <p className='text-sm text-gray-900 mt-1'>{delivery.address}</p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Receiver Info */}
-                <div className='space-y-3'>
-                  <div className='flex items-center gap-3'>
-                    <User className='h-4 w-4 text-gray-500 flex-shrink-0' />
-                    <div className='flex-1'>
-                      <p className='text-sm font-medium text-gray-700'>Receiver</p>
-                      <p className='text-sm text-gray-900'>{delivery.receiver_name}</p>
-                    </div>
-                  </div>
-
-                  <div className='flex items-center gap-3'>
-                    <Phone className='h-4 w-4 text-gray-500 flex-shrink-0' />
-                    <div className='flex-1'>
-                      <p className='text-sm font-medium text-gray-700'>Phone</p>
-                      <p className='text-sm text-gray-900'>{delivery.receiver_phone}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Conditional sections */}
-                {(delivery.shipper_info || delivery.estimated_time) && (
-                  <>
-                    <Separator />
-
-                    {delivery.shipper_info && (
-                      <div className='flex items-center gap-3'>
-                        <Truck className='h-4 w-4 text-gray-500 flex-shrink-0' />
-                        <div className='flex-1'>
-                          <p className='text-sm font-medium text-gray-700'>Shipper</p>
-                          <p className='text-sm text-gray-900'>{delivery.shipper_info}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {delivery.estimated_time && (
-                      <div className='flex items-center gap-3'>
-                        <Clock className='h-4 w-4 text-gray-500 flex-shrink-0' />
-                        <div className='flex-1'>
-                          <p className='text-sm font-medium text-gray-700'>Estimated Delivery</p>
-                          <p className='text-sm text-gray-900'>
-                            {formatDateTimeToLocaleString(delivery.estimated_time)}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
-      )
+      const orderGroup = row.original as GetOrdersResType['result'][0]
+      const delivery = orderGroup.delivery
+      return <DeliveryInfoComponent order_group_id={orderGroup._id} delivery={delivery} />
     }
   },
   {

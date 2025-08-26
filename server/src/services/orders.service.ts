@@ -440,55 +440,64 @@ class OrdersService {
       session.startTransaction()
 
       // Update order groups
-      await databaseService.orderGroups.updateMany(
-        {
-          _id: { $in: orderGroups.map((og) => og._id) }
-        },
-        {
-          $set: {
-            status: OrderStatus.Paid,
-            updated_at: new Date()
-          }
-        },
-        { session }
-      )
+      await Promise.all([
+        await databaseService.orderGroups.updateMany(
+          {
+            _id: { $in: orderGroups.map((og) => og._id) }
+          },
+          {
+            $set: {
+              status: OrderStatus.Paid,
+              updated_at: new Date()
+            }
+          },
+          { session }
+        ),
+        await databaseService.orders.updateMany(
+          {
+            order_group_id: { $in: orderGroups.map((og) => og._id) }
+          },
+          {
+            $set: {
+              status: OrderStatus.Paid,
+              order_handler_id: new ObjectId(orderHandlerId),
+              updated_at: new Date()
+            }
+          },
+          { session }
+        )
+      ])
 
       // Update individual orders
-      await databaseService.orders.updateMany(
-        {
-          order_group_id: { $in: orderGroups.map((og) => og._id) }
-        },
-        {
-          $set: {
-            status: OrderStatus.Paid,
-            order_handler_id: new ObjectId(orderHandlerId),
-            updated_at: new Date()
-          }
-        },
-        { session }
-      )
-
-      await session.commitTransaction()
 
       // Get updated order groups with complete information
       const orderGroupsResult = await this.getOrderGroupsByIds(orderGroups.map((og) => og._id))
 
-      if (orderGroupsResult[0].table_number) {
+      await Promise.all([
         await databaseService.tables.updateOne(
           { number: orderGroupsResult[0].table_number },
-          { $set: { status: TableStatus.Occupied, reservation: null }, $currentDate: { updated_at: true } },
+          { $set: { status: TableStatus.Available }, $currentDate: { updated_at: true } },
+          { session }
+        ),
+        await databaseService.deliveries.updateMany(
+          {
+            order_group_id: { $in: orderGroupsResult.map((og) => og._id) }
+          },
+          {
+            $set: {
+              delivery_status: DeliveryStatus.Delivered,
+              updated_at: new Date()
+            }
+          },
           { session }
         )
-      }
+      ])
+
+      await session.commitTransaction()
+
       const socketRecord = isCustomer
         ? await databaseService.sockets.findOne({ customer_id: new ObjectId(customerOrGuestId) })
         : await databaseService.sockets.findOne({ guest_id: new ObjectId(customerOrGuestId) })
-
-      await databaseService.tables.updateOne(
-        { number: orderGroupsResult[0].table_number },
-        { $set: { status: TableStatus.Available }, $currentDate: { updated_at: true } },
-        { session }
-      )
 
       return {
         orderGroups: orderGroupsResult,
@@ -884,6 +893,30 @@ class OrdersService {
     }
 
     await databaseService.deliveries.updateOne({ order_group_id: new ObjectId(orderGroupId) }, { $set: updateData })
+
+    let orderGroupStatus: string | undefined
+
+    switch (deliveryStatus) {
+      case DeliveryStatus.Pending:
+        orderGroupStatus = OrderStatus.Pending
+        break
+      case DeliveryStatus.Shipping:
+        orderGroupStatus = OrderStatus.Processing
+        break
+      case DeliveryStatus.Delivered:
+        orderGroupStatus = OrderStatus.Delivered
+        break
+      case DeliveryStatus.Cancelled:
+        orderGroupStatus = OrderStatus.Cancelled
+        break
+    }
+
+    if (orderGroupStatus) {
+      await databaseService.orderGroups.updateOne(
+        { _id: new ObjectId(orderGroupId) },
+        { $set: { status: orderGroupStatus, updated_at: new Date() } }
+      )
+    }
 
     const updatedOrderGroup = await this.getOrderGroupDetail(orderGroupId)
 
