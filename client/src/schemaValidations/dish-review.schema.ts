@@ -75,7 +75,7 @@ export const DishReviewStatsRes = z.object({
 
 export type DishReviewStatsResType = z.TypeOf<typeof DishReviewStatsRes>
 
-export const DishReviewByGuestListRes = z.object({
+export const DishReviewByMeListRes = z.object({
   message: z.string(),
   result: z.object({
     reviews: z.array(
@@ -94,4 +94,4 @@ export const DishReviewByGuestListRes = z.object({
   })
 })
 
-export type DishReviewByGuestListResType = z.TypeOf<typeof DishReviewByGuestListRes>
+export type DishReviewByMeListResType = z.TypeOf<typeof DishReviewByMeListRes>

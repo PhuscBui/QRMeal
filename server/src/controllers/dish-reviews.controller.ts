@@ -53,12 +53,9 @@ export const getDishReviewsStatsController = async (req: Request<GetDishReviewsB
   })
 }
 
-export const getDishReviewsByGuestController = async (
-  req: Request<ParamsDictionary, unknown, unknown, GetDishReviewsQuery>,
-  res: Response
-) => {
+export const getDishReviewsByMeController = async (req: Request<ParamsDictionary, unknown, unknown>, res: Response) => {
   const { account_id } = req.decoded_authorization as TokenPayload
-  const result = await dishReviewService.getDishReviewsByGuest(account_id, req.query)
+  const result = await dishReviewService.getDishReviewsByMe(account_id)
   res.status(HTTP_STATUS.OK).json({
     message: DISH_REVIEWS_MESSAGE.DISH_REVIEWS_FETCHED,
     result: result

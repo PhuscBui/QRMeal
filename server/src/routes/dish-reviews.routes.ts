@@ -4,7 +4,7 @@ import {
   deleteDishReviewController,
   getDishReviewByIdController,
   getDishReviewsByDishController,
-  getDishReviewsByGuestController,
+  getDishReviewsByMeController,
   getDishReviewsStatsController,
   updateDishReviewController
 } from '~/controllers/dish-reviews.controller'
@@ -84,11 +84,11 @@ dishReviewsRouter.delete(
 dishReviewsRouter.get('/:dishId/stats', wrapRequestHandler(getDishReviewsStatsController))
 
 /**
- * Description. Get dish reviews by guest
- * Path:  /:dishId/guest-info
+ * Description. Get dish reviews by guest or customer
+ * Path:  /:dishId/
  * Method: GET
  * Response: { reviews: DishReview[] }
  */
-dishReviewsRouter.get('/guest/detail', accessTokenValidator, wrapRequestHandler(getDishReviewsByGuestController))
+dishReviewsRouter.get('/reviews/me', accessTokenValidator, wrapRequestHandler(getDishReviewsByMeController))
 
 export default dishReviewsRouter

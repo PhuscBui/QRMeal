@@ -108,19 +108,10 @@ class DishReviewService {
     return { reviews, total }
   }
 
-  async getDishReviewsByGuest(guestId: string, query: GetDishReviewsQuery) {
-    const limit = typeof query.limit === 'number' ? query.limit : 10
-    const page = typeof query.page === 'number' ? query.page : 1
-    const skip = (page - 1) * limit
-
+  async getDishReviewsByMe(accountId: string) {
     const [reviews, total] = await Promise.all([
-      databaseService.dishReviews
-        .find({ author_id: new ObjectId(guestId) })
-        .sort({ created_at: -1 })
-        .skip(skip)
-        .limit(limit)
-        .toArray(),
-      databaseService.dishReviews.countDocuments({ author_id: new ObjectId(guestId) })
+      databaseService.dishReviews.find({ author_id: new ObjectId(accountId) }).toArray(),
+      databaseService.dishReviews.countDocuments({ author_id: new ObjectId(accountId) })
     ])
 
     return {

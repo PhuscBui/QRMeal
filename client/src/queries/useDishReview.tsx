@@ -65,10 +65,10 @@ export const useGetDishReviewStatsQuery = (dishId: string) => {
   })
 }
 
-export const useGetDishReviewsByGuestQuery = (enabled: boolean) => {
+export const useGetDishReviewsByMeQuery = (enabled: boolean) => {
   return useQuery({
-    queryKey: ['dishReviews', 'guest'],
-    queryFn: () => dishReviewApiRequest.getByGuest(),
+    queryKey: ['dishReviews', 'me'],
+    queryFn: () => dishReviewApiRequest.getByMe(),
     enabled
   })
 }

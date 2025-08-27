@@ -3,7 +3,7 @@ import {
   CreateDishReviewBodyType,
   DeleteDishReviewResType,
   DishReviewByDishListResType,
-  DishReviewByGuestListResType,
+  DishReviewByMeListResType,
   DishReviewResType,
   DishReviewStatsResType,
   UpdateDishReviewReqBodyType
@@ -16,7 +16,7 @@ const dishReviewApiRequest = {
   update: (id: string, data: UpdateDishReviewReqBodyType) => http.put<DishReviewResType>(`/dish-reviews/${id}`, data),
   delete: (id: string) => http.delete<DeleteDishReviewResType>(`/dish-reviews/${id}`),
   getStats: (dishId: string) => http.get<DishReviewStatsResType>(`/dish-reviews/${dishId}/stats`),
-  getByGuest: () => http.get<DishReviewByGuestListResType>(`/dish-reviews/guest/detail`)
+  getByMe: () => http.get<DishReviewByMeListResType>(`/dish-reviews/reviews/me`)
 }
 
 export default dishReviewApiRequest
