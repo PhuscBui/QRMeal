@@ -18,6 +18,7 @@ export const DishSchema = z.object({
   price: z.coerce.number(),
   description: z.string(),
   category_ids: z.array(z.string().min(1).max(256)),
+  avg_rating: z.number().nullable().optional(),
   image: z.string().nullable(),
   status: z.enum(DishStatusValues),
   created_at: z.date(),

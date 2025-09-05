@@ -5,8 +5,30 @@ import databaseService from '~/services/databases.service'
 
 class DishesService {
   async getDishes() {
-    const result = await databaseService.dishes.find().toArray()
-    return result
+    const dishes = await databaseService.dishes
+      .aggregate([
+        {
+          $lookup: {
+            from: 'dish_reviews',
+            localField: '_id',
+            foreignField: 'dish_id',
+            as: 'reviews'
+          }
+        },
+        {
+          $addFields: {
+            avg_rating: { $avg: '$reviews.rating' }
+          }
+        },
+        {
+          $project: {
+            reviews: 0
+          }
+        }
+      ])
+      .toArray()
+
+    return dishes
   }
 
   async createDish(payload: CreateDishReqBody) {

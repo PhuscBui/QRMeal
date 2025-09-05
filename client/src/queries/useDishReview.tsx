@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import dishReviewApiRequest from '@/apiRequests/dish-review'
-import { UpdateDishReviewReqBodyType } from '@/schemaValidations/dish-review.schema'
+import { GetDishReviewsQueryType, UpdateDishReviewReqBodyType } from '@/schemaValidations/dish-review.schema'
 
-export const useDishReviewListQuery = (dishId: string) => {
+export const useDishReviewListQuery = (dishId: string, query?: GetDishReviewsQueryType) => {
   return useQuery({
-    queryKey: ['dishReviews', dishId],
-    queryFn: () => dishReviewApiRequest.getByDish(dishId),
+    queryKey: ['dishReviews', dishId, query],
+    queryFn: () => dishReviewApiRequest.getByDish(dishId, query),
     enabled: !!dishId
   })
 }

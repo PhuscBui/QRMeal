@@ -95,3 +95,13 @@ export const DishReviewByMeListRes = z.object({
 })
 
 export type DishReviewByMeListResType = z.TypeOf<typeof DishReviewByMeListRes>
+
+export const GetDishReviewsQuery = z.object({
+  page: z.string().optional(),
+  limit: z.string().optional(),
+  rating: z.string().optional(),
+  sortBy: z.enum(['rating', 'created_at']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional()
+})
+
+export type GetDishReviewsQueryType = z.TypeOf<typeof GetDishReviewsQuery>

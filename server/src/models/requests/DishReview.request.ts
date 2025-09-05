@@ -37,4 +37,5 @@ export interface GetDishReviewsQuery extends Query {
   rating?: string
   sortBy?: 'rating' | 'created_at'
   sortOrder?: 'asc' | 'desc'
+  byMe?: string
 }

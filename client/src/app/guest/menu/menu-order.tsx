@@ -195,7 +195,7 @@ export default function MenuOrder() {
                       </span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className='px-4 pb-4'>
+                  <AccordionContent className='pb-4'>
                     <div className='space-y-4'>
                       {dishesInCategory.map((dish) => (
                         // reuse card dish component
