@@ -301,9 +301,9 @@ export function DishReviewsModal({ isOpen, onClose, dish }: DishReviewsModalProp
         {totalReviews > REVIEWS_PER_PAGE && (
           <div className='flex items-center justify-between border-t bg-gray-50 px-6 py-4 flex-shrink-0'>
             <div className='text-sm text-gray-600'>
-              Trang <span className='font-semibold'>{currentPage}</span> /{' '}
+              Page <span className='font-semibold'>{currentPage}</span> /{' '}
               <span className='font-semibold'>{totalPages}</span>
-              <span className='text-gray-400 ml-2'>({totalReviews} đánh giá)</span>
+              <span className='text-gray-400 ml-2'>({totalReviews} reviews)</span>
             </div>
             <div className='flex items-center gap-2'>
               <Button
