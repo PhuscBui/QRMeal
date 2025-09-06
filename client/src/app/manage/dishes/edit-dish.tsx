@@ -25,8 +25,8 @@ import { useUploadMediaMutation } from '@/queries/useMedia'
 import { useGetDishQuery, useUpdateDishMutation } from '@/queries/useDish'
 import { toast } from 'sonner'
 import revalidateApiRequest from '@/apiRequests/revalidate'
-import { Checkbox } from '@/components/ui/checkbox'
 import { useCategoryListQuery } from '@/queries/useCategory'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 
 export default function EditDish({
   id,
@@ -50,7 +50,7 @@ export default function EditDish({
     defaultValues: {
       name: '',
       description: '',
-      category_ids: [],
+      category_id: '',
       price: 0,
       image: undefined,
       status: DishStatus.Unavailable
@@ -63,12 +63,12 @@ export default function EditDish({
 
   useEffect(() => {
     if (data) {
-      const { name, image, description, price, status, category_ids } = data.payload.result
+      const { name, image, description, price, status, category_id } = data.payload.result
       form.reset({
         name,
         image: image || undefined,
         description,
-        category_ids,
+        category_id,
         price,
         status
       })
@@ -226,29 +226,20 @@ export default function EditDish({
 
               <FormField
                 control={form.control}
-                name='category_ids'
+                name='category_id'
                 render={({ field }) => (
                   <FormItem>
-                    <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
-                      <Label htmlFor='description' className='text-sm font-bold'>
-                        Categories
-                      </Label>
-                      <div className='col-span-3 w-full space-y-2'>
+                    <div className='grid grid-cols-4 items-start justify-items-start gap-4'>
+                      <Label className='text-sm font-bold'>Category</Label>
+
+                      <RadioGroup value={field.value} onValueChange={field.onChange} className='col-span-3 space-y-2'>
                         {categoryData.map((category) => (
                           <div key={category._id} className='flex items-center space-x-2'>
-                            <Checkbox
-                              checked={field.value?.includes(category._id)}
-                              onCheckedChange={(checked) => {
-                                const newValue = checked
-                                  ? [...field.value, category._id]
-                                  : field.value.filter((id) => id !== category._id)
-                                field.onChange(newValue)
-                              }}
-                            />
-                            <Label>{category.name}</Label>
+                            <RadioGroupItem value={category._id} id={category._id} />
+                            <Label htmlFor={category._id}>{category.name}</Label>
                           </div>
                         ))}
-                      </div>
+                      </RadioGroup>
 
                       <FormMessage />
                     </div>

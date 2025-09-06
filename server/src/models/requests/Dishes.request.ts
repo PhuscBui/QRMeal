@@ -4,7 +4,7 @@ export interface CreateDishReqBody {
   name: string
   price: number
   description: string
-  category_ids: string[]
+  category_id: string
   image?: string
   status: string
 }
@@ -29,7 +29,7 @@ export interface UpdateDishReqBody {
   name: string
   price: number
   description: string
-  category_ids: string[]
+  category_id: string
   image?: string
   status: string
 }

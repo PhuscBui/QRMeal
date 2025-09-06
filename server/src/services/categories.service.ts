@@ -31,7 +31,7 @@ class CategoryService {
           $lookup: {
             from: 'dishes',
             localField: '_id',
-            foreignField: 'category_ids',
+            foreignField: 'category_id',
             as: 'dishes'
           }
         },

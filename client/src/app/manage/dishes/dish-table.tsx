@@ -37,8 +37,6 @@ import AddDish from '@/app/manage/dishes/add-dish'
 import { useDeleteDishMutation, useDishListQuery } from '@/queries/useDish'
 import { toast } from 'sonner'
 import { Pen, Trash } from 'lucide-react'
-import { useCategoryListQuery } from '@/queries/useCategory'
-import { CategoryResType } from '@/schemaValidations/category.schema'
 
 type DishItem = DishListResType['result'][0]
 
@@ -64,7 +62,7 @@ const DishTableContext = createContext<{
   setDishDelete: () => {}
 })
 
-const getColumns = (categoryData: CategoryResType['result'][]): ColumnDef<DishItem>[] => [
+const getColumns = (): ColumnDef<DishItem>[] => [
   {
     accessorKey: 'index',
     header: 'No.',
@@ -109,13 +107,10 @@ const getColumns = (categoryData: CategoryResType['result'][]): ColumnDef<DishIt
     )
   },
   {
-    accessorKey: 'category_ids',
-    header: 'Categories',
+    accessorKey: 'category_name',
+    header: 'Category',
     cell: ({ row }) => {
-      const categoryIds = (row.getValue('category_ids') as string[]) || []
-      const categoryNames = categoryData.filter((c) => categoryIds?.includes(c._id)).map((c) => c.name)
-
-      return <div className='capitalize'>{categoryNames.join(', ') || 'Other'}</div>
+      return <div className='capitalize'>{row.getValue('category_name') || 'Other'}</div>
     }
   },
   {
@@ -201,8 +196,6 @@ export default function DishTable() {
   const [dishDelete, setDishDelete] = useState<DishItem | null>(null)
   const dishListQuery = useDishListQuery()
   const data = dishListQuery.data?.payload.result ?? []
-  const categoryListQuery = useCategoryListQuery()
-  const categoryData = categoryListQuery.data?.payload.result ?? []
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
@@ -215,7 +208,7 @@ export default function DishTable() {
   })
   const table = useReactTable({
     data,
-    columns: getColumns(categoryData),
+    columns: getColumns(),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),

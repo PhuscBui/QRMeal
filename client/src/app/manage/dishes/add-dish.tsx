@@ -19,7 +19,7 @@ import { useUploadMediaMutation } from '@/queries/useMedia'
 import { toast } from 'sonner'
 import revalidateApiRequest from '@/apiRequests/revalidate'
 import { useCategoryListQuery } from '@/queries/useCategory'
-import { Checkbox } from '@/components/ui/checkbox'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 
 export default function AddDish() {
   const categoryListQuery = useCategoryListQuery()
@@ -34,7 +34,7 @@ export default function AddDish() {
     defaultValues: {
       name: '',
       description: '',
-      category_ids: [],
+      category_id: '',
       price: 0,
       image: undefined,
       status: DishStatus.Unavailable
@@ -201,30 +201,21 @@ export default function AddDish() {
 
               <FormField
                 control={form.control}
-                name='category_ids'
+                name='category_id'
                 render={({ field }) => (
                   <FormItem>
                     <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
-                      <Label htmlFor='description' className='text-sm font-bold'>
-                        Categories
-                      </Label>
+                      <Label className='text-sm font-bold'>Category</Label>
                       <div className='col-span-3 w-full space-y-2'>
-                        {categoryData.map((category) => (
-                          <div key={category._id} className='flex items-center space-x-2'>
-                            <Checkbox
-                              checked={field.value?.includes(category._id)}
-                              onCheckedChange={(checked) => {
-                                const newValue = checked
-                                  ? [...field.value, category._id]
-                                  : field.value.filter((id) => id !== category._id)
-                                field.onChange(newValue)
-                              }}
-                            />
-                            <Label>{category.name}</Label>
-                          </div>
-                        ))}
+                        <RadioGroup value={field.value} onValueChange={field.onChange}>
+                          {categoryData.map((category) => (
+                            <div key={category._id} className='flex items-center space-x-2'>
+                              <RadioGroupItem value={category._id} id={category._id} />
+                              <Label htmlFor={category._id}>{category.name}</Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
                       </div>
-
                       <FormMessage />
                     </div>
                   </FormItem>

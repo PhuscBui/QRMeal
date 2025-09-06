@@ -60,7 +60,7 @@ dishesRouter.put(
   isEmployeeValidator,
   updateDishValidator,
   dishIdValidator,
-  filterMiddleware<UpdateDishReqBody>(['name', 'price', 'image', 'description', 'category_ids', 'status']),
+  filterMiddleware<UpdateDishReqBody>(['name', 'price', 'image', 'description', 'category_id', 'status']),
   wrapRequestHandler(updateDishController)
 )
 

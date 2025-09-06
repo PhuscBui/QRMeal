@@ -21,8 +21,22 @@ class DishesService {
           }
         },
         {
+          $lookup: {
+            from: 'categories',
+            localField: 'category_id',
+            foreignField: '_id',
+            as: 'category'
+          }
+        },
+        {
+          $addFields: {
+            category_name: { $arrayElemAt: ['$category.name', 0] }
+          }
+        },
+        {
           $project: {
-            reviews: 0
+            reviews: 0,
+            category: 0
           }
         }
       ])
@@ -38,7 +52,7 @@ class DishesService {
         price: payload.price,
         image: payload.image,
         description: payload.description,
-        category_ids: payload.category_ids.map((id) => new ObjectId(id)),
+        category_id: new ObjectId(payload.category_id),
         status: payload.status
       })
     )
@@ -60,7 +74,7 @@ class DishesService {
           price: payload.price,
           image: payload.image,
           description: payload.description,
-          category_ids: payload.category_ids.map((id) => new ObjectId(id)),
+          category_id: new ObjectId(payload.category_id),
           status: payload.status
         },
         $currentDate: { updated_at: true }

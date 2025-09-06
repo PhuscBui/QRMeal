@@ -5,7 +5,7 @@ export const CreateDishBody = z.object({
   name: z.string().min(1).max(256),
   price: z.coerce.number().positive(),
   description: z.string().max(10000),
-  category_ids: z.array(z.string().min(1).max(256)),
+  category_id: z.string().min(1).max(256),
   image: z.string().url().optional(),
   status: z.enum(DishStatusValues).optional()
 })
@@ -17,7 +17,8 @@ export const DishSchema = z.object({
   name: z.string(),
   price: z.coerce.number(),
   description: z.string(),
-  category_ids: z.array(z.string().min(1).max(256)),
+  category_id: z.string().min(1).max(256),
+  category_name: z.string().optional(),
   avg_rating: z.number().nullable().optional(),
   image: z.string().nullable(),
   status: z.enum(DishStatusValues),
