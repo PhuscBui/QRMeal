@@ -77,18 +77,25 @@ class GuestsService {
   }
 
   async logout(refresh_token: string) {
-    await databaseService.guests.updateOne(
-      { refresh_token: refresh_token },
-      {
-        $set: {
-          refresh_token: null,
-          refresh_token_exp: null
-        },
-        $currentDate: { updated_at: true }
-      }
-    )
+    const guest = await databaseService.guests.findOne({ refresh_token: refresh_token })
+    await Promise.all([
+      await databaseService.guests.updateOne(
+        { refresh_token: refresh_token },
+        {
+          $set: {
+            refresh_token: null,
+            refresh_token_exp: null
+          },
+          $currentDate: { updated_at: true }
+        }
+      ),
+      await databaseService.refreshTokens.deleteOne({ token: refresh_token }),
+      await databaseService.tables.updateOne(
+        { number: guest?.table_number || -1 },
+        { $set: { status: TableStatus.Available, reservation: null }, $currentDate: { updated_at: true } }
+      )
+    ])
 
-    await databaseService.refreshTokens.deleteOne({ token: refresh_token })
     return {
       message: USERS_MESSAGES.USER_LOGOUT_SUCCESS
     }

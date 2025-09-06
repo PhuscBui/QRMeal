@@ -27,7 +27,8 @@ export const loginController = async (req: Request<ParamsDictionary, unknown, Lo
 
 export const logoutController = async (req: Request<ParamsDictionary, unknown, LogoutReqBody>, res: Response) => {
   const { refresh_token } = req.body
-  const result = await authService.logout(refresh_token)
+  const { role } = req.decoded_authorization as TokenPayload
+  const result = await authService.logout(role, refresh_token)
   res.json(result)
 }
 
