@@ -166,7 +166,7 @@ class OrdersService {
             name: dish.name,
             price: dish.price,
             dish_id: dish._id,
-            category_ids: dish.category_ids,
+            category_id: dish.category_id,
             status: dish.status,
             created_at: new Date()
           }),
@@ -681,7 +681,7 @@ class OrdersService {
           image: dish.image,
           name: dish.name,
           price: dish.price,
-          category_ids: dish.category_ids,
+          category_id: dish.category_id,
           dish_id: dish._id,
           status: dish.status,
           created_at: new Date()

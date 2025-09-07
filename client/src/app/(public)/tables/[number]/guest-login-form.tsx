@@ -24,6 +24,7 @@ export default function GuestLoginForm() {
   const updateTableStatusMutation = useUpdateTableStatusMutation()
   const router = useRouter()
   const loginMutation = useGuestLoginMutation()
+
   const form = useForm<GuestLoginBodyType>({
     resolver: zodResolver(GuestLoginBody),
     defaultValues: {
@@ -106,6 +107,15 @@ export default function GuestLoginForm() {
                 disabled={loginMutation.isPending || updateTableStatusMutation.isPending}
               >
                 {loginMutation.isPending || updateTableStatusMutation.isPending ? 'Logging in...' : 'Login'}
+              </Button>
+
+              <Button
+                variant='outline'
+                className='w-full'
+                disabled={loginMutation.isPending || updateTableStatusMutation.isPending}
+                onClick={() => router.push('/')}
+              >
+                Login as customer
               </Button>
             </div>
           </form>
