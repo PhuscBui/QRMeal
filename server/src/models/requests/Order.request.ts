@@ -31,7 +31,7 @@ export interface CreateOrderGroupReqBody {
   customer_id?: string // Optional: for registered customers
   guest_id?: string // Optional: for guest users
   table_number?: number | null // Optional: for dine-in orders
-  order_type: 'dine-in' | 'delivery' // Type of order
+  order_type: 'dine-in' | 'delivery' | 'takeaway' // Type of order
   orders: OrderItem[] // Array of items to order
   delivery_info?: DeliveryInfo // Required for delivery orders
 }
@@ -50,7 +50,7 @@ export interface DeliveryInfo {
 export interface GetOrdersQueryParams {
   fromDate?: string
   toDate?: string
-  order_type?: 'dine-in' | 'delivery'
+  order_type?: 'dine-in' | 'delivery' | 'takeaway'
   customer_id?: string
   guest_id?: string
 }
