@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import {
   Clock,
   CheckCircle,
@@ -182,12 +183,76 @@ const paymentMethodConfig = {
 }
 
 export default function OrdersPage() {
+  const params = useParams()
+  const router = useRouter()
+  const orderType = params.type as string
+  
   const [selectedTab, setSelectedTab] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
   const [reviewText, setReviewText] = useState('')
   const [rating, setRating] = useState(0)
+  const [orders, setOrders] = useState<any[]>([])
+
+  // Order type specific configurations
+  const orderTypeConfig = {
+    'dine-in': {
+      title: 'Đơn hàng - Ăn tại quán',
+      description: 'Theo dõi đơn hàng tại nhà hàng',
+      icon: MapPin,
+      color: 'text-blue-600'
+    },
+    'takeaway': {
+      title: 'Đơn hàng - Mua mang về',
+      description: 'Theo dõi đơn hàng mua mang về',
+      icon: Package,
+      color: 'text-orange-600'
+    },
+    'delivery': {
+      title: 'Đơn hàng - Giao hàng',
+      description: 'Theo dõi đơn hàng giao tận nơi',
+      icon: Truck,
+      color: 'text-green-600'
+    }
+  }
+
+  const currentConfig = orderTypeConfig[orderType as keyof typeof orderTypeConfig]
+
+  useEffect(() => {
+    // Load orders from localStorage (in real app, this would be from API)
+    const storedOrders = localStorage.getItem('orders')
+    if (storedOrders) {
+      const allOrders = JSON.parse(storedOrders)
+      // Filter orders by type
+      const filteredOrders = allOrders.filter((order: any) => order.orderType === orderType)
+      setOrders(filteredOrders)
+    }
+
+    // Check if there's a current order to add
+    const currentOrder = localStorage.getItem('currentOrder')
+    if (currentOrder) {
+      const orderData = JSON.parse(currentOrder)
+      if (orderData.orderType === orderType) {
+        // Add current order to the list
+        const newOrder = {
+          id: `ORD-${Date.now()}`,
+          orderNumber: `QRM-${Date.now()}`,
+          status: 'pending',
+          ...orderData,
+          createdAt: new Date().toISOString()
+        }
+        setOrders(prev => [newOrder, ...prev])
+        
+        // Store in localStorage
+        const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]')
+        localStorage.setItem('orders', JSON.stringify([newOrder, ...existingOrders]))
+        
+        // Clear current order
+        localStorage.removeItem('currentOrder')
+      }
+    }
+  }, [orderType])
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
@@ -246,8 +311,15 @@ export default function OrdersPage() {
     <div className='container mx-auto px-4 py-6'>
       {/* Header */}
       <div className='mb-8'>
-        <h1 className='text-3xl font-bold mb-2'>Quản lý đơn hàng</h1>
-        <p className='text-muted-foreground'>Theo dõi và quản lý tất cả đơn hàng của bạn</p>
+        <div className='flex items-center gap-3 mb-4'>
+          <div className={`p-2 rounded-lg bg-muted`}>
+            <currentConfig.icon className={`h-6 w-6 ${currentConfig.color}`} />
+          </div>
+          <div>
+            <h1 className='text-3xl font-bold'>{currentConfig.title}</h1>
+            <p className='text-muted-foreground'>{currentConfig.description}</p>
+          </div>
+        </div>
       </div>
 
       {/* Search and Filters */}

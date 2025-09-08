@@ -91,7 +91,7 @@ export const CreateOrderGroupBody = z.object({
   customer_id: z.string().optional(),
   guest_id: z.string().optional(),
   table_number: z.number().nullable().optional(),
-  order_type: z.enum(['dine-in', 'delivery']),
+  order_type: z.enum(['dine-in', 'delivery', 'takeaway']),
   orders: z.array(
     z.object({
       dish_id: z.string(),
@@ -103,6 +103,13 @@ export const CreateOrderGroupBody = z.object({
       address: z.string(),
       receiver_name: z.string(),
       receiver_phone: z.string()
+    })
+    .optional(),
+  takeaway_info: z
+    .object({
+      pickup_time: z.string().optional(),
+      customer_name: z.string(),
+      customer_phone: z.string()
     })
     .optional()
 })
@@ -145,7 +152,7 @@ export type OrderGroupParamType = z.TypeOf<typeof OrderGroupParam>
 export const GetOrdersQueryParams = z.object({
   fromDate: z.coerce.date().optional(),
   toDate: z.coerce.date().optional(),
-  order_type: z.enum(['dine-in', 'delivery']).optional(),
+  order_type: z.enum(['dine-in', 'delivery', 'takeaway']).optional(),
   customer_id: z.string().optional(),
   guest_id: z.string().optional()
 })

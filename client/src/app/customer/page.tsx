@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Search, Star, Clock, MapPin, ChefHat, Award, Users } from 'lucide-react'
+import { Search, Star, Clock, ChefHat, Award, Users, QrCode, Package, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -46,14 +46,18 @@ export default function CustomerHomePage() {
             <h1 className='text-3xl md:text-5xl font-bold mb-4'>Welcome to QRMeal</h1>
             <p className='text-lg md:text-xl mb-6 opacity-90'>Enjoy the best dishes with dedicated service</p>
             <div className='flex flex-col sm:flex-row gap-4'>
-              <Button size='lg' className=''>
-                <ChefHat className='mr-2 h-5 w-5' />
-                View Menu
-              </Button>
-              <Button size='lg' variant='secondary' className=''>
-                <MapPin className='mr-2 h-5 w-5' />
-                Find Restaurant
-              </Button>
+              <Link href='/customer/order-type'>
+                <Button size='lg' className='md:w-auto w-full'>
+                  <ChefHat className='mr-2 h-5 w-5' />
+                  Đặt món ngay
+                </Button>
+              </Link>
+              <Link href='/customer/order-type'>
+                <Button size='lg' variant='secondary' className='md:w-auto w-full'>
+                  <QrCode className='mr-2 h-5 w-5' />
+                  Quét QR Code
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -159,6 +163,50 @@ export default function CustomerHomePage() {
         </div>
       </div>
 
+      {/* Order Type Selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Chọn cách thưởng thức</CardTitle>
+          <CardDescription>Chọn cách phù hợp nhất để thưởng thức món ăn</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className='grid md:grid-cols-3 gap-4'>
+            <Link href='/customer/scan-qr'>
+              <Card className='hover:shadow-lg transition-shadow cursor-pointer border-blue-200 bg-blue-50 dark:bg-blue-950/20'>
+                <CardContent className='p-6 text-center'>
+                  <QrCode className='h-12 w-12 mx-auto mb-4 text-blue-600' />
+                  <h3 className='font-semibold text-lg mb-2'>Ăn tại quán</h3>
+                  <p className='text-sm text-muted-foreground mb-4'>Quét QR code và thưởng thức tại nhà hàng</p>
+                  <Button className='w-full'>Quét QR Code</Button>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href='/customer/takeaway/menu'>
+              <Card className='hover:shadow-lg transition-shadow cursor-pointer border-orange-200 bg-orange-50 dark:bg-orange-950/20'>
+                <CardContent className='p-6 text-center'>
+                  <Package className='h-12 w-12 mx-auto mb-4 text-orange-600' />
+                  <h3 className='font-semibold text-lg mb-2'>Mua mang về</h3>
+                  <p className='text-sm text-muted-foreground mb-4'>Đặt trước và đến lấy tại nhà hàng</p>
+                  <Button className='w-full'>Đặt món</Button>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href='/customer/delivery/menu'>
+              <Card className='hover:shadow-lg transition-shadow cursor-pointer border-green-200 bg-green-50 dark:bg-green-950/20'>
+                <CardContent className='p-6 text-center'>
+                  <Truck className='h-12 w-12 mx-auto mb-4 text-green-600' />
+                  <h3 className='font-semibold text-lg mb-2'>Giao hàng</h3>
+                  <p className='text-sm text-muted-foreground mb-4'>Đặt món và giao tận nơi</p>
+                  <Button className='w-full'>Đặt giao hàng</Button>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Quick Actions */}
       <Card>
         <CardHeader>
@@ -167,10 +215,10 @@ export default function CustomerHomePage() {
         </CardHeader>
         <CardContent>
           <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-            <Link href='/customer/menu'>
+            <Link href='/customer/order-type'>
               <Button variant='outline' className='w-full h-20 flex-col gap-2'>
                 <ChefHat className='h-6 w-6' />
-                <span>Xem thực đơn</span>
+                <span>Đặt món</span>
               </Button>
             </Link>
             <Link href='/customer/orders'>

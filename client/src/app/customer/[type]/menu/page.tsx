@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Search, Filter, Star, Plus, Minus, ChefHat } from 'lucide-react'
+import { Search, Filter, Star, Plus, Minus, ChefHat, MapPin, Package, Truck, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -22,6 +23,10 @@ const sortOptions = [
 ]
 
 export default function MenuPage() {
+  const params = useParams()
+  const router = useRouter()
+  const orderType = params.type as string
+  
   const { data: categoriesData } = useCategoryListQuery()
   const { data: dishesData } = useDishListQuery()
   const categories = categoriesData?.payload.result || []
@@ -32,6 +37,47 @@ export default function MenuPage() {
   const [sortBy, setSortBy] = useState('popular')
   const [cart, setCart] = useState<Record<string, number>>({})
   const [showFilters, setShowFilters] = useState(false)
+  const [tableInfo, setTableInfo] = useState<any>(null)
+
+  // Order type specific configurations
+  const orderTypeConfig = {
+    'dine-in': {
+      title: 'Menu - Ăn tại quán',
+      description: 'Chọn món và thưởng thức tại nhà hàng',
+      icon: MapPin,
+      color: 'text-blue-600',
+      features: ['Phục vụ tận bàn', 'Món ăn tươi ngon', 'Trải nghiệm tại chỗ']
+    },
+    'takeaway': {
+      title: 'Menu - Mua mang về',
+      description: 'Đặt món và đến lấy tại nhà hàng',
+      icon: Package,
+      color: 'text-orange-600',
+      features: ['Đặt trước', 'Đến lấy nhanh', 'Món ăn tươi ngon']
+    },
+    'delivery': {
+      title: 'Menu - Giao hàng',
+      description: 'Đặt món và giao tận nơi',
+      icon: Truck,
+      color: 'text-green-600',
+      features: ['Giao tận nơi', 'Thanh toán linh hoạt', 'Theo dõi đơn hàng']
+    }
+  }
+
+  const currentConfig = orderTypeConfig[orderType as keyof typeof orderTypeConfig]
+
+  useEffect(() => {
+    // Load table info for dine-in orders
+    if (orderType === 'dine-in') {
+      const storedTableInfo = localStorage.getItem('tableInfo')
+      if (storedTableInfo) {
+        setTableInfo(JSON.parse(storedTableInfo))
+      } else {
+        // Redirect to scan QR if no table info
+        router.push('/customer/scan-qr')
+      }
+    }
+  }, [orderType, router])
 
   const filteredDishes = dishes.filter((dish) => {
     const matchesSearch =
@@ -87,12 +133,45 @@ export default function MenuPage() {
     }, 0)
   }
 
+  const handleProceedToCheckout = () => {
+    // Store cart data for checkout
+    localStorage.setItem('cart', JSON.stringify(cart))
+    localStorage.setItem('orderType', orderType)
+    router.push(`/customer/${orderType}/checkout`)
+  }
+
   return (
     <div className='container mx-auto px-4 py-6'>
       {/* Header */}
       <div className='mb-8'>
-        <h1 className='text-3xl font-bold mb-2'>Menu</h1>
-        <p className='text-muted-foreground'>Explore our delicious dishes</p>
+        <div className='flex items-center gap-3 mb-4'>
+          <div className={`p-2 rounded-lg bg-muted`}>
+            <currentConfig.icon className={`h-6 w-6 ${currentConfig.color}`} />
+          </div>
+          <div>
+            <h1 className='text-3xl font-bold'>{currentConfig.title}</h1>
+            <p className='text-muted-foreground'>{currentConfig.description}</p>
+          </div>
+        </div>
+
+        {/* Table Info for Dine-in */}
+        {orderType === 'dine-in' && tableInfo && (
+          <div className='flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg'>
+            <MapPin className='h-4 w-4 text-blue-600' />
+            <span className='text-sm font-medium text-blue-800 dark:text-blue-200'>
+              {tableInfo.tableNumber} - {tableInfo.floor} (Tối đa {tableInfo.capacity} người)
+            </span>
+          </div>
+        )}
+
+        {/* Order Type Features */}
+        <div className='flex flex-wrap gap-2 mt-4'>
+          {currentConfig.features.map((feature, index) => (
+            <Badge key={index} variant='secondary' className='text-xs'>
+              {feature}
+            </Badge>
+          ))}
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -268,8 +347,9 @@ export default function MenuPage() {
                       <p className='text-sm text-muted-foreground'>Total: {getCartTotal().toLocaleString('vi-VN')}đ</p>
                     </div>
                   </div>
-                  <Button size='lg' className='md:w-auto w-auto'>
-                    View Cart
+                  <Button size='lg' className='md:w-auto w-auto' onClick={handleProceedToCheckout}>
+                    <ChefHat className='h-4 w-4 mr-2' />
+                    Thanh toán
                   </Button>
                 </div>
               </CardContent>
