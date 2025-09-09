@@ -14,7 +14,7 @@ import databaseService from '~/services/databases.service'
 
 class OrdersService {
   async createOrderGroup(orderHandlerId: string, body: CreateOrderGroupReqBody) {
-    const { customer_id, guest_id, orders, order_type, delivery_info, table_number } = body
+    const { customer_id, guest_id, orders, order_type, delivery_info, table_number, takeaway_info } = body
 
     let tableNumber: number | null = null
 
@@ -99,6 +99,13 @@ class OrdersService {
       })
     }
 
+    if (order_type === OrderType.Takeaway && !takeaway_info) {
+      throw new ErrorWithStatus({
+        message: ORDERS_MESSAGE.TAKEAWAY_INFO_REQUIRED,
+        status: HTTP_STATUS.BAD_REQUEST
+      })
+    }
+
     const session = databaseService.clientInstance.startSession()
 
     try {
@@ -111,7 +118,8 @@ class OrdersService {
           guest_id: guest_id ? new ObjectId(guest_id) : null,
           table_number: tableNumber,
           order_type,
-          status: OrderStatus.Pending
+          status: OrderStatus.Pending,
+          takeaway_info: takeaway_info ? takeaway_info : null
         }),
         { session }
       )
@@ -246,6 +254,7 @@ class OrdersService {
           guest_id,
           table_number: tableNumber,
           order_type,
+          takeaway_info,
           status: OrderStatus.Pending,
           delivery: deliveryRecord
             ? {
@@ -385,6 +394,7 @@ class OrdersService {
             guest_id: { $first: '$guest_id' },
             table_number: { $first: '$table_number' },
             order_type: { $first: '$order_type' },
+            takeaway_info: { $first: '$takeaway_info' },
             status: { $first: '$status' },
             created_at: { $first: '$created_at' },
             updated_at: { $first: '$updated_at' },
@@ -611,6 +621,7 @@ class OrdersService {
             guest_id: { $first: '$guest_id' },
             table_number: { $first: '$table_number' },
             order_type: { $first: '$order_type' },
+            takeaway_info: { $first: '$takeaway_info' },
             status: { $first: '$status' },
             created_at: { $first: '$created_at' },
             updated_at: { $first: '$updated_at' },
@@ -1023,6 +1034,7 @@ class OrdersService {
             guest_id: { $first: '$guest_id' },
             table_number: { $first: '$table_number' },
             order_type: { $first: '$order_type' },
+            takeaway_info: { $first: '$takeaway_info' },
             status: { $first: '$status' },
             created_at: { $first: '$created_at' },
             updated_at: { $first: '$updated_at' },

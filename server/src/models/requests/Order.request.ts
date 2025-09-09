@@ -1,5 +1,11 @@
 import { ParamsDictionary, Query } from 'express-serve-static-core'
 
+interface TakeawayInfo {
+  pickup_time?: Date
+  customer_name: string
+  customer_phone: string
+}
+
 export interface CreateOrdersReqBody {
   guest_id: string
   orders: {
@@ -34,6 +40,7 @@ export interface CreateOrderGroupReqBody {
   order_type: 'dine-in' | 'delivery' | 'takeaway' // Type of order
   orders: OrderItem[] // Array of items to order
   delivery_info?: DeliveryInfo // Required for delivery orders
+  takeaway_info?: TakeawayInfo
 }
 
 export interface OrderItem {

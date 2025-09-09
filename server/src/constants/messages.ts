@@ -141,6 +141,7 @@ export const COMMON_MESSAGES = {
 } as const
 
 export const ORDERS_MESSAGE = {
+  TAKEAWAY_INFO_REQUIRED: 'Takeaway information is required',
   DELIVERY_STATUS_UPDATE_SUCCESS: 'Delivery status update success',
   ORDER_UPDATE_SUCCESS: 'Order update success',
   ORDER_CREATE_SUCCESS: 'Order create success',

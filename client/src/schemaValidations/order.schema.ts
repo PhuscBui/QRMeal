@@ -81,6 +81,13 @@ export const OrderGroupSchema = z.object({
   updated_at: z.string().datetime(),
   // Related data
   delivery: DeliverySchema.nullable(),
+  takeaway_info: z
+    .object({
+      pickup_time: z.string().datetime().optional(),
+      customer_name: z.string(),
+      customer_phone: z.string()
+    })
+    .nullable(),
   customer: CustomerSchema.nullable(),
   guest: GuestSchema.nullable(),
   orders: z.array(OrderSchema),

@@ -76,7 +76,7 @@ export const AuthorType = {
 export const AuthorTypeValues = [AuthorType.Customer, AuthorType.Guest] as const
 
 export const OrderType = {
-  Takeaway: 'take-away',
+  Takeaway: 'takeaway',
   Delivery: 'delivery',
   DineIn: 'dine-in'
 } as const

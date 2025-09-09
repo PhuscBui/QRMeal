@@ -1,11 +1,17 @@
 import { ObjectId } from 'mongodb'
 
+interface TakeawayInfoType {
+  pickup_time?: Date
+  customer_name: string
+  customer_phone: string
+}
 interface OrderGroupType {
   _id?: ObjectId
   customer_id?: ObjectId | null
   guest_id?: ObjectId | null
   table_number?: number | null
   order_type: string
+  takeaway_info?: TakeawayInfoType | null
   status: string
   created_at?: Date
   updated_at?: Date
@@ -17,6 +23,7 @@ export default class OrderGroup {
   guest_id?: ObjectId | null
   table_number?: number | null
   order_type: string
+  takeaway_info?: TakeawayInfoType | null
   status: string
   created_at?: Date
   updated_at?: Date
@@ -28,6 +35,7 @@ export default class OrderGroup {
     this.guest_id = orderGroup.guest_id
     this.table_number = orderGroup.table_number
     this.order_type = orderGroup.order_type
+    this.takeaway_info = orderGroup.takeaway_info
     this.status = orderGroup.status
     this.created_at = orderGroup.created_at || date
     this.updated_at = orderGroup.updated_at || date
