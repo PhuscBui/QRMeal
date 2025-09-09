@@ -131,6 +131,7 @@ class OrdersService {
           new Delivery({
             order_group_id: orderGroup.insertedId,
             address: delivery_info.address,
+            notes: delivery_info.notes,
             receiver_name: delivery_info.receiver_name,
             receiver_phone: delivery_info.receiver_phone,
             delivery_status: DeliveryStatus.Pending,

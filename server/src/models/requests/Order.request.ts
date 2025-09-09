@@ -4,6 +4,7 @@ interface TakeawayInfo {
   pickup_time?: Date
   customer_name: string
   customer_phone: string
+  notes?: string
 }
 
 export interface CreateOrdersReqBody {
@@ -52,6 +53,7 @@ export interface DeliveryInfo {
   address: string
   receiver_name: string
   receiver_phone: string
+  notes?: string
 }
 
 export interface GetOrdersQueryParams {

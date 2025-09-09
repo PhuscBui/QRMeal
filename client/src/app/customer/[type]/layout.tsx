@@ -5,37 +5,34 @@ import { useEffect, useState } from 'react'
 import { ArrowLeft, MapPin, Package, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { TableInfo } from '@/types/common.type'
 
 const orderTypeConfig = {
   'dine-in': {
-    title: 'Ăn tại quán',
+    title: 'Eat at the restaurant',
     icon: MapPin,
     color: 'bg-blue-500',
-    description: 'Thưởng thức tại nhà hàng'
+    description: 'Enjoy at the restaurant'
   },
-  'takeaway': {
-    title: 'Mua mang về',
+  takeaway: {
+    title: 'Take-out',
     icon: Package,
     color: 'bg-orange-500',
-    description: 'Đến lấy tại nhà hàng'
+    description: 'Pick up at the restaurant'
   },
-  'delivery': {
-    title: 'Giao hàng',
+  delivery: {
+    title: 'Delivery',
     icon: Truck,
     color: 'bg-green-500',
-    description: 'Giao tận nơi'
+    description: 'Delivery to your door'
   }
 }
 
-export default function OrderTypeLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function OrderTypeLayout({ children }: { children: React.ReactNode }) {
   const params = useParams()
   const router = useRouter()
   const [orderType, setOrderType] = useState<string | null>(null)
-  const [tableInfo, setTableInfo] = useState<any>(null)
+  const [tableInfo, setTableInfo] = useState<TableInfo | null>(null)
 
   useEffect(() => {
     const type = params.type as string
@@ -50,14 +47,17 @@ export default function OrderTypeLayout({
     }
   }, [params.type])
 
+  const backToOrderTypeSelection = () => {
+    localStorage.removeItem('tableInfo')
+    router.push('/customer/order-type')
+  }
+
   if (!orderType || !orderTypeConfig[orderType as keyof typeof orderTypeConfig]) {
     return (
       <div className='container mx-auto px-4 py-8'>
         <div className='text-center'>
-          <h1 className='text-2xl font-bold mb-4'>Loại đơn hàng không hợp lệ</h1>
-          <Button onClick={() => router.push('/customer/order-type')}>
-            Quay lại chọn loại đơn hàng
-          </Button>
+          <h1 className='text-2xl font-bold mb-4'>Invalid order type</h1>
+          <Button onClick={() => router.push('/customer/order-type')}>Back to select order type</Button>
         </div>
       </div>
     )
@@ -73,10 +73,10 @@ export default function OrderTypeLayout({
         <div className='container mx-auto px-4 py-4'>
           <div className='flex items-center justify-between'>
             <div className='flex items-center gap-4'>
-              <Button variant='ghost' size='icon' onClick={() => router.back()}>
+              <Button variant='ghost' size='icon' onClick={backToOrderTypeSelection}>
                 <ArrowLeft className='h-4 w-4' />
               </Button>
-              
+
               <div className='flex items-center gap-3'>
                 <div className={`w-10 h-10 rounded-full ${config.color} flex items-center justify-center`}>
                   <Icon className='h-5 w-5 text-white' />
@@ -91,7 +91,7 @@ export default function OrderTypeLayout({
             {/* Table Info for Dine-in */}
             {orderType === 'dine-in' && tableInfo && (
               <Badge variant='secondary' className='text-sm'>
-                {tableInfo.tableNumber} - {tableInfo.floor}
+                {tableInfo.tableNumber} - {tableInfo.location}
               </Badge>
             )}
           </div>
@@ -99,9 +99,7 @@ export default function OrderTypeLayout({
       </div>
 
       {/* Content */}
-      <div className='container mx-auto px-4 py-6'>
-        {children}
-      </div>
+      <div className='container mx-auto px-4 py-6'>{children}</div>
     </div>
   )
 }

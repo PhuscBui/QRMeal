@@ -24,34 +24,20 @@ import { Separator } from '@/components/ui/separator'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useDishListQuery } from '@/queries/useDish'
+import { TableInfo } from '@/types/common.type'
+import { useAccountMe } from '@/queries/useAccount'
 
-// Mock data - sẽ được thay thế bằng API thực tế
-const cartItems = [
-  {
-    id: '1',
-    name: 'Phở Bò Tái',
-    price: 45000,
-    quantity: 2,
-    image: '/api/placeholder/80/80',
-    notes: 'Ít rau, nhiều thịt'
-  },
-  {
-    id: '2',
-    name: 'Bún Chả Hà Nội',
-    price: 55000,
-    quantity: 1,
-    image: '/api/placeholder/80/80',
-    notes: ''
-  },
-  {
-    id: '3',
-    name: 'Gỏi Cuốn Tôm Thịt',
-    price: 35000,
-    quantity: 3,
-    image: '/api/placeholder/80/80',
-    notes: 'Không tôm'
-  }
-]
+// Define cart item type
+interface CartItem {
+  id: string
+  name: string
+  price: number
+  image: string
+  quantity: number
+  notes?: string
+  dishId: string
+}
 
 const paymentMethods = [
   { id: 'cash', name: 'Tiền mặt', description: 'Thanh toán khi nhận hàng' },
@@ -67,26 +53,43 @@ const orderTypes = [
 ]
 
 export default function CheckoutPage() {
+  const { data } = useDishListQuery()
+  const { data: accountData } = useAccountMe()
+  const dishes = data?.payload.result || []
+  const user = accountData?.payload.result || null
   const params = useParams()
   const router = useRouter()
   const orderType = params.type as string
 
   const [paymentMethod, setPaymentMethod] = useState('cash')
   const [customerInfo, setCustomerInfo] = useState({
-    name: '',
-    phone: '',
-    email: '',
+    name: user?.name || '',
+    phone: user?.phone || '',
+    email: user?.email || '',
     address: '',
     notes: ''
   })
+
+  useEffect(() => {
+    if (user) {
+      setCustomerInfo((prev) => ({
+        ...prev,
+        name: user.name || '',
+        phone: user.phone || '',
+        email: user.email || ''
+      }))
+    }
+  }, [user])
+
   const [deliveryTime, setDeliveryTime] = useState('asap')
-  const [cartItems, setCartItems] = useState<any[]>([])
-  const [tableInfo, setTableInfo] = useState<any>(null)
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [tableInfo, setTableInfo] = useState<TableInfo | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   // Order type specific configurations
   const orderTypeConfig = {
     'dine-in': {
-      title: 'Thanh toán - Ăn tại quán',
+      title: 'Thanh toán - Tại chỗ',
       description: 'Hoàn tất đơn hàng và thưởng thức tại nhà hàng',
       icon: MapPin,
       color: 'text-blue-600',
@@ -95,7 +98,7 @@ export default function CheckoutPage() {
       showTableInfo: true
     },
     takeaway: {
-      title: 'Thanh toán - Mua mang về',
+      title: 'Thanh toán - Mang về',
       description: 'Hoàn tất đơn hàng và đến lấy tại nhà hàng',
       icon: Package,
       color: 'text-orange-600',
@@ -116,67 +119,178 @@ export default function CheckoutPage() {
 
   const currentConfig = orderTypeConfig[orderType as keyof typeof orderTypeConfig]
 
+  // Load cart and table data
   useEffect(() => {
-    // Load cart data from localStorage
-    const storedCart = localStorage.getItem('cart')
-    if (storedCart) {
-      setCartItems(JSON.parse(storedCart))
-    }
+    const loadCartData = () => {
+      try {
+        const storedCart = localStorage.getItem('cart')
+        if (storedCart) {
+          const parsedCart = JSON.parse(storedCart)
+          // Validate cart structure and ensure it's an array
+          if (Array.isArray(parsedCart)) {
+            // Map cart items to match our CartItem interface
+            const validatedCart = parsedCart
+              .map((item: any) => ({
+                id: item.id || item.dishId || '',
+                name: item.name || '',
+                price: Number(item.price) || 0,
+                image: item.image || '/placeholder-dish.jpg',
+                quantity: Number(item.quantity) || 1,
+                notes: item.notes || '',
+                dishId: item.dishId || item.id || ''
+              }))
+              .filter((item: CartItem) => item.id && item.name && item.price > 0)
 
-    // Load table info for dine-in orders
-    if (orderType === 'dine-in') {
-      const storedTableInfo = localStorage.getItem('tableInfo')
-      if (storedTableInfo) {
-        setTableInfo(JSON.parse(storedTableInfo))
-      } else {
-        // Redirect to scan QR if no table info
-        router.push('/customer/scan-qr')
+            setCartItems(validatedCart)
+          }
+        }
+
+        // Load table info for dine-in orders
+        if (orderType === 'dine-in') {
+          const storedTableInfo = localStorage.getItem('tableInfo')
+          if (storedTableInfo) {
+            try {
+              setTableInfo(JSON.parse(storedTableInfo))
+            } catch (error) {
+              console.error('Error parsing table info:', error)
+              // Redirect to scan QR if table info is invalid
+              router.push('/customer/scan-qr')
+            }
+          } else {
+            // Redirect to scan QR if no table info
+            router.push('/customer/scan-qr')
+          }
+        }
+      } catch (error) {
+        console.error('Error loading cart data:', error)
+        setCartItems([])
+      } finally {
+        setIsLoading(false)
       }
     }
+
+    loadCartData()
   }, [orderType, router])
 
-  const subtotal = Array.isArray(cartItems) ? cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0) : 0
+  // Calculate totals
+  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const deliveryFee = orderType === 'delivery' ? 15000 : 0
-  const serviceFee = subtotal * 0.05 // 5% service fee
+  const serviceFee = Math.round(subtotal * 0.05) // 5% service fee, rounded
   const total = subtotal + deliveryFee + serviceFee
 
+  // Update cart in localStorage
+  const updateCartInStorage = (newCartItems: CartItem[]) => {
+    try {
+      localStorage.setItem('cart', JSON.stringify(newCartItems))
+    } catch (error) {
+      console.error('Error saving cart:', error)
+    }
+  }
+
   const handleQuantityChange = (itemId: string, change: number) => {
-    // Logic to update cart quantity
-    console.log('Update quantity:', itemId, change)
+    setCartItems((prevItems) => {
+      const updatedItems = prevItems.map((item) => {
+        if (item.id === itemId) {
+          const newQuantity = Math.max(1, item.quantity + change)
+          return { ...item, quantity: newQuantity }
+        }
+        return item
+      })
+      updateCartInStorage(updatedItems)
+      return updatedItems
+    })
   }
 
   const handleRemoveItem = (itemId: string) => {
-    // Logic to remove item from cart
-    console.log('Remove item:', itemId)
+    setCartItems((prevItems) => {
+      const updatedItems = prevItems.filter((item) => item.id !== itemId)
+      updateCartInStorage(updatedItems)
+      return updatedItems
+    })
   }
 
   const handlePlaceOrder = () => {
-    // Logic to place order
+    // Validate required fields
+    if (!customerInfo.name.trim() || !customerInfo.phone.trim()) {
+      alert('Vui lòng nhập đầy đủ họ tên và số điện thoại')
+      return
+    }
+
+    if (currentConfig.showAddress && !customerInfo.address.trim()) {
+      alert('Vui lòng nhập địa chỉ giao hàng')
+      return
+    }
+
+    if (cartItems.length === 0) {
+      alert('Giỏ hàng trống, vui lòng chọn món ăn')
+      return
+    }
+
+    // Create order data
     const orderData = {
       orderType,
       paymentMethod,
-      customerInfo,
+      customerInfo: {
+        ...customerInfo,
+        name: customerInfo.name.trim(),
+        phone: customerInfo.phone.trim(),
+        address: customerInfo.address.trim(),
+        notes: customerInfo.notes.trim()
+      },
       deliveryTime: currentConfig.showDeliveryTime ? deliveryTime : null,
       tableInfo: currentConfig.showTableInfo ? tableInfo : null,
       items: cartItems,
       total,
       subtotal,
       deliveryFee,
-      serviceFee
+      serviceFee,
+      createdAt: new Date().toISOString()
     }
 
-    console.log('Place order:', orderData)
+    try {
+      // Store order data for confirmation
+      localStorage.setItem('currentOrder', JSON.stringify(orderData))
 
-    // Store order data for confirmation
-    localStorage.setItem('currentOrder', JSON.stringify(orderData))
+      // Clear cart and table info
+      localStorage.removeItem('cart')
+      if (orderType === 'dine-in') {
+        localStorage.removeItem('tableInfo')
+      }
 
-    // Clear cart and table info
-    localStorage.removeItem('cart')
-    if (orderType === 'dine-in') {
-      localStorage.removeItem('tableInfo')
+      console.log('Order placed:', orderData)
+
+      // Navigate to order confirmation
+      router.push(`/customer/${orderType}/order-confirmation`)
+    } catch (error) {
+      console.error('Error placing order:', error)
+      alert('Có lỗi xảy ra khi đặt hàng, vui lòng thử lại')
     }
+  }
 
-    router.push(`/customer/${orderType}/orders`)
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className='container mx-auto px-4 py-6 max-w-4xl'>
+        <div className='flex items-center justify-center h-64'>
+          <div className='text-center'>
+            <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4'></div>
+            <p className='text-muted-foreground'>Đang tải thông tin đơn hàng...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error if no valid order type
+  if (!currentConfig) {
+    return (
+      <div className='container mx-auto px-4 py-6 max-w-4xl'>
+        <div className='text-center py-8'>
+          <h1 className='text-2xl font-bold mb-4'>Loại đơn hàng không hợp lệ</h1>
+          <Button onClick={() => router.push('/customer/menu')}>Quay về menu</Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -237,10 +351,10 @@ export default function CheckoutPage() {
                   <div className='flex items-center gap-2'>
                     <MapPin className='h-4 w-4 text-blue-600' />
                     <span className='font-medium text-blue-800 dark:text-blue-200'>
-                      {tableInfo.tableNumber} - {tableInfo.floor}
+                      Bàn {tableInfo.tableNumber} - {tableInfo.location}
                     </span>
                   </div>
-                  <p className='text-sm text-blue-700 dark:text-blue-300 mt-1'>Tối đa {tableInfo.capacity} người</p>
+                  <p className='text-sm text-blue-700 dark:text-blue-300 mt-1'>Sức chứa: {tableInfo.capacity} người</p>
                 </div>
               </CardContent>
             </Card>
@@ -257,51 +371,51 @@ export default function CheckoutPage() {
             <CardContent className='space-y-4'>
               <div className='grid md:grid-cols-2 gap-4'>
                 <div>
-                  <Label htmlFor='name'>Họ và tên *</Label>
+                  <Label className='mb-1' htmlFor='name'>
+                    Họ và tên *
+                  </Label>
                   <Input
                     id='name'
                     value={customerInfo.name}
                     onChange={(e) => setCustomerInfo((prev) => ({ ...prev, name: e.target.value }))}
                     placeholder='Nhập họ và tên'
+                    required
                   />
                 </div>
                 <div>
-                  <Label htmlFor='phone'>Số điện thoại *</Label>
+                  <Label className='mb-1' htmlFor='phone'>
+                    Số điện thoại *
+                  </Label>
                   <Input
                     id='phone'
                     value={customerInfo.phone}
                     onChange={(e) => setCustomerInfo((prev) => ({ ...prev, phone: e.target.value }))}
                     placeholder='Nhập số điện thoại'
+                    required
                   />
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor='email'>Email</Label>
-                <Input
-                  id='email'
-                  type='email'
-                  value={customerInfo.email}
-                  onChange={(e) => setCustomerInfo((prev) => ({ ...prev, email: e.target.value }))}
-                  placeholder='Nhập email (tùy chọn)'
-                />
-              </div>
-
               {currentConfig.showAddress && (
                 <div>
-                  <Label htmlFor='address'>Địa chỉ giao hàng *</Label>
+                  <Label className='mb-1' htmlFor='address'>
+                    Địa chỉ giao hàng *
+                  </Label>
                   <Textarea
                     id='address'
                     value={customerInfo.address}
                     onChange={(e) => setCustomerInfo((prev) => ({ ...prev, address: e.target.value }))}
                     placeholder='Nhập địa chỉ giao hàng chi tiết'
                     rows={3}
+                    required
                   />
                 </div>
               )}
 
               <div>
-                <Label htmlFor='notes'>Ghi chú đặc biệt</Label>
+                <Label className='mb-1' htmlFor='notes'>
+                  Ghi chú đặc biệt
+                </Label>
                 <Textarea
                   id='notes'
                   value={customerInfo.notes}
@@ -373,43 +487,72 @@ export default function CheckoutPage() {
           {/* Cart Items */}
           <Card>
             <CardHeader>
-              <CardTitle>Đơn hàng của bạn</CardTitle>
+              <CardTitle className='flex items-center justify-between'>
+                <span>Đơn hàng của bạn</span>
+                <span className='text-sm text-muted-foreground'>({cartItems.length} món)</span>
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className='space-y-4'>
                 {cartItems.length === 0 ? (
                   <div className='text-center py-8 text-muted-foreground'>
                     <ShoppingCart className='h-12 w-12 mx-auto mb-4 opacity-50' />
-                    <p>Giỏ hàng trống</p>
+                    <p className='font-medium mb-2'>Giỏ hàng trống</p>
+                    <Button variant='outline' size='sm' onClick={() => router.push('/customer/menu')}>
+                      Chọn món ăn
+                    </Button>
                   </div>
                 ) : (
-                  Array.isArray(cartItems) &&
-                  cartItems.map((item) => (
-                    <div key={item.id} className='flex items-center gap-3'>
-                      <div className='relative w-16 h-16 rounded-lg overflow-hidden bg-muted'>
-                        <img src={item.image} alt={item.name} className='w-full h-full object-cover' />
+                  cartItems.map((item, index) => (
+                    <div key={`${item.id}-${index}`} className='flex items-start gap-3 p-3 border rounded-lg'>
+                      <div className='relative w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0'>
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className='w-full h-full object-cover'
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder-dish.jpg'
+                          }}
+                        />
                       </div>
                       <div className='flex-1 min-w-0'>
-                        <h4 className='font-medium text-sm truncate'>{item.name}</h4>
-                        <p className='text-sm text-muted-foreground'>{item.price.toLocaleString('vi-VN')}đ</p>
-                        {item.notes && <p className='text-xs text-muted-foreground italic'>Ghi chú: {item.notes}</p>}
-                      </div>
-                      <div className='flex items-center gap-2'>
-                        <Button size='sm' variant='outline' onClick={() => handleQuantityChange(item.id, -1)}>
-                          <Minus className='h-3 w-3' />
-                        </Button>
-                        <span className='w-8 text-center text-sm font-medium'>{item.quantity}</span>
-                        <Button size='sm' variant='outline' onClick={() => handleQuantityChange(item.id, 1)}>
-                          <Plus className='h-3 w-3' />
-                        </Button>
-                        <Button
-                          size='sm'
-                          variant='ghost'
-                          onClick={() => handleRemoveItem(item.id)}
-                          className='text-destructive hover:text-destructive'
-                        >
-                          <Trash2 className='h-3 w-3' />
-                        </Button>
+                        <h4 className='font-medium text-sm leading-tight mb-1'>{item.name}</h4>
+                        <p className='text-sm text-muted-foreground mb-1'>{item.price.toLocaleString('vi-VN')}đ</p>
+                        {item.notes && (
+                          <p className='text-xs text-muted-foreground italic bg-muted px-2 py-1 rounded'>
+                            {item.notes}
+                          </p>
+                        )}
+                        <div className='flex items-center justify-between mt-2'>
+                          <div className='flex items-center gap-1'>
+                            <Button
+                              size='sm'
+                              variant='outline'
+                              onClick={() => handleQuantityChange(item.id, -1)}
+                              disabled={item.quantity <= 1}
+                              className='h-7 w-7 p-0'
+                            >
+                              <Minus className='h-3 w-3' />
+                            </Button>
+                            <span className='w-8 text-center text-sm font-medium'>{item.quantity}</span>
+                            <Button
+                              size='sm'
+                              variant='outline'
+                              onClick={() => handleQuantityChange(item.id, 1)}
+                              className='h-7 w-7 p-0'
+                            >
+                              <Plus className='h-3 w-3' />
+                            </Button>
+                          </div>
+                          <Button
+                            size='sm'
+                            variant='ghost'
+                            onClick={() => handleRemoveItem(item.id)}
+                            className='text-destructive hover:text-destructive h-7 w-7 p-0'
+                          >
+                            <Trash2 className='h-3 w-3' />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))
@@ -419,59 +562,61 @@ export default function CheckoutPage() {
           </Card>
 
           {/* Order Summary */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Tổng kết đơn hàng</CardTitle>
-            </CardHeader>
-            <CardContent className='space-y-4'>
-              <div className='space-y-2'>
-                <div className='flex justify-between text-sm'>
-                  <span>Tạm tính</span>
-                  <span>{subtotal.toLocaleString('vi-VN')}đ</span>
-                </div>
-                {deliveryFee > 0 && (
+          {cartItems.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Tổng kết đơn hàng</CardTitle>
+              </CardHeader>
+              <CardContent className='space-y-4'>
+                <div className='space-y-2'>
                   <div className='flex justify-between text-sm'>
-                    <span>Phí giao hàng</span>
-                    <span>{deliveryFee.toLocaleString('vi-VN')}đ</span>
+                    <span>Tạm tính ({cartItems.reduce((sum, item) => sum + item.quantity, 0)} món)</span>
+                    <span>{subtotal.toLocaleString('vi-VN')}đ</span>
                   </div>
-                )}
-                <div className='flex justify-between text-sm'>
-                  <span>Phí dịch vụ (5%)</span>
-                  <span>{serviceFee.toLocaleString('vi-VN')}đ</span>
+                  {deliveryFee > 0 && (
+                    <div className='flex justify-between text-sm'>
+                      <span>Phí giao hàng</span>
+                      <span>{deliveryFee.toLocaleString('vi-VN')}đ</span>
+                    </div>
+                  )}
+                  <div className='flex justify-between text-sm'>
+                    <span>Phí dịch vụ (5%)</span>
+                    <span>{serviceFee.toLocaleString('vi-VN')}đ</span>
+                  </div>
+                  <Separator />
+                  <div className='flex justify-between font-semibold text-lg'>
+                    <span>Tổng cộng</span>
+                    <span className='text-primary'>{total.toLocaleString('vi-VN')}đ</span>
+                  </div>
                 </div>
-                <Separator />
-                <div className='flex justify-between font-semibold text-lg'>
-                  <span>Tổng cộng</span>
-                  <span className='text-primary'>{total.toLocaleString('vi-VN')}đ</span>
-                </div>
-              </div>
 
-              <Button
-                size='lg'
-                className='w-full'
-                onClick={handlePlaceOrder}
-                disabled={
-                  !customerInfo.name ||
-                  !customerInfo.phone ||
-                  (currentConfig.showAddress && !customerInfo.address) ||
-                  cartItems.length === 0
-                }
-              >
-                Đặt hàng ngay
-              </Button>
+                <Button
+                  size='lg'
+                  className='w-full'
+                  onClick={handlePlaceOrder}
+                  disabled={
+                    !customerInfo.name.trim() ||
+                    !customerInfo.phone.trim() ||
+                    (currentConfig.showAddress && !customerInfo.address.trim()) ||
+                    cartItems.length === 0
+                  }
+                >
+                  Đặt hàng ngay • {total.toLocaleString('vi-VN')}đ
+                </Button>
 
-              <p className='text-xs text-muted-foreground text-center'>
-                Bằng cách đặt hàng, bạn đồng ý với{' '}
-                <a href='#' className='underline'>
-                  Điều khoản sử dụng
-                </a>{' '}
-                và{' '}
-                <a href='#' className='underline'>
-                  Chính sách bảo mật
-                </a>
-              </p>
-            </CardContent>
-          </Card>
+                <p className='text-xs text-muted-foreground text-center'>
+                  Bằng cách đặt hàng, bạn đồng ý với{' '}
+                  <a href='#' className='underline hover:text-primary'>
+                    Điều khoản sử dụng
+                  </a>{' '}
+                  và{' '}
+                  <a href='#' className='underline hover:text-primary'>
+                    Chính sách bảo mật
+                  </a>
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

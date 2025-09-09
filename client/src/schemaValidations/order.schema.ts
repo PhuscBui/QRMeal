@@ -46,6 +46,7 @@ export const DeliverySchema = z.object({
   _id: z.string(),
   order_group_id: z.string(),
   address: z.string(),
+  notes: z.string().nullable(),
   receiver_name: z.string(),
   receiver_phone: z.string(),
   delivery_status: z.string(),
@@ -85,7 +86,8 @@ export const OrderGroupSchema = z.object({
     .object({
       pickup_time: z.string().datetime().optional(),
       customer_name: z.string(),
-      customer_phone: z.string()
+      customer_phone: z.string(),
+      notes: z.string().optional().nullable()
     })
     .nullable(),
   customer: CustomerSchema.nullable(),
@@ -109,14 +111,16 @@ export const CreateOrderGroupBody = z.object({
     .object({
       address: z.string(),
       receiver_name: z.string(),
-      receiver_phone: z.string()
+      receiver_phone: z.string(),
+      notes: z.string().optional().nullable()
     })
     .optional(),
   takeaway_info: z
     .object({
       pickup_time: z.string().optional(),
       customer_name: z.string(),
-      customer_phone: z.string()
+      customer_phone: z.string(),
+      notes: z.string().optional().nullable()
     })
     .optional()
 })

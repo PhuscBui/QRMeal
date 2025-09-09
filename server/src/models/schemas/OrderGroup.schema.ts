@@ -4,6 +4,7 @@ interface TakeawayInfoType {
   pickup_time?: Date
   customer_name: string
   customer_phone: string
+  notes?: string
 }
 interface OrderGroupType {
   _id?: ObjectId

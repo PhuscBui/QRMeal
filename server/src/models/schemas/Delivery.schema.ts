@@ -4,6 +4,7 @@ interface DeliveryType {
   _id?: ObjectId
   order_group_id: ObjectId
   address: string
+  notes?: string
   receiver_name: string
   receiver_phone: string
   delivery_status: string
@@ -17,6 +18,7 @@ export default class Delivery {
   _id?: ObjectId
   order_group_id: ObjectId
   address: string
+  notes?: string
   receiver_name: string
   receiver_phone: string
   delivery_status: string
@@ -30,6 +32,7 @@ export default class Delivery {
     this._id = delivery._id
     this.order_group_id = delivery.order_group_id
     this.address = delivery.address
+    this.notes = delivery.notes
     this.receiver_name = delivery.receiver_name
     this.receiver_phone = delivery.receiver_phone
     this.delivery_status = delivery.delivery_status

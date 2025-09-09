@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { QrCode, ArrowLeft, Camera, AlertCircle, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -8,53 +8,49 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useTableListQuery } from '@/queries/useTable'
+import { BrowserQRCodeReader } from '@zxing/browser'
 
 export default function ScanQRPage() {
   const router = useRouter()
   const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isScanning, setIsScanning] = useState(false)
   const [scannedData, setScannedData] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [manualCode, setManualCode] = useState('')
-  const [showManualInput, setShowManualInput] = useState(false)
 
-  // Mock table data - in real app, this would come from API
-  const mockTableData = {
-    'table-001': { number: 'Bàn 1', floor: 'Tầng 1', capacity: 4 },
-    'table-002': { number: 'Bàn 2', floor: 'Tầng 1', capacity: 2 },
-    'table-003': { number: 'Bàn 3', floor: 'Tầng 2', capacity: 6 },
-    'table-004': { number: 'Bàn 4', floor: 'Tầng 2', capacity: 4 }
-  }
+  const { data } = useTableListQuery()
+
+  const tables = useMemo(() => data?.payload.result || [], [data])
 
   const startScanning = async () => {
     try {
       setError(null)
       setIsScanning(true)
-      
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
           facingMode: 'environment' // Use back camera on mobile
-        } 
+        }
       })
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream
-        videoRef.current.play()
       }
     } catch (err) {
+      console.error('Error accessing camera:', err)
       setError('Không thể truy cập camera. Vui lòng kiểm tra quyền truy cập.')
       setIsScanning(false)
     }
   }
 
-  const stopScanning = () => {
+  const stopScanning = useCallback(() => {
     setIsScanning(false)
     if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream
-      stream.getTracks().forEach(track => track.stop())
+      stream.getTracks().forEach((track) => track.stop())
     }
-  }
+  }, [])
 
   const handleManualSubmit = () => {
     if (manualCode.trim()) {
@@ -62,51 +58,131 @@ export default function ScanQRPage() {
     }
   }
 
-  const processScannedData = (data: string) => {
-    // In real app, this would validate the QR code format and check if table exists
-    const tableInfo = mockTableData[data as keyof typeof mockTableData]
-    
-    if (tableInfo) {
-      setScannedData(data)
-      setError(null)
-      stopScanning()
-      
-      // Store table info in localStorage for the order session
-      localStorage.setItem('tableInfo', JSON.stringify({
-        tableId: data,
-        tableNumber: tableInfo.number,
-        floor: tableInfo.floor,
-        capacity: tableInfo.capacity
-      }))
-      
-      // Navigate to menu with table info
-      setTimeout(() => {
-        router.push('/customer/dine-in/menu')
-      }, 1500)
-    } else {
-      setError('Mã QR không hợp lệ hoặc bàn không tồn tại. Vui lòng thử lại.')
-    }
-  }
+  const processScannedData = useCallback(
+    (data: string) => {
+      try {
+        let tableNumber: number | null = null
+        let token: string | null = null
 
-  const handleQRCodeDetected = (data: string) => {
-    processScannedData(data)
-  }
+        // Check if scanned data is a URL
+        if (data.startsWith('http://') || data.startsWith('https://')) {
+          try {
+            const url = new URL(data)
 
-  // Simulate QR code detection (in real app, use a QR code library)
+            // Extract table ID from path (e.g., /tables/1 -> tableId = "1")
+            const pathSegments = url.pathname.split('/').filter(Boolean)
+            if (pathSegments.length >= 2 && pathSegments[0] === 'tables') {
+              tableNumber = parseInt(pathSegments[1], 10)
+            }
+
+            // Extract token from query parameters
+            token = url.searchParams.get('token')
+
+            if (!tableNumber || !token) {
+              throw new Error('Invalid QR code format')
+            }
+          } catch (urlError) {
+            console.error('Error parsing URL:', urlError)
+            setError('URL QR code không hợp lệ. Vui lòng thử lại.')
+            return
+          }
+        } else {
+          // Handle legacy format (direct table code like "table-001")
+          tableNumber = parseInt(data.split('-')[1], 10)
+        }
+
+        // Find table by ID
+        const table = tables.find((t) => t.number === tableNumber)
+
+        if (!table) {
+          setError('Bàn không tồn tại hoặc mã QR không hợp lệ. Vui lòng thử lại.')
+          return
+        }
+
+        // Validate token if provided
+        if (token && table.token !== token) {
+          setError('Mã xác thực không hợp lệ. Vui lòng sử dụng QR code chính thức của nhà hàng.')
+          return
+        }
+
+        // Check table status
+        if (table.status === 'Hidden') {
+          setError('Bàn này hiện không khả dụng. Vui lòng liên hệ nhân viên.')
+          return
+        }
+
+        if (table.status === 'Reserved' && !table.reservation?.is_customer) {
+          setError('Bàn này đã được đặt trước. Vui lòng liên hệ nhân viên nếu bạn là người đặt bàn.')
+          return
+        }
+
+        // Success - table is available or customer has valid reservation
+        setScannedData(tableNumber.toString())
+        setError(null)
+        stopScanning()
+
+        // Store comprehensive table info for the order session
+        const tableInfo = {
+          tableId: table._id,
+          tableNumber: table.number,
+          location: table.location,
+          capacity: table.capacity,
+          status: table.status,
+          token: table.token,
+          ...(table.reservation && {
+            reservation: {
+              guest_id: table.reservation.guest_id,
+              customer_id: table.reservation.customer_id,
+              reservation_time: table.reservation.reservation_time,
+              is_customer: table.reservation.is_customer,
+              note: table.reservation.note
+            }
+          })
+        }
+
+        // Store table info (using sessionStorage instead of localStorage)
+        localStorage.setItem('tableInfo', JSON.stringify(tableInfo))
+
+        // Navigate to menu with table info
+        setTimeout(() => {
+          router.push(`/customer/dine-in/menu`)
+        }, 1500)
+      } catch (error) {
+        console.error('Error processing scanned data:', error)
+        setError('Có lỗi xảy ra khi xử lý mã QR. Vui lòng thử lại.')
+      }
+    },
+    [tables, setError, setScannedData, stopScanning, router]
+  )
+
+  const handleQRCodeDetected = useCallback(
+    (data: string) => {
+      processScannedData(data)
+    },
+    [processScannedData]
+  )
+
   useEffect(() => {
     if (isScanning && videoRef.current) {
-      const interval = setInterval(() => {
-        // This is a mock implementation
-        // In real app, you would use a library like @zxing/library or jsQR
-        const mockQRData = 'table-001' // Simulate detected QR code
-        if (Math.random() > 0.95) { // 5% chance per interval
-          handleQRCodeDetected(mockQRData)
-        }
-      }, 1000)
+      const codeReader = new BrowserQRCodeReader()
 
-      return () => clearInterval(interval)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let controls: any
+
+      codeReader.decodeFromVideoDevice(undefined, videoRef.current, (result, error, ctrl) => {
+        controls = ctrl // giữ lại instance điều khiển
+        if (result) {
+          handleQRCodeDetected(result.getText())
+        }
+      })
+
+      return () => {
+        if (controls) {
+          controls.stop()
+        }
+      }
     }
-  }, [isScanning])
+  }, [isScanning, handleQRCodeDetected])
 
   return (
     <div className='container mx-auto px-4 py-8 max-w-2xl'>
@@ -126,15 +202,31 @@ export default function ScanQRPage() {
         <Card className='border-green-200 bg-green-50 dark:bg-green-950/20'>
           <CardContent className='p-6 text-center'>
             <CheckCircle className='h-16 w-16 mx-auto text-green-500 mb-4' />
-            <h2 className='text-xl font-bold text-green-800 dark:text-green-200 mb-2'>
-              Quét thành công!
-            </h2>
-            <p className='text-green-700 dark:text-green-300 mb-4'>
-              Đang chuyển đến menu...
-            </p>
-            <div className='text-sm text-green-600 dark:text-green-400'>
-              Bàn: {mockTableData[scannedData as keyof typeof mockTableData]?.number} - 
-              {mockTableData[scannedData as keyof typeof mockTableData]?.floor}
+            <h2 className='text-xl font-bold text-green-800 dark:text-green-200 mb-2'>Quét thành công!</h2>
+            <p className='text-green-700 dark:text-green-300 mb-4'>Đang chuyển đến menu...</p>
+            <div className='text-sm text-green-600 dark:text-green-400 space-y-1'>
+              {(() => {
+                const table = tables.find((t) => t._id === scannedData)
+                if (!table) return null
+
+                return (
+                  <>
+                    <div>Bàn số: {table.number}</div>
+                    <div>Vị trí: {table.location}</div>
+                    <div>Sức chứa: {table.capacity} người</div>
+                    {table.status === 'Reserved' && table.reservation?.is_customer && (
+                      <div className='mt-2 p-2 bg-blue-100 dark:bg-blue-900/20 rounded text-blue-700 dark:text-blue-300'>
+                        Bàn đã đặt trước cho bạn
+                      </div>
+                    )}
+                    {table.status === 'Occupied' && (
+                      <div className='mt-2 p-2 bg-orange-100 dark:bg-orange-900/20 rounded text-orange-700 dark:text-orange-300'>
+                        Bàn hiện đang được sử dụng
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
             </div>
           </CardContent>
         </Card>
@@ -156,18 +248,12 @@ export default function ScanQRPage() {
               <Camera className='h-5 w-5' />
               Camera
             </CardTitle>
-            <CardDescription>
-              Hướng camera về phía mã QR trên bàn
-            </CardDescription>
+            <CardDescription>Hướng camera về phía mã QR trên bàn</CardDescription>
           </CardHeader>
           <CardContent>
             <div className='relative aspect-video bg-black rounded-lg overflow-hidden'>
               {isScanning ? (
-                <video
-                  ref={videoRef}
-                  className='w-full h-full object-cover'
-                  playsInline
-                />
+                <video ref={videoRef} className='w-full h-full object-cover' playsInline />
               ) : (
                 <div className='flex items-center justify-center h-full'>
                   <div className='text-center text-white'>
@@ -176,7 +262,7 @@ export default function ScanQRPage() {
                   </div>
                 </div>
               )}
-              
+
               {/* QR Code Overlay */}
               {isScanning && (
                 <div className='absolute inset-0 flex items-center justify-center'>
@@ -211,26 +297,20 @@ export default function ScanQRPage() {
         <Card>
           <CardHeader>
             <CardTitle>Nhập mã bàn thủ công</CardTitle>
-            <CardDescription>
-              Nếu không thể quét QR code, bạn có thể nhập mã bàn trực tiếp
-            </CardDescription>
+            <CardDescription>Nếu không thể quét QR code, bạn có thể nhập URL hoặc mã bàn trực tiếp</CardDescription>
           </CardHeader>
           <CardContent>
             <div className='space-y-4'>
               <div>
-                <Label htmlFor='tableCode'>Mã bàn</Label>
+                <Label htmlFor='tableCode'>Mã bàn hoặc URL</Label>
                 <Input
                   id='tableCode'
-                  placeholder='Nhập mã bàn (ví dụ: table-001)'
+                  placeholder='Nhập URL (http://...) hoặc mã bàn (table-001)'
                   value={manualCode}
                   onChange={(e) => setManualCode(e.target.value)}
                 />
               </div>
-              <Button 
-                onClick={handleManualSubmit} 
-                className='w-full'
-                disabled={!manualCode.trim()}
-              >
+              <Button onClick={handleManualSubmit} className='w-full' disabled={!manualCode.trim()}>
                 Xác nhận mã bàn
               </Button>
             </div>
@@ -244,9 +324,10 @@ export default function ScanQRPage() {
           <h3 className='font-semibold mb-3'>Hướng dẫn sử dụng:</h3>
           <ol className='space-y-2 text-sm text-muted-foreground'>
             <li>1. Tìm mã QR code trên bàn của bạn</li>
-            <li>2. Nhấn "Bắt đầu quét" và hướng camera về phía mã QR</li>
+            <li>2. Nhấn &quot;Bắt đầu quét&#34; và hướng camera về phía mã QR</li>
             <li>3. Giữ camera ổn định cho đến khi quét thành công</li>
-            <li>4. Nếu không quét được, bạn có thể nhập mã bàn thủ công</li>
+            <li>4. Nếu không quét được, bạn có thể nhập URL hoặc mã bàn thủ công</li>
+            <li>5. Hệ thống sẽ kiểm tra tính hợp lệ của bàn và chuyển đến menu</li>
           </ol>
         </CardContent>
       </Card>

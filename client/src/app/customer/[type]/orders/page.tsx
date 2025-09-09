@@ -186,7 +186,7 @@ export default function OrdersPage() {
   const params = useParams()
   const router = useRouter()
   const orderType = params.type as string
-  
+
   const [selectedTab, setSelectedTab] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
@@ -203,13 +203,13 @@ export default function OrdersPage() {
       icon: MapPin,
       color: 'text-blue-600'
     },
-    'takeaway': {
+    takeaway: {
       title: 'Đơn hàng - Mua mang về',
       description: 'Theo dõi đơn hàng mua mang về',
       icon: Package,
       color: 'text-orange-600'
     },
-    'delivery': {
+    delivery: {
       title: 'Đơn hàng - Giao hàng',
       description: 'Theo dõi đơn hàng giao tận nơi',
       icon: Truck,
@@ -242,12 +242,12 @@ export default function OrdersPage() {
           ...orderData,
           createdAt: new Date().toISOString()
         }
-        setOrders(prev => [newOrder, ...prev])
-        
+        setOrders((prev) => [newOrder, ...prev])
+
         // Store in localStorage
         const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]')
         localStorage.setItem('orders', JSON.stringify([newOrder, ...existingOrders]))
-        
+
         // Clear current order
         localStorage.removeItem('currentOrder')
       }
@@ -413,22 +413,33 @@ export default function OrdersPage() {
                   <div className='space-y-3'>
                     <h4 className='font-medium text-sm'>Món đã đặt:</h4>
                     <div className='space-y-2'>
-                      {order.items.map((item, index) => (
-                        <div key={index} className='flex items-center gap-3 p-2 bg-muted/50 rounded-lg'>
-                          <img src={item.image} alt={item.name} className='w-12 h-12 rounded-lg object-cover' />
-                          <div className='flex-1'>
-                            <div className='flex items-center justify-between'>
-                              <h5 className='font-medium text-sm'>{item.name}</h5>
-                              <span className='text-sm font-medium'>
-                                {(item.price * item.quantity).toLocaleString('vi-VN')}đ
-                              </span>
+                      {(Array.isArray(order.items) ? order.items : []).map(
+                        (
+                          item: {
+                            name: string
+                            quantity: number
+                            price: number
+                            image: string
+                            notes?: string
+                          },
+                          index: number
+                        ) => (
+                          <div key={index} className='flex items-center gap-3 p-2 bg-muted/50 rounded-lg'>
+                            <img src={item.image} alt={item.name} className='w-12 h-12 rounded-lg object-cover' />
+                            <div className='flex-1'>
+                              <div className='flex items-center justify-between'>
+                                <h5 className='font-medium text-sm'>{item.name}</h5>
+                                <span className='text-sm font-medium'>
+                                  {(item.price * item.quantity).toLocaleString('vi-VN')}đ
+                                </span>
+                              </div>
+                              <p className='text-xs text-muted-foreground'>
+                                {item.quantity}x {item.price.toLocaleString('vi-VN')}đ{item.notes && ` • ${item.notes}`}
+                              </p>
                             </div>
-                            <p className='text-xs text-muted-foreground'>
-                              {item.quantity}x {item.price.toLocaleString('vi-VN')}đ{item.notes && ` • ${item.notes}`}
-                            </p>
                           </div>
-                        </div>
-                      ))}
+                        )
+                      )}
                     </div>
                   </div>
 
@@ -564,21 +575,32 @@ export default function OrdersPage() {
               <div>
                 <h4 className='font-medium mb-3'>Món đã đặt</h4>
                 <div className='space-y-3'>
-                  {selectedOrder.items.map((item: any, index: number) => (
-                    <div key={index} className='flex items-center gap-3 p-3 border rounded-lg'>
-                      <img src={item.image} alt={item.name} className='w-16 h-16 rounded-lg object-cover' />
-                      <div className='flex-1'>
-                        <h5 className='font-medium'>{item.name}</h5>
-                        <p className='text-sm text-muted-foreground'>
-                          {item.quantity}x {item.price.toLocaleString('vi-VN')}đ
-                        </p>
-                        {item.notes && <p className='text-xs text-muted-foreground italic'>Ghi chú: {item.notes}</p>}
+                  {(Array.isArray(selectedOrder.items) ? selectedOrder.items : []).map(
+                    (
+                      item: {
+                        name: string
+                        quantity: number
+                        price: number
+                        image: string
+                        notes?: string
+                      },
+                      index: number
+                    ) => (
+                      <div key={index} className='flex items-center gap-3 p-3 border rounded-lg'>
+                        <img src={item.image} alt={item.name} className='w-16 h-16 rounded-lg object-cover' />
+                        <div className='flex-1'>
+                          <h5 className='font-medium'>{item.name}</h5>
+                          <p className='text-sm text-muted-foreground'>
+                            {item.quantity}x {item.price.toLocaleString('vi-VN')}đ
+                          </p>
+                          {item.notes && <p className='text-xs text-muted-foreground italic'>Ghi chú: {item.notes}</p>}
+                        </div>
+                        <div className='text-right'>
+                          <p className='font-medium'>{(item.price * item.quantity).toLocaleString('vi-VN')}đ</p>
+                        </div>
                       </div>
-                      <div className='text-right'>
-                        <p className='font-medium'>{(item.price * item.quantity).toLocaleString('vi-VN')}đ</p>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               </div>
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Search, Filter, Star, Plus, Minus, ChefHat, MapPin, Package, Truck, Clock } from 'lucide-react'
+import { Search, Filter, Star, Plus, Minus, ChefHat, MapPin, Package, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useCategoryListQuery } from '@/queries/useCategory'
 import { useDishListQuery } from '@/queries/useDish'
+import { TableInfo } from '@/types/common.type'
 
 const sortOptions = [
   { value: 'popular', label: 'Popular' },
@@ -26,7 +27,7 @@ export default function MenuPage() {
   const params = useParams()
   const router = useRouter()
   const orderType = params.type as string
-  
+
   const { data: categoriesData } = useCategoryListQuery()
   const { data: dishesData } = useDishListQuery()
   const categories = categoriesData?.payload.result || []
@@ -37,30 +38,30 @@ export default function MenuPage() {
   const [sortBy, setSortBy] = useState('popular')
   const [cart, setCart] = useState<Record<string, number>>({})
   const [showFilters, setShowFilters] = useState(false)
-  const [tableInfo, setTableInfo] = useState<any>(null)
+  const [tableInfo, setTableInfo] = useState<TableInfo | null>(null)
 
   // Order type specific configurations
   const orderTypeConfig = {
     'dine-in': {
-      title: 'Menu - Ăn tại quán',
-      description: 'Chọn món và thưởng thức tại nhà hàng',
+      title: 'Menu - Eat at the restaurant',
+      description: 'Choose and enjoy at the restaurant',
       icon: MapPin,
       color: 'text-blue-600',
-      features: ['Phục vụ tận bàn', 'Món ăn tươi ngon', 'Trải nghiệm tại chỗ']
+      features: ['Delivery to your table', 'Fresh food', 'On-site experience']
     },
-    'takeaway': {
-      title: 'Menu - Mua mang về',
-      description: 'Đặt món và đến lấy tại nhà hàng',
+    takeaway: {
+      title: 'Menu - Take away',
+      description: 'Order and pick up at the restaurant',
       icon: Package,
       color: 'text-orange-600',
-      features: ['Đặt trước', 'Đến lấy nhanh', 'Món ăn tươi ngon']
+      features: ['Pre-order', 'Fast pick up', 'Fresh food']
     },
-    'delivery': {
-      title: 'Menu - Giao hàng',
-      description: 'Đặt món và giao tận nơi',
+    delivery: {
+      title: 'Menu - Delivery',
+      description: 'Order and deliver',
       icon: Truck,
       color: 'text-green-600',
-      features: ['Giao tận nơi', 'Thanh toán linh hoạt', 'Theo dõi đơn hàng']
+      features: ['Delivery to your door', 'Flexible payment', 'Order tracking row']
     }
   }
 
@@ -159,7 +160,7 @@ export default function MenuPage() {
           <div className='flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg'>
             <MapPin className='h-4 w-4 text-blue-600' />
             <span className='text-sm font-medium text-blue-800 dark:text-blue-200'>
-              {tableInfo.tableNumber} - {tableInfo.floor} (Tối đa {tableInfo.capacity} người)
+              {tableInfo.tableNumber} - {tableInfo.location} (Tối đa {tableInfo.capacity} người)
             </span>
           </div>
         )}
