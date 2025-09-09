@@ -10,8 +10,9 @@ const decodeToken = (token: string) => {
 
 const managePaths = ['/manage']
 const guestPaths = ['/guest']
+const customerPaths = ['/customer']
 const ownerPaths = ['/manage/accounts', '/manage/dashboard']
-const privatePaths = [...managePaths, ...guestPaths]
+const privatePaths = [...managePaths, ...guestPaths, ...customerPaths]
 const unAuthPaths = ['/login']
 
 // This function can be marked `async` if using `await` inside
@@ -48,11 +49,21 @@ export function middleware(request: NextRequest) {
     const isGuestGoToManagePath = role === Role.Guest && managePaths.some((path) => pathname.startsWith(path))
     // Không phải Guest nhưng cố vào route guest
     const isNotGuestGoToGuestPath = role !== Role.Guest && guestPaths.some((path) => pathname.startsWith(path))
-
     // Không phải Owner nhưng cố vào route owner
     const isNotOwnerGoToOwnerPath = role !== Role.Owner && ownerPaths.some((path) => pathname.startsWith(path))
 
-    if (isGuestGoToManagePath || isNotGuestGoToGuestPath || isNotOwnerGoToOwnerPath) {
+    // Customer nếu cố vào route owner hoặc guest
+    const isCustomerGoToManagePath = role === Role.Customer && managePaths.some((path) => pathname.startsWith(path))
+
+    const isCustomerGoToGuestPath = role === Role.Customer && guestPaths.some((path) => pathname.startsWith(path))
+
+    if (
+      isGuestGoToManagePath ||
+      isNotGuestGoToGuestPath ||
+      isNotOwnerGoToOwnerPath ||
+      isCustomerGoToManagePath ||
+      isCustomerGoToGuestPath
+    ) {
       return NextResponse.redirect(new URL('/', request.url))
     }
 
@@ -62,5 +73,5 @@ export function middleware(request: NextRequest) {
 
 // See "Matching Paths" below to learn more
 export const config = {
-  matcher: ['/manage/:path*', '/guest/:path*', '/login']
+  matcher: ['/manage/:path*', '/guest/:path*', '/customer/:path*', '/login']
 }
