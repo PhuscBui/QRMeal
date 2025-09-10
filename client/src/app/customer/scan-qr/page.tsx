@@ -39,7 +39,7 @@ export default function ScanQRPage() {
       }
     } catch (err) {
       console.error('Error accessing camera:', err)
-      setError('Không thể truy cập camera. Vui lòng kiểm tra quyền truy cập.')
+      setError('Cannot access camera. Please check access rights.')
       setIsScanning(false)
     }
   }
@@ -83,7 +83,7 @@ export default function ScanQRPage() {
             }
           } catch (urlError) {
             console.error('Error parsing URL:', urlError)
-            setError('URL QR code không hợp lệ. Vui lòng thử lại.')
+            setError('The QR code URL is invalid. Please try again.')
             return
           }
         } else {
@@ -95,24 +95,24 @@ export default function ScanQRPage() {
         const table = tables.find((t) => t.number === tableNumber)
 
         if (!table) {
-          setError('Bàn không tồn tại hoặc mã QR không hợp lệ. Vui lòng thử lại.')
+          setError('The scanned table does not exist. Please check the QR code and try again.')
           return
         }
 
         // Validate token if provided
         if (token && table.token !== token) {
-          setError('Mã xác thực không hợp lệ. Vui lòng sử dụng QR code chính thức của nhà hàng.')
+          setError('The token is invalid. Please use the official QR code from the restaurant.')
           return
         }
 
         // Check table status
         if (table.status === 'Hidden') {
-          setError('Bàn này hiện không khả dụng. Vui lòng liên hệ nhân viên.')
+          setError('This table is currently unavailable. Please contact staff.')
           return
         }
 
         if (table.status === 'Reserved' && !table.reservation?.is_customer) {
-          setError('Bàn này đã được đặt trước. Vui lòng liên hệ nhân viên nếu bạn là người đặt bàn.')
+          setError('This table is already reserved. Please contact staff if you are the reserver.')
           return
         }
 
@@ -149,7 +149,7 @@ export default function ScanQRPage() {
         }, 1500)
       } catch (error) {
         console.error('Error processing scanned data:', error)
-        setError('Có lỗi xảy ra khi xử lý mã QR. Vui lòng thử lại.')
+        setError('An error occurred while processing the QR code. Please try again.')
       }
     },
     [tables, setError, setScannedData, stopScanning, router]
@@ -192,8 +192,8 @@ export default function ScanQRPage() {
           <ArrowLeft className='h-4 w-4' />
         </Button>
         <div>
-          <h1 className='text-3xl font-bold'>Quét QR Code</h1>
-          <p className='text-muted-foreground'>Quét mã QR trên bàn để bắt đầu đặt món</p>
+          <h1 className='text-3xl font-bold'>Scan QR Code</h1>
+          <p className='text-muted-foreground'>Scan the QR code on the table to start ordering</p>
         </div>
       </div>
 
@@ -202,8 +202,8 @@ export default function ScanQRPage() {
         <Card className='border-green-200 bg-green-50 dark:bg-green-950/20'>
           <CardContent className='p-6 text-center'>
             <CheckCircle className='h-16 w-16 mx-auto text-green-500 mb-4' />
-            <h2 className='text-xl font-bold text-green-800 dark:text-green-200 mb-2'>Quét thành công!</h2>
-            <p className='text-green-700 dark:text-green-300 mb-4'>Đang chuyển đến menu...</p>
+            <h2 className='text-xl font-bold text-green-800 dark:text-green-200 mb-2'>Scan successful!</h2>
+            <p className='text-green-700 dark:text-green-300 mb-4'>Redirecting to menu...</p>
             <div className='text-sm text-green-600 dark:text-green-400 space-y-1'>
               {(() => {
                 const table = tables.find((t) => t._id === scannedData)
@@ -211,17 +211,17 @@ export default function ScanQRPage() {
 
                 return (
                   <>
-                    <div>Bàn số: {table.number}</div>
-                    <div>Vị trí: {table.location}</div>
-                    <div>Sức chứa: {table.capacity} người</div>
+                    <div>Table number: {table.number}</div>
+                    <div>Location: {table.location}</div>
+                    <div>Capacity: {table.capacity} people</div>
                     {table.status === 'Reserved' && table.reservation?.is_customer && (
                       <div className='mt-2 p-2 bg-blue-100 dark:bg-blue-900/20 rounded text-blue-700 dark:text-blue-300'>
-                        Bàn đã đặt trước cho bạn
+                        This table is reserved for you
                       </div>
                     )}
                     {table.status === 'Occupied' && (
                       <div className='mt-2 p-2 bg-orange-100 dark:bg-orange-900/20 rounded text-orange-700 dark:text-orange-300'>
-                        Bàn hiện đang được sử dụng
+                        This table is currently occupied
                       </div>
                     )}
                   </>
@@ -248,7 +248,7 @@ export default function ScanQRPage() {
               <Camera className='h-5 w-5' />
               Camera
             </CardTitle>
-            <CardDescription>Hướng camera về phía mã QR trên bàn</CardDescription>
+            <CardDescription>Aim the camera at the QR code on the table</CardDescription>
           </CardHeader>
           <CardContent>
             <div className='relative aspect-video bg-black rounded-lg overflow-hidden'>
@@ -258,7 +258,7 @@ export default function ScanQRPage() {
                 <div className='flex items-center justify-center h-full'>
                   <div className='text-center text-white'>
                     <QrCode className='h-16 w-16 mx-auto mb-4 opacity-50' />
-                    <p className='text-lg'>Camera chưa được khởi động</p>
+                    <p className='text-lg'>Camera is not started</p>
                   </div>
                 </div>
               )}
@@ -280,11 +280,11 @@ export default function ScanQRPage() {
               {!isScanning ? (
                 <Button onClick={startScanning} className='flex-1'>
                   <Camera className='h-4 w-4 mr-2' />
-                  Bắt đầu quét
+                  Start Scanning
                 </Button>
               ) : (
                 <Button onClick={stopScanning} variant='outline' className='flex-1'>
-                  Dừng quét
+                  Stop Scanning
                 </Button>
               )}
             </div>
@@ -296,22 +296,22 @@ export default function ScanQRPage() {
       {!scannedData && (
         <Card>
           <CardHeader>
-            <CardTitle>Nhập mã bàn thủ công</CardTitle>
-            <CardDescription>Nếu không thể quét QR code, bạn có thể nhập URL hoặc mã bàn trực tiếp</CardDescription>
+            <CardTitle>Enter table code manually</CardTitle>
+            <CardDescription>If you can&apos;t scan the QR code, you can enter the URL manually</CardDescription>
           </CardHeader>
           <CardContent>
             <div className='space-y-4'>
               <div>
-                <Label htmlFor='tableCode'>Mã bàn hoặc URL</Label>
+                <Label htmlFor='tableCode'>Table code or URL</Label>
                 <Input
                   id='tableCode'
-                  placeholder='Nhập URL (http://...) hoặc mã bàn (table-001)'
+                  placeholder='Enter URL (http://...)'
                   value={manualCode}
                   onChange={(e) => setManualCode(e.target.value)}
                 />
               </div>
               <Button onClick={handleManualSubmit} className='w-full' disabled={!manualCode.trim()}>
-                Xác nhận mã bàn
+                Confirm Table Code
               </Button>
             </div>
           </CardContent>
@@ -321,13 +321,13 @@ export default function ScanQRPage() {
       {/* Instructions */}
       <Card className='mt-6'>
         <CardContent className='p-6'>
-          <h3 className='font-semibold mb-3'>Hướng dẫn sử dụng:</h3>
+          <h3 className='font-semibold mb-3'>How to use:</h3>
           <ol className='space-y-2 text-sm text-muted-foreground'>
-            <li>1. Tìm mã QR code trên bàn của bạn</li>
-            <li>2. Nhấn &quot;Bắt đầu quét&#34; và hướng camera về phía mã QR</li>
-            <li>3. Giữ camera ổn định cho đến khi quét thành công</li>
-            <li>4. Nếu không quét được, bạn có thể nhập URL hoặc mã bàn thủ công</li>
-            <li>5. Hệ thống sẽ kiểm tra tính hợp lệ của bàn và chuyển đến menu</li>
+            <li>1. Find the QR code on your table</li>
+            <li>2. Press &quot;Start Scanning&quot; and point the camera at the QR code</li>
+            <li>3. Keep the camera steady until the scan is successful</li>
+            <li>4. If the scan fails, you can enter the URL or table code manually</li>
+            <li>5. The system will check the validity of the table and go to the menu</li>
           </ol>
         </CardContent>
       </Card>
