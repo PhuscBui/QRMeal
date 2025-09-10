@@ -59,6 +59,7 @@ export interface DeliveryInfo {
 export interface GetOrdersQueryParams {
   fromDate?: string
   toDate?: string
+  status?: 'Pending' | 'Processing' | 'Rejected' | 'Delivered' | 'Paid'
   order_type?: 'dine-in' | 'delivery' | 'takeaway'
   customer_id?: string
   guest_id?: string

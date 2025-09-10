@@ -1,13 +1,10 @@
 'use client'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import RefreshToken from '@/components/refresh-token'
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { decodeToken, generateSocket, getAccessTokenFromLocalStorage, removeTokensFromLocalStorage } from '@/lib/utils'
 import { RoleType } from '@/types/jwt.types'
-import socket from '@/lib/socket'
-import { io, type Socket } from 'socket.io-client'
-import envConfig from '@/config'
+import { type Socket } from 'socket.io-client'
 
 // Default
 // staleTime: 0
@@ -27,6 +24,7 @@ const AppContext = createContext({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setRole: (role?: RoleType | undefined) => {},
   socket: undefined as Socket | undefined,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setSocket: (socket?: Socket | undefined) => {},
   disconnectSocket: () => {}
 })
@@ -76,7 +74,6 @@ export default function AppProvider({ children }: { children: React.ReactNode })
       <QueryClientProvider client={queryClient}>
         {children}
         <RefreshToken />
-        {/* <ReactQueryDevtools initialIsOpen={false} /> */}
       </QueryClientProvider>
     </AppContext>
   )

@@ -350,7 +350,7 @@ export default function MenuPage() {
                   </div>
                   <Button size='lg' className='md:w-auto w-auto' onClick={handleProceedToCheckout}>
                     <ChefHat className='h-4 w-4 mr-2' />
-                    Thanh toán
+                    Tiếp tục
                   </Button>
                 </div>
               </CardContent>

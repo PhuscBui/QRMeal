@@ -238,7 +238,7 @@ class GuestsService {
             price: dish.price,
             image: dish.image,
             description: dish.description,
-            category_ids: dish.category_ids,
+            category_id: dish.category_id,
             status: dish.status,
             dish_id: dish._id
           }),

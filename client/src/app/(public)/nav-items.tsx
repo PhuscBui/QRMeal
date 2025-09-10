@@ -49,23 +49,18 @@ const menuItems: {
     role: [Role.Guest]
   },
   {
-    title: 'Booking',
-    href: '/customer/booking',
-    role: [Role.Customer]
-  },
-  {
     title: 'Promotions',
     href: '/customer/promotions',
     role: [Role.Customer]
   },
   {
-    title: 'Menu',
-    href: '/customer/menu',
+    title: 'Select Order Type',
+    href: '/customer/order-type',
     role: [Role.Customer]
   },
   {
-    title: 'Orders',
-    href: '/customer/orders',
+    title: 'Account',
+    href: '/customer/account',
     role: [Role.Customer]
   },
   {

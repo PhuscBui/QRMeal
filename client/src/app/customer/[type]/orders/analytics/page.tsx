@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState, createElement } from 'react'
 import { TrendingUp, TrendingDown, Star, Package, CreditCard, ChefHat, Award } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -186,7 +186,7 @@ export default function OrderAnalyticsPage() {
                   <Package className='h-8 w-8 text-muted-foreground' />
                 </div>
                 <div className='flex items-center gap-1 mt-2'>
-                  {React.createElement(getGrowthIcon(ordersGrowth), {
+                  {createElement(getGrowthIcon(ordersGrowth), {
                     className: `h-4 w-4 ${getGrowthColor(ordersGrowth)}`
                   })}
                   <span className={`text-sm ${getGrowthColor(ordersGrowth)}`}>{Math.abs(ordersGrowth)}%</span>
@@ -205,7 +205,7 @@ export default function OrderAnalyticsPage() {
                   <CreditCard className='h-8 w-8 text-muted-foreground' />
                 </div>
                 <div className='flex items-center gap-1 mt-2'>
-                  {React.createElement(getGrowthIcon(spendingGrowth), {
+                  {createElement(getGrowthIcon(spendingGrowth), {
                     className: `h-4 w-4 ${getGrowthColor(spendingGrowth)}`
                   })}
                   <span className={`text-sm ${getGrowthColor(spendingGrowth)}`}>{Math.abs(spendingGrowth)}%</span>

@@ -1,32 +1,23 @@
 /* eslint-disable @next/next/no-img-element */
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import {
-  ArrowLeft,
-  CreditCard,
-  Clock,
-  User,
-  ShoppingCart,
-  Plus,
-  Minus,
-  Trash2,
-  MapPin,
-  Package,
-  Truck
-} from 'lucide-react'
+import { ArrowLeft, Clock, User, ShoppingCart, Plus, Minus, Trash2, MapPin, Package, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+// Removed payment selection; payment happens after order management
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useDishListQuery } from '@/queries/useDish'
 import { TableInfo } from '@/types/common.type'
 import { useAccountMe } from '@/queries/useAccount'
+import { toast } from 'sonner'
+import { useCreateOrderMutation } from '@/queries/useOrder'
+import { CreateOrderGroupBodyType } from '@/schemaValidations/order.schema'
 
 // Define cart item type
 interface CartItem {
@@ -39,29 +30,24 @@ interface CartItem {
   dishId: string
 }
 
-const paymentMethods = [
-  { id: 'cash', name: 'Tiền mặt', description: 'Thanh toán khi nhận hàng' },
-  { id: 'card', name: 'Thẻ tín dụng', description: 'Visa, Mastercard' },
-  { id: 'banking', name: 'Chuyển khoản', description: 'Internet Banking' },
-  { id: 'momo', name: 'Ví MoMo', description: 'Thanh toán qua MoMo' }
-]
+// Payment methods moved to orders page (final step)
 
 const orderTypes = [
-  { id: 'dine-in', name: 'Tại chỗ', description: 'Thưởng thức tại nhà hàng', icon: MapPin },
-  { id: 'takeaway', name: 'Mang về', description: 'Đến lấy tại nhà hàng', icon: Package },
-  { id: 'delivery', name: 'Giao hàng', description: 'Giao tận nơi', icon: Truck }
+  { id: 'dine-in', name: 'On-site', description: 'Dine-in', icon: MapPin },
+  { id: 'takeaway', name: 'Takeaway', description: 'Pick up', icon: Package },
+  { id: 'delivery', name: 'Delivery', description: 'Delivery', icon: Truck }
 ]
 
 export default function CheckoutPage() {
   const { data } = useDishListQuery()
   const { data: accountData } = useAccountMe()
-  const dishes = data?.payload.result || []
+  const dishes = useMemo(() => data?.payload.result || [], [data])
+  const createOrder = useCreateOrderMutation()
   const user = accountData?.payload.result || null
   const params = useParams()
   const router = useRouter()
   const orderType = params.type as string
 
-  const [paymentMethod, setPaymentMethod] = useState('cash')
   const [customerInfo, setCustomerInfo] = useState({
     name: user?.name || '',
     phone: user?.phone || '',
@@ -82,15 +68,35 @@ export default function CheckoutPage() {
   }, [user])
 
   const [deliveryTime, setDeliveryTime] = useState('asap')
+  const [customTime, setCustomTime] = useState<string | null>(null)
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [tableInfo, setTableInfo] = useState<TableInfo | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  // Helper: convert deliveryTime (string) -> ISO string
+  const getDeliveryISO = (value: string): string | undefined => {
+    const now = new Date()
+    switch (value) {
+      case 'asap':
+        return now.toISOString()
+      case '30min':
+        return new Date(now.getTime() + 30 * 60 * 1000).toISOString()
+      case '1hour':
+        return new Date(now.getTime() + 60 * 60 * 1000).toISOString()
+      case '2hour':
+        return new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString()
+      case 'custom':
+        return customTime ? new Date(customTime).toISOString() : undefined
+      default:
+        return undefined
+    }
+  }
+
   // Order type specific configurations
   const orderTypeConfig = {
     'dine-in': {
-      title: 'Thanh toán - Tại chỗ',
-      description: 'Hoàn tất đơn hàng và thưởng thức tại nhà hàng',
+      title: 'Confirm Order - On-site',
+      description: 'Complete Order and Enjoy at the Restaurant',
       icon: MapPin,
       color: 'text-blue-600',
       showDeliveryTime: false,
@@ -98,8 +104,8 @@ export default function CheckoutPage() {
       showTableInfo: true
     },
     takeaway: {
-      title: 'Thanh toán - Mang về',
-      description: 'Hoàn tất đơn hàng và đến lấy tại nhà hàng',
+      title: 'Confirm Order - Takeaway',
+      description: 'Complete Order and Pick Up at the Restaurant',
       icon: Package,
       color: 'text-orange-600',
       showDeliveryTime: true,
@@ -107,8 +113,8 @@ export default function CheckoutPage() {
       showTableInfo: false
     },
     delivery: {
-      title: 'Thanh toán - Giao hàng',
-      description: 'Hoàn tất đơn hàng và giao tận nơi',
+      title: 'Confirm Order - Delivery',
+      description: 'Complete Order and Deliver',
       icon: Truck,
       color: 'text-green-600',
       showDeliveryTime: true,
@@ -121,43 +127,41 @@ export default function CheckoutPage() {
 
   // Load cart and table data
   useEffect(() => {
+    if (!dishes || dishes.length === 0) return
+
     const loadCartData = () => {
       try {
         const storedCart = localStorage.getItem('cart')
         if (storedCart) {
           const parsedCart = JSON.parse(storedCart)
-          // Validate cart structure and ensure it's an array
-          if (Array.isArray(parsedCart)) {
-            // Map cart items to match our CartItem interface
-            const validatedCart = parsedCart
-              .map((item: any) => ({
-                id: item.id || item.dishId || '',
-                name: item.name || '',
-                price: Number(item.price) || 0,
-                image: item.image || '/placeholder-dish.jpg',
-                quantity: Number(item.quantity) || 1,
-                notes: item.notes || '',
-                dishId: item.dishId || item.id || ''
-              }))
-              .filter((item: CartItem) => item.id && item.name && item.price > 0)
+
+          // Nếu là object { dishId: quantity }
+          if (parsedCart && typeof parsedCart === 'object' && !Array.isArray(parsedCart)) {
+            const validatedCart = Object.entries(parsedCart)
+              .map(([dishId, quantity]) => {
+                const dish = dishes.find((d) => d._id === dishId)
+                if (!dish) return null
+
+                return {
+                  id: dish._id,
+                  dishId: dish._id,
+                  name: dish.name,
+                  price: dish.price,
+                  image: dish.image || '/placeholder-dish.jpg',
+                  quantity: Number(quantity) || 1
+                }
+              })
+              .filter((item): item is CartItem => item !== null)
 
             setCartItems(validatedCart)
           }
         }
 
-        // Load table info for dine-in orders
         if (orderType === 'dine-in') {
           const storedTableInfo = localStorage.getItem('tableInfo')
           if (storedTableInfo) {
-            try {
-              setTableInfo(JSON.parse(storedTableInfo))
-            } catch (error) {
-              console.error('Error parsing table info:', error)
-              // Redirect to scan QR if table info is invalid
-              router.push('/customer/scan-qr')
-            }
+            setTableInfo(JSON.parse(storedTableInfo))
           } else {
-            // Redirect to scan QR if no table info
             router.push('/customer/scan-qr')
           }
         }
@@ -170,7 +174,7 @@ export default function CheckoutPage() {
     }
 
     loadCartData()
-  }, [orderType, router])
+  }, [orderType, router, dishes])
 
   // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -209,61 +213,58 @@ export default function CheckoutPage() {
     })
   }
 
-  const handlePlaceOrder = () => {
-    // Validate required fields
+  const handlePlaceOrder = async () => {
     if (!customerInfo.name.trim() || !customerInfo.phone.trim()) {
-      alert('Vui lòng nhập đầy đủ họ tên và số điện thoại')
+      toast.error('Please enter your full name and phone number')
       return
     }
 
     if (currentConfig.showAddress && !customerInfo.address.trim()) {
-      alert('Vui lòng nhập địa chỉ giao hàng')
+      toast.error('Please enter your delivery address')
       return
     }
 
     if (cartItems.length === 0) {
-      alert('Giỏ hàng trống, vui lòng chọn món ăn')
+      toast.error('Your cart is empty, please select dishes to order')
       return
     }
 
-    // Create order data
-    const orderData = {
-      orderType,
-      paymentMethod,
-      customerInfo: {
-        ...customerInfo,
-        name: customerInfo.name.trim(),
-        phone: customerInfo.phone.trim(),
-        address: customerInfo.address.trim(),
-        notes: customerInfo.notes.trim()
-      },
-      deliveryTime: currentConfig.showDeliveryTime ? deliveryTime : null,
-      tableInfo: currentConfig.showTableInfo ? tableInfo : null,
-      items: cartItems,
-      total,
-      subtotal,
-      deliveryFee,
-      serviceFee,
-      createdAt: new Date().toISOString()
+    const body: CreateOrderGroupBodyType = {
+      table_number: currentConfig.showTableInfo ? tableInfo?.tableNumber ?? null : null,
+      order_type: orderType as 'dine-in' | 'delivery' | 'takeaway',
+      orders: cartItems.map((item) => ({
+        dish_id: item.dishId,
+        quantity: item.quantity
+      })),
+      delivery_info: currentConfig.showAddress
+        ? {
+            address: customerInfo.address,
+            receiver_name: customerInfo.name,
+            receiver_phone: customerInfo.phone,
+            notes: customerInfo.notes || null
+          }
+        : undefined,
+      takeaway_info:
+        orderType === 'takeaway'
+          ? {
+              pickup_time: getDeliveryISO(deliveryTime),
+              customer_name: customerInfo.name,
+              customer_phone: customerInfo.phone,
+              notes: customerInfo.notes || null
+            }
+          : undefined
     }
 
     try {
-      // Store order data for confirmation
-      localStorage.setItem('currentOrder', JSON.stringify(orderData))
+      const res = await createOrder.mutateAsync(body)
 
-      // Clear cart and table info
       localStorage.removeItem('cart')
-      if (orderType === 'dine-in') {
-        localStorage.removeItem('tableInfo')
-      }
 
-      console.log('Order placed:', orderData)
-
-      // Navigate to order confirmation
-      router.push(`/customer/${orderType}/order-confirmation`)
+      toast.success(res.payload.message)
+      router.push(`/customer/${orderType}/orders`)
     } catch (error) {
       console.error('Error placing order:', error)
-      alert('Có lỗi xảy ra khi đặt hàng, vui lòng thử lại')
+      toast.error('An error occurred while placing your order. Please try again.')
     }
   }
 
@@ -274,7 +275,7 @@ export default function CheckoutPage() {
         <div className='flex items-center justify-center h-64'>
           <div className='text-center'>
             <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4'></div>
-            <p className='text-muted-foreground'>Đang tải thông tin đơn hàng...</p>
+            <p className='text-muted-foreground'>Loading order information...</p>
           </div>
         </div>
       </div>
@@ -286,8 +287,8 @@ export default function CheckoutPage() {
     return (
       <div className='container mx-auto px-4 py-6 max-w-4xl'>
         <div className='text-center py-8'>
-          <h1 className='text-2xl font-bold mb-4'>Loại đơn hàng không hợp lệ</h1>
-          <Button onClick={() => router.push('/customer/menu')}>Quay về menu</Button>
+          <h1 className='text-2xl font-bold mb-4'>Invalid Order Type</h1>
+          <Button onClick={() => router.push('/customer/menu')}>Back to Menu</Button>
         </div>
       </div>
     )
@@ -319,7 +320,7 @@ export default function CheckoutPage() {
             <CardHeader>
               <CardTitle className='flex items-center gap-2'>
                 <ShoppingCart className='h-5 w-5' />
-                Loại đơn hàng
+                Order Type
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -343,7 +344,7 @@ export default function CheckoutPage() {
               <CardHeader>
                 <CardTitle className='flex items-center gap-2'>
                   <MapPin className='h-5 w-5' />
-                  Thông tin bàn
+                  Table Information
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -351,10 +352,10 @@ export default function CheckoutPage() {
                   <div className='flex items-center gap-2'>
                     <MapPin className='h-4 w-4 text-blue-600' />
                     <span className='font-medium text-blue-800 dark:text-blue-200'>
-                      Bàn {tableInfo.tableNumber} - {tableInfo.location}
+                      Table {tableInfo.tableNumber} - {tableInfo.location}
                     </span>
                   </div>
-                  <p className='text-sm text-blue-700 dark:text-blue-300 mt-1'>Sức chứa: {tableInfo.capacity} người</p>
+                  <p className='text-sm text-blue-700 dark:text-blue-300 mt-1'>Capacity: {tableInfo.capacity} people</p>
                 </div>
               </CardContent>
             </Card>
@@ -365,32 +366,32 @@ export default function CheckoutPage() {
             <CardHeader>
               <CardTitle className='flex items-center gap-2'>
                 <User className='h-5 w-5' />
-                Thông tin khách hàng
+                Customer Information
               </CardTitle>
             </CardHeader>
             <CardContent className='space-y-4'>
               <div className='grid md:grid-cols-2 gap-4'>
                 <div>
                   <Label className='mb-1' htmlFor='name'>
-                    Họ và tên *
+                    Full Name <span className='text-red-500'>*</span>
                   </Label>
                   <Input
                     id='name'
                     value={customerInfo.name}
                     onChange={(e) => setCustomerInfo((prev) => ({ ...prev, name: e.target.value }))}
-                    placeholder='Nhập họ và tên'
+                    placeholder='Enter your full name'
                     required
                   />
                 </div>
                 <div>
                   <Label className='mb-1' htmlFor='phone'>
-                    Số điện thoại *
+                    Phone Number <span className='text-red-500'>*</span>
                   </Label>
                   <Input
                     id='phone'
                     value={customerInfo.phone}
                     onChange={(e) => setCustomerInfo((prev) => ({ ...prev, phone: e.target.value }))}
-                    placeholder='Nhập số điện thoại'
+                    placeholder='Enter your phone number'
                     required
                   />
                 </div>
@@ -399,13 +400,13 @@ export default function CheckoutPage() {
               {currentConfig.showAddress && (
                 <div>
                   <Label className='mb-1' htmlFor='address'>
-                    Địa chỉ giao hàng *
+                    Delivery Address <span className='text-red-500'>*</span>
                   </Label>
                   <Textarea
                     id='address'
                     value={customerInfo.address}
                     onChange={(e) => setCustomerInfo((prev) => ({ ...prev, address: e.target.value }))}
-                    placeholder='Nhập địa chỉ giao hàng chi tiết'
+                    placeholder='Enter your detailed delivery address'
                     rows={3}
                     required
                   />
@@ -414,13 +415,13 @@ export default function CheckoutPage() {
 
               <div>
                 <Label className='mb-1' htmlFor='notes'>
-                  Ghi chú đặc biệt
+                  Special Instructions
                 </Label>
                 <Textarea
                   id='notes'
                   value={customerInfo.notes}
                   onChange={(e) => setCustomerInfo((prev) => ({ ...prev, notes: e.target.value }))}
-                  placeholder='Ghi chú về đơn hàng (tùy chọn)'
+                  placeholder='Enter any special instructions for your order (optional)'
                   rows={2}
                 />
               </div>
@@ -433,7 +434,7 @@ export default function CheckoutPage() {
               <CardHeader>
                 <CardTitle className='flex items-center gap-2'>
                   <Clock className='h-5 w-5' />
-                  Thời gian nhận hàng
+                  Delivery Time
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -442,44 +443,30 @@ export default function CheckoutPage() {
                     <SelectValue placeholder='Chọn thời gian nhận hàng' />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='asap'>Càng sớm càng tốt</SelectItem>
-                    <SelectItem value='30min'>Sau 30 phút</SelectItem>
-                    <SelectItem value='1hour'>Sau 1 giờ</SelectItem>
-                    <SelectItem value='2hour'>Sau 2 giờ</SelectItem>
-                    <SelectItem value='custom'>Chọn thời gian cụ thể</SelectItem>
+                    <SelectItem value='asap'>As soon as possible</SelectItem>
+                    <SelectItem value='30min'>In 30 minutes</SelectItem>
+                    <SelectItem value='1hour'>In 1 hour</SelectItem>
+                    <SelectItem value='2hour'>In 2 hours</SelectItem>
+                    <SelectItem value='custom'>Select a specific time</SelectItem>
                   </SelectContent>
                 </Select>
+
+                {deliveryTime === 'custom' && (
+                  <div>
+                    <Label className='mt-2 mb-1' htmlFor='customTime'>
+                      Choose custom time
+                    </Label>
+                    <Input
+                      id='customTime'
+                      type='datetime-local'
+                      value={customTime || ''}
+                      onChange={(e) => setCustomTime(e.target.value)}
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
-
-          {/* Payment Method */}
-          <Card>
-            <CardHeader>
-              <CardTitle className='flex items-center gap-2'>
-                <CreditCard className='h-5 w-5' />
-                Phương thức thanh toán
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                <div className='space-y-3'>
-                  {paymentMethods.map((method) => (
-                    <label
-                      key={method.id}
-                      className='flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-accent'
-                    >
-                      <RadioGroupItem value={method.id} />
-                      <div className='flex-1'>
-                        <div className='font-medium'>{method.name}</div>
-                        <div className='text-sm text-muted-foreground'>{method.description}</div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </RadioGroup>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Right Column - Order Summary */}
@@ -488,8 +475,8 @@ export default function CheckoutPage() {
           <Card>
             <CardHeader>
               <CardTitle className='flex items-center justify-between'>
-                <span>Đơn hàng của bạn</span>
-                <span className='text-sm text-muted-foreground'>({cartItems.length} món)</span>
+                <span>Your Order</span>
+                <span className='text-sm text-muted-foreground'>({cartItems.length} items)</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -497,9 +484,9 @@ export default function CheckoutPage() {
                 {cartItems.length === 0 ? (
                   <div className='text-center py-8 text-muted-foreground'>
                     <ShoppingCart className='h-12 w-12 mx-auto mb-4 opacity-50' />
-                    <p className='font-medium mb-2'>Giỏ hàng trống</p>
-                    <Button variant='outline' size='sm' onClick={() => router.push('/customer/menu')}>
-                      Chọn món ăn
+                    <p className='font-medium mb-2'>Your cart is empty</p>
+                    <Button variant='outline' size='sm' onClick={() => router.push(`/customer/${orderType}/menu`)}>
+                      Select Dishes
                     </Button>
                   </div>
                 ) : (
@@ -565,27 +552,27 @@ export default function CheckoutPage() {
           {cartItems.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Tổng kết đơn hàng</CardTitle>
+                <CardTitle>Order Summary</CardTitle>
               </CardHeader>
               <CardContent className='space-y-4'>
                 <div className='space-y-2'>
                   <div className='flex justify-between text-sm'>
-                    <span>Tạm tính ({cartItems.reduce((sum, item) => sum + item.quantity, 0)} món)</span>
+                    <span>Subtotal ({cartItems.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
                     <span>{subtotal.toLocaleString('vi-VN')}đ</span>
                   </div>
                   {deliveryFee > 0 && (
                     <div className='flex justify-between text-sm'>
-                      <span>Phí giao hàng</span>
+                      <span>Delivery Fee</span>
                       <span>{deliveryFee.toLocaleString('vi-VN')}đ</span>
                     </div>
                   )}
                   <div className='flex justify-between text-sm'>
-                    <span>Phí dịch vụ (5%)</span>
+                    <span>Service Fee (5%)</span>
                     <span>{serviceFee.toLocaleString('vi-VN')}đ</span>
                   </div>
                   <Separator />
                   <div className='flex justify-between font-semibold text-lg'>
-                    <span>Tổng cộng</span>
+                    <span>Total</span>
                     <span className='text-primary'>{total.toLocaleString('vi-VN')}đ</span>
                   </div>
                 </div>
@@ -601,17 +588,17 @@ export default function CheckoutPage() {
                     cartItems.length === 0
                   }
                 >
-                  Đặt hàng ngay • {total.toLocaleString('vi-VN')}đ
+                  Place Order • {total.toLocaleString('vi-VN')}đ
                 </Button>
 
                 <p className='text-xs text-muted-foreground text-center'>
-                  Bằng cách đặt hàng, bạn đồng ý với{' '}
+                  By placing an order, you agree to{' '}
                   <a href='#' className='underline hover:text-primary'>
-                    Điều khoản sử dụng
+                    Terms of Service
                   </a>{' '}
-                  và{' '}
+                  and{' '}
                   <a href='#' className='underline hover:text-primary'>
-                    Chính sách bảo mật
+                    Privacy Policy
                   </a>
                 </p>
               </CardContent>

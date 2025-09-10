@@ -163,6 +163,7 @@ export type OrderGroupParamType = z.TypeOf<typeof OrderGroupParam>
 export const GetOrdersQueryParams = z.object({
   fromDate: z.coerce.date().optional(),
   toDate: z.coerce.date().optional(),
+  status: z.enum(OrderStatusValues).optional(),
   order_type: z.enum(['dine-in', 'delivery', 'takeaway']).optional(),
   customer_id: z.string().optional(),
   guest_id: z.string().optional()
@@ -179,7 +180,7 @@ export type GetOrdersResType = z.TypeOf<typeof GetOrdersRes>
 export const GetOrderDetailRes = z.object({
   message: z.string(),
   result: OrderGroupSchema.extend({
-    table: TableSchema
+    table: TableSchema.nullable()
   })
 })
 export type GetOrderDetailResType = z.TypeOf<typeof GetOrderDetailRes>

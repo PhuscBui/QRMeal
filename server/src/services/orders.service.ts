@@ -277,7 +277,7 @@ class OrdersService {
   }
 
   async getOrders(query: GetOrdersQueryParams) {
-    const { fromDate, toDate, order_type, customer_id, guest_id } = query
+    const { fromDate, toDate, order_type, customer_id, guest_id, status } = query
     const matchCondition: any = {}
 
     if (fromDate || toDate) {
@@ -300,6 +300,10 @@ class OrdersService {
 
     if (guest_id) {
       matchCondition.guest_id = guest_id
+    }
+
+    if (status) {
+      matchCondition.status = status
     }
 
     const orderGroups = await databaseService.orderGroups
@@ -658,6 +662,106 @@ class OrdersService {
     return orderGroup[0]
   }
 
+  async getOrdersForCustomer(customerId: string) {
+    const orderGroups = await databaseService.orderGroups
+      .aggregate([
+        { $match: { customer_id: new ObjectId(customerId) } },
+        {
+          $lookup: {
+            from: 'orders',
+            localField: '_id',
+            foreignField: 'order_group_id',
+            as: 'orders'
+          }
+        },
+        {
+          $lookup: {
+            from: 'deliveries',
+            localField: '_id',
+            foreignField: 'order_group_id',
+            as: 'delivery'
+          }
+        },
+        {
+          $unwind: {
+            path: '$delivery',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $lookup: {
+            from: 'accounts',
+            localField: 'customer_id',
+            foreignField: '_id',
+            as: 'customer'
+          }
+        },
+        {
+          $unwind: {
+            path: '$customer',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $unwind: {
+            path: '$orders',
+            preserveNullAndEmptyArrays: false
+          }
+        },
+        {
+          $lookup: {
+            from: 'dish_snapshots',
+            localField: 'orders.dish_snapshot_id',
+            foreignField: '_id',
+            as: 'orders.dish_snapshot'
+          }
+        },
+        {
+          $unwind: '$orders.dish_snapshot'
+        },
+        {
+          $lookup: {
+            from: 'accounts',
+            localField: 'orders.order_handler_id',
+            foreignField: '_id',
+            as: 'orders.order_handler'
+          }
+        },
+        {
+          $unwind: {
+            path: '$orders.order_handler',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $group: {
+            _id: '$_id',
+            customer_id: { $first: '$customer_id' },
+            table_number: { $first: '$table_number' },
+            order_type: { $first: '$order_type' },
+            takeaway_info: { $first: '$takeaway_info' },
+            status: { $first: '$status' },
+            created_at: { $first: '$created_at' },
+            updated_at: { $first: '$updated_at' },
+            delivery: { $first: '$delivery' },
+            customer: { $first: '$customer' },
+            orders: { $push: '$orders' }
+          }
+        },
+        {
+          $project: {
+            customer: {
+              password: 0
+            }
+          }
+        },
+        { $sort: { created_at: -1 } }
+      ])
+      .toArray()
+
+    return orderGroups
+  }
+
   async updateOrder(orderId: string, body: UpdateOrderReqBody & { order_handler_id: string }) {
     const { status, dish_id, quantity, order_handler_id } = body
 
@@ -943,7 +1047,7 @@ class OrdersService {
     }
   }
 
-  private async getOrderGroupsByIds(orderGroupIds: ObjectId[]) {
+  async getOrderGroupsByIds(orderGroupIds: ObjectId[]) {
     return await databaseService.orderGroups
       .aggregate([
         { $match: { _id: { $in: orderGroupIds } } },
@@ -1048,8 +1152,7 @@ class OrdersService {
         {
           $project: {
             customer: {
-              refresh_token: 0,
-              refresh_token_exp: 0
+              password: 0
             },
             guest: {
               refresh_token: 0,

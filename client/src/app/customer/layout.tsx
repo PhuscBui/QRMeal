@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Menu, ShoppingCart, User, Gift, Clock, Package2, Bell } from 'lucide-react'
+import { Home, Menu, ShoppingCart, User, Gift, Package2, Bell, QrCode } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -11,9 +11,9 @@ import { cn } from '@/lib/utils'
 
 const navigation = [
   { name: 'Home', href: '/customer', icon: Home },
-  { name: 'Menu', href: '/customer/menu', icon: Menu },
+  { name: 'Select Order Type', href: '/customer/order-type', icon: Menu },
   { name: 'Promotions', href: '/customer/promotions', icon: Gift },
-  { name: 'Orders', href: '/customer/orders', icon: Clock },
+  { name: 'Scan QR Code', href: '/customer/scan-qr', icon: QrCode },
   { name: 'Account', href: '/customer/account/profile', icon: User }
 ]
 
