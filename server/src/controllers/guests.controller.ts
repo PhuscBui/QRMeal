@@ -6,7 +6,6 @@ import { ManagerRoom, Role, TableStatus } from '~/constants/type'
 import { TokenPayload } from '~/models/requests/Account.request'
 import { GuestCreateOrdersReqBody, GuestLoginReqBody, GuestLogoutReqBody } from '~/models/requests/Guest.request'
 import Guest from '~/models/schemas/Guest.schema'
-import GuestLoyalty from '~/models/schemas/GuestLoyalty.schema'
 import databaseService from '~/services/databases.service'
 import guestsService from '~/services/guests.service'
 import socketService from '~/utils/socket'
@@ -32,28 +31,14 @@ export const loginGuestController = async (
     return
   }
 
-  const [guest, existedPhone] = await Promise.all([
-    await databaseService.guests.insertOne(
-      new Guest({
-        name: name,
-        phone: phone || null,
-        table_number: table_number,
-        role: Role.Guest
-      })
-    ),
-    await databaseService.guest_loyalties.findOne({ guest_phone: phone })
-  ])
-
-  if (!existedPhone && phone) {
-    await databaseService.guest_loyalties.insertOne(
-      new GuestLoyalty({
-        guest_phone: phone,
-        loyalty_points: 0,
-        total_spend: 0,
-        visit_count: 0
-      })
-    )
-  }
+  const guest = await databaseService.guests.insertOne(
+    new Guest({
+      name: name,
+      phone: phone || null,
+      table_number: table_number,
+      role: Role.Guest
+    })
+  )
 
   const result = await guestsService.login(guest.insertedId.toString(), Role.Guest)
   if (result.guest === null) {

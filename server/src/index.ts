@@ -17,12 +17,12 @@ import socketService from '~/utils/socket'
 import cors from 'cors'
 import helmet from 'helmet'
 import promotionsRoutes from '~/routes/promotion.routes'
-import guest_loyaltyRouter from '~/routes/guest-loyalty.routes'
 import guest_promotionRouter from '~/routes/guest-promotion.routes'
 import revenuesRouter from '~/routes/revenues.routes'
 import indicatorsRouter from '~/routes/indicators.routes'
 import categoriesRouter from '~/routes/categories.routes'
 import dishReviewsRouter from '~/routes/dish-reviews.routes'
+import loyaltiesRouter from '~/routes/loyalty.routes'
 
 initFolder()
 
@@ -63,7 +63,7 @@ app.use('/guest', guestsRouter)
 app.use('/orders', ordersRouter)
 app.use('/indicators', indicatorsRouter)
 app.use('/promotions', promotionsRoutes)
-app.use('/guest-loyalty', guest_loyaltyRouter)
+app.use('/loyalties', loyaltiesRouter)
 app.use('/guest-promotion', guest_promotionRouter)
 app.use('/revenues', revenuesRouter)
 app.use('/categories', categoriesRouter)

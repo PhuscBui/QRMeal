@@ -13,7 +13,7 @@ const guestPaths = ['/guest']
 const customerPaths = ['/customer']
 const ownerPaths = ['/manage/accounts', '/manage/dashboard']
 const privatePaths = [...managePaths, ...guestPaths, ...customerPaths]
-const unAuthPaths = ['/login']
+const unAuthPaths = ['/login', '/customer/login', '/customer/register']
 
 // This function can be marked `async` if using `await` inside
 export function middleware(request: NextRequest) {
@@ -22,7 +22,15 @@ export function middleware(request: NextRequest) {
   const accessToken = request.cookies.get('access_token')?.value
   const refreshToken = request.cookies.get('refresh_token')?.value
   // 1. Chưa đăng nhập thì không cho vào private paths
-  if (privatePaths.some((path) => pathname.startsWith(path)) && !refreshToken) {
+  // 1. Chưa đăng nhập thì không cho vào private paths
+  if (
+    privatePaths.some((path) => pathname.startsWith(path)) &&
+    !refreshToken &&
+    pathname !== '/customer/login' &&
+    pathname !== '/customer/register'
+
+    // 👈 cho phép customer/login
+  ) {
     const url = new URL('/login', request.url)
     url.searchParams.set('clearTokens', 'true')
     return NextResponse.redirect(url)

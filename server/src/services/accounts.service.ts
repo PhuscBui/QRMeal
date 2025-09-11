@@ -12,6 +12,7 @@ import {
 } from '~/models/requests/Account.request'
 import Account from '~/models/schemas/Account.schema'
 import Guest from '~/models/schemas/Guest.schema'
+import Loyalty from '~/models/schemas/Loyalty.schema'
 import databaseService from '~/services/databases.service'
 import { hashPassword } from '~/utils/crypto'
 
@@ -317,7 +318,17 @@ class AccountsService {
         date_of_birth: new Date(payload.date_of_birth)
       })
     )
+
     const user_id = result.insertedId.toString()
+
+    await databaseService.loyalties.insertOne(
+      new Loyalty({
+        customer_id: new ObjectId(result.insertedId.toString()),
+        loyalty_points: 0,
+        total_spend: 0,
+        visit_count: 0
+      })
+    )
     return await databaseService.accounts.findOne(
       { _id: new ObjectId(user_id) },
       {

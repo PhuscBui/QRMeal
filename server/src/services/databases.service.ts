@@ -7,8 +7,8 @@ import Dish from '~/models/schemas/Dish.schema'
 import DishReview from '~/models/schemas/DishReview.schema'
 import DishSnapshot from '~/models/schemas/DishSnapshot.schema'
 import Guest from '~/models/schemas/Guest.schema'
-import GuestLoyalty from '~/models/schemas/GuestLoyalty.schema'
 import GuestPromotion from '~/models/schemas/GuestPromotion.schema'
+import Loyalty from '~/models/schemas/Loyalty.schema'
 import Order from '~/models/schemas/Order.schema'
 import OrderGroup from '~/models/schemas/OrderGroup.schema'
 import Promotion from '~/models/schemas/Promotion.schema'
@@ -76,8 +76,8 @@ class DatabaseService {
     return this.db.collection(envConfig.dbGuestPromotionsCollection)
   }
 
-  get guest_loyalties(): Collection<GuestLoyalty> {
-    return this.db.collection(envConfig.dbGuestLoyaltiesCollection)
+  get loyalties(): Collection<Loyalty> {
+    return this.db.collection(envConfig.dbLoyaltiesCollection)
   }
 
   get revenues(): Collection<Revenue> {

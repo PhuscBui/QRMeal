@@ -220,19 +220,20 @@ export const PROMOTIONS_MESSAGE = {
   PROMOTION_ID_MUST_BE_A_VALID_OBJECT_ID: 'Promotion ID must be a valid ObjectId'
 } as const
 
-export const GUEST_LOYALTY_MESSAGE = {
-  GUEST_LOYALTY_NOT_FOUND: 'Guest loyalty not found',
-  GUEST_LOYALTY_CREATED: 'Guest loyalty created',
-  GUEST_LOYALTY_UPDATED: 'Guest loyalty updated',
-  GUEST_LOYALTY_DELETED: 'Guest loyalty deleted',
-  GUEST_LOYALTY_FETCHED: 'Guest loyalty fetched',
-  GUEST_LOYALTIES_FETCHED: 'Guest loyalties fetched',
-  GUEST_PHONE_IS_REQUIRED: 'Guest phone is required',
-  GUEST_PHONE_MUST_BE_A_STRING: 'Guest phone must be a string',
-  GUEST_PHONE_IS_INVALID: 'Guest phone is invalid',
-  GUEST_ID_IS_REQUIRED: 'Guest ID is required',
-  GUEST_ID_MUST_BE_A_STRING: 'Guest ID must be a string',
-  GUEST_ID_IS_INVALID: 'Guest ID is invalid',
+export const LOYALTY_MESSAGE = {
+  LOYALTIES_FETCHED: 'Loyalties fetched',
+  LOYALTY_NOT_FOUND: 'Loyalty not found',
+  LOYALTY_CREATED: 'Loyalty created',
+  LOYALTY_UPDATED: 'Loyalty updated',
+  LOYALTY_DELETED: 'Loyalty deleted',
+  LOYALTY_FETCHED: 'Loyalty fetched',
+  CUSTOMER_LOYALTIES_FETCHED: 'Customer loyalties fetched',
+  CUSTOMER_PHONE_IS_REQUIRED: 'Customer phone is required',
+  CUSTOMER_PHONE_MUST_BE_A_STRING: 'Customer phone must be a string',
+  CUSTOMER_PHONE_IS_INVALID: 'Customer phone is invalid',
+  CUSTOMER_ID_IS_REQUIRED: 'Customer ID is required',
+  CUSTOMER_ID_MUST_BE_A_STRING: 'Customer ID must be a string',
+  CUSTOMER_ID_IS_INVALID: 'Customer ID is invalid',
   TOTAL_SPEND_IS_REQUIRED: 'Total spend is required',
   TOTAL_SPEND_MUST_BE_A_NUMBER: 'Total spend must be a number',
   TOTAL_SPEND_MUST_BE_GREATER_THAN_0: 'Total spend must be greater than 0',
