@@ -1,11 +1,14 @@
 'use client'
 
+import type React from 'react'
+
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Menu, ShoppingCart, User, Gift, Package2, Bell, QrCode } from 'lucide-react'
+import { Home, Menu, ShoppingCart, User, Gift, Package2, Bell, QrCode, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import { cn } from '@/lib/utils'
 
@@ -14,7 +17,17 @@ const navigation = [
   { name: 'Select Order Type', href: '/customer/order-type', icon: Menu },
   { name: 'Promotions', href: '/customer/promotions', icon: Gift },
   { name: 'Scan QR Code', href: '/customer/scan-qr', icon: QrCode },
-  { name: 'Account', href: '/customer/account/profile', icon: User }
+  { name: 'Reservations', href: '/customer/reservations', icon: Package2 },
+  {
+    name: 'Account',
+    href: '/customer/account/profile',
+    icon: User,
+    children: [
+      { name: 'Profile', href: '/customer/account/profile' },
+      { name: 'Orders', href: '/customer/account/orders' },
+      { name: 'Settings', href: '/customer/account/settings' }
+    ]
+  }
 ]
 
 export default function CustomerLayout({
@@ -37,6 +50,42 @@ export default function CustomerLayout({
         <nav className='hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6'>
           {navigation.map((item) => {
             const isActive = pathname === item.href || (item.href !== '/customer' && pathname.startsWith(item.href))
+
+            if (item.children) {
+              return (
+                <DropdownMenu key={item.name}>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant='ghost'
+                      className={cn(
+                        'flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground h-auto p-2',
+                        isActive && 'text-foreground font-medium'
+                      )}
+                    >
+                      <item.icon className='h-4 w-4' />
+                      <span className='hidden lg:inline'>{item.name}</span>
+                      <ChevronDown className='h-3 w-3' />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align='start' className='w-48'>
+                    {item.children.map((child) => (
+                      <DropdownMenuItem key={child.name} asChild>
+                        <Link
+                          href={child.href}
+                          className={cn(
+                            'flex items-center w-full cursor-pointer',
+                            pathname === child.href && 'bg-accent text-accent-foreground'
+                          )}
+                        >
+                          {child.name}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )
+            }
+
             return (
               <Link
                 key={item.name}
@@ -91,6 +140,37 @@ export default function CustomerLayout({
                 {navigation.map((item) => {
                   const isActive =
                     pathname === item.href || (item.href !== '/customer' && pathname.startsWith(item.href))
+
+                  if (item.children) {
+                    return (
+                      <div key={item.name} className='space-y-1'>
+                        <div
+                          className={cn(
+                            'flex items-center gap-3 text-muted-foreground p-2 rounded-md font-medium',
+                            isActive && 'text-foreground bg-accent'
+                          )}
+                        >
+                          <item.icon className='h-5 w-5' />
+                          {item.name}
+                        </div>
+                        <div className='ml-8 space-y-1'>
+                          {item.children.map((child) => (
+                            <Link
+                              key={child.name}
+                              href={child.href}
+                              className={cn(
+                                'block text-sm text-muted-foreground transition-colors hover:text-foreground p-2 rounded-md',
+                                pathname === child.href && 'text-foreground font-medium bg-accent'
+                              )}
+                            >
+                              {child.name}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  }
+
                   return (
                     <Link
                       key={item.name}
