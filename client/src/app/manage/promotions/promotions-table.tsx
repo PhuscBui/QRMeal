@@ -37,15 +37,29 @@ import { PromotionListResType } from '@/schemaValidations/promotion.schema'
 import { useDeletePromotionMutation, usePromotionListQuery } from '@/queries/usePromotion'
 import AddPromotion from '@/app/manage/promotions/add-promotion'
 import EditPromotion from '@/app/manage/promotions/edit-promotion'
-import { PromotionType } from '@/constants/type'
 
 type PromotionItem = PromotionListResType['result'][0]
 
 const statusBadge = (status: boolean) => {
   if (status) {
-    return <span className='bg-green-100 text-green-800 rounded-full px-2 py-1 text-xs font-bold'>Available</span>
+    return <span className='bg-green-100 text-green-800 rounded-full px-2 py-1 text-xs font-bold'>Active</span>
   }
-  return <span className='bg-red-100 text-red-800 rounded-full px-2 py-1 text-xs font-bold'>Unavailable</span>
+  return <span className='bg-red-100 text-red-800 rounded-full px-2 py-1 text-xs font-bold'>Inactive</span>
+}
+
+const categoryBadge = (category: string) => {
+  const colorMap = {
+    discount: 'bg-blue-100 text-blue-800',
+    loyalty_points: 'bg-purple-100 text-purple-800',
+    buy_x_get_y: 'bg-green-100 text-green-800',
+    free_shipping: 'bg-orange-100 text-orange-800'
+  }
+  const color = colorMap[category as keyof typeof colorMap] || 'bg-gray-100 text-gray-800'
+  return (
+    <span className={`${color} rounded-full px-2 py-1 text-xs font-bold`}>
+      {category ? category.charAt(0).toUpperCase() + (category.slice(1) || '').replace('_', ' ') : 'Unknown'}
+    </span>
+  )
 }
 
 const PromotionTableContext = createContext<{
@@ -83,52 +97,80 @@ export const columns: ColumnDef<PromotionItem>[] = [
         dangerouslySetInnerHTML={{
           __html: DOMPurify.sanitize(row.getValue('description'))
         }}
-        className='whitespace-pre-line'
+        className='whitespace-pre-line max-w-xs truncate'
       />
     )
   },
   {
+    accessorKey: 'category',
+    header: 'Category',
+    cell: ({ row }) => categoryBadge(row.getValue('category'))
+  },
+  {
     accessorKey: 'discount_type',
     header: 'Discount Type',
-    cell: ({ row }) => <div className='capitalize'>{row.getValue('discount_type')}</div>
+    cell: ({ row }) => {
+      const discountType = row.getValue('discount_type')
+      if (!discountType) return <div>-</div>
+      return <div className='capitalize'>{(discountType as string).replace('_', ' ')}</div>
+    }
   },
   {
     accessorKey: 'is_active',
     header: 'Status',
-    cell: ({ row }) => <div>{statusBadge(row.getValue('is_active'))}</div>
+    cell: ({ row }) => statusBadge(row.getValue('is_active'))
   },
   {
     accessorKey: 'discount_value',
     header: 'Discount Value',
     cell: ({ row }) => {
-      const type = row.getValue('discount_type')
+      const discountType = row.getValue('discount_type')
       const value = row.getValue('discount_value')
 
-      if (type === PromotionType.Discount) {
+      if (!value || !discountType) return <div>-</div>
+
+      if (discountType === 'fixed') {
         return <div>{formatCurrency(value as number)}</div>
       }
 
-      if (type === PromotionType.Percent) {
-        return <div>{value as number} %</div>
+      if (discountType === 'percentage') {
+        return <div>{value as number}%</div>
       }
 
       return <div>{formatCurrency(value as number)}</div>
     }
   },
   {
-    accessorKey: 'min_spend',
-    header: 'Min Spend',
-    cell: ({ row }) => <div>{formatCurrency(row.getValue('min_spend'))}</div>
+    accessorKey: 'applicable_to',
+    header: 'Applicable To',
+    cell: ({ row }) => {
+      const value = row.getValue('applicable_to') as string | undefined
+      return <div className='capitalize'>{value ? value.replace('_', ' ') : '-'}</div>
+    }
   },
   {
-    accessorKey: 'min_visits',
-    header: 'Min Visits',
-    cell: ({ row }) => <div>{row.getValue('min_visits')}</div>
-  },
-  {
-    accessorKey: 'min_loyalty_points',
-    header: 'Min Loyalty Points',
-    cell: ({ row }) => <div>{row.getValue('min_loyalty_points')}</div>
+    accessorKey: 'conditions',
+    header: 'Conditions',
+    cell: ({ row }) => {
+      const conditions = row.getValue('conditions') as {
+        min_spend?: number
+        min_visits?: number
+        min_loyalty_points?: number
+        buy_quantity?: number
+        get_quantity?: number
+      }
+      if (!conditions) return <div>-</div>
+
+      const conditionsList = []
+      if (conditions.min_spend) conditionsList.push(`Min spend: ${formatCurrency(conditions.min_spend)}`)
+      if (conditions.min_visits) conditionsList.push(`Min visits: ${conditions.min_visits}`)
+      if (conditions.min_loyalty_points) conditionsList.push(`Min points: ${conditions.min_loyalty_points}`)
+      if (conditions.buy_quantity && conditions.get_quantity) {
+        conditionsList.push(`Buy ${conditions.buy_quantity}, Get ${conditions.get_quantity}`)
+      }
+
+      return <div className='text-sm'>{conditionsList.length > 0 ? conditionsList.join(', ') : '-'}</div>
+    }
   },
   {
     accessorKey: 'start_date',
@@ -214,6 +256,7 @@ function AlertDialogDeletePromotion({
     </AlertDialog>
   )
 }
+
 // Số lượng item trên 1 trang
 const PAGE_SIZE = 10
 export default function PromotionTable() {
@@ -324,7 +367,7 @@ export default function PromotionTable() {
             <AutoPagination
               page={table.getState().pagination.pageIndex + 1}
               pageSize={table.getPageCount()}
-              pathname='/manage/dishes'
+              pathname='/manage/promotions'
             />
           </div>
         </div>

@@ -158,6 +158,17 @@ export const ORDERS_MESSAGE = {
 } as const
 
 export const PROMOTIONS_MESSAGE = {
+  APPLICABLE_TO_IS_REQUIRED: 'Applicable to is required',
+  APPLICABLE_TO_MUST_BE_A_STRING: 'Applicable to must be a string',
+  APPLICABLE_TO_INVALID: 'Applicable to is invalid',
+  BUY_QUANTITY_MUST_BE_AN_INTEGER: 'Buy quantity must be an integer',
+  BUY_QUANTITY_LENGTH_MUST_BE_GREATER_THAN_0: 'Buy quantity length must be greater than 0',
+  GET_QUANTITY_MUST_BE_AN_INTEGER: 'Get quantity must be an integer',
+  APPLICABLE_ITEMS_MUST_BE_AN_ARRAY: 'Applicable items must be an array',
+  DISCOUNT_TYPE_INVALID: 'Discount type is invalid',
+  CATEGORY_IS_REQUIRED: 'Category is required',
+  CATEGORY_MUST_BE_A_STRING: 'Category must be a string',
+  CATEGORY_INVALID: 'Category is invalid',
   PROMOTION_NOT_FOUND: 'Promotion not found',
   DESCRIPTION_MUST_BE_A_STRING: 'Description must be a string',
   PROMOTION_CREATED: 'Promotion created',

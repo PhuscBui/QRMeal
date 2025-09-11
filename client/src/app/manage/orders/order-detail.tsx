@@ -1,9 +1,8 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { OrderStatus, PromotionType } from '@/constants/type'
+import { OrderStatus } from '@/constants/type'
 import {
   OrderStatusIcon,
-  calculateDiscount,
   formatCurrency,
   formatDateTimeToLocaleString,
   formatDateTimeToTimeString,
@@ -84,21 +83,22 @@ export default function OrderDetail({
   }, [ordersFilterToPurchase])
 
   const calculateTotalAmount = (price: number, promotion: PromotionResType['result'][]) => {
-    if (promotion.length === 0) return price
+    // if (promotion.length === 0) return price
 
-    const totalDiscount = promotion.reduce((acc, promotion) => {
-      if (promotion.discount_type === PromotionType.FreeItem) {
-        // For free item promotions, find the cheapest item in the order
-        const cheapestItem = ordersFilterToPurchase.reduce((min, order) => {
-          const itemPrice = order.dish_snapshot.price
-          return itemPrice < min ? itemPrice : min
-        }, Infinity)
-        return acc + cheapestItem
-      }
-      return acc + calculateDiscount(promotion, price)
-    }, 0)
+    // const totalDiscount = promotion.reduce((acc, promotion) => {
+    //   if (promotion.discount_type === PromotionType.FreeItem) {
+    //     // For free item promotions, find the cheapest item in the order
+    //     const cheapestItem = ordersFilterToPurchase.reduce((min, order) => {
+    //       const itemPrice = order.dish_snapshot.price
+    //       return itemPrice < min ? itemPrice : min
+    //     }, Infinity)
+    //     return acc + cheapestItem
+    //   }
+    //   return acc + calculateDiscount(promotion, price)
+    // }, 0)
 
-    return price - totalDiscount
+    // return price - totalDiscount
+    return 0
   }
 
   const pay = async () => {
@@ -298,8 +298,8 @@ export default function OrderDetail({
         {usePromotions.length > 0 && (
           <Badge variant={'outline'}>
             <span>
-              -
-              {formatCurrency(
+              - 0 đ
+              {/* {formatCurrency(
                 usePromotions.reduce((acc, promotion) => {
                   return (
                     acc +
@@ -312,7 +312,7 @@ export default function OrderDetail({
                     )
                   )
                 }, 0)
-              )}
+              )} */}
             </span>
           </Badge>
         )}

@@ -4,73 +4,122 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { PlusCircle, HelpCircle } from 'lucide-react'
+import { PlusCircle, HelpCircle, X } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { Form, FormControl, FormField, FormItem, FormMessage, FormDescription } from '@/components/ui/form'
-import { getPromotionType, handleErrorApi } from '@/lib/utils'
+import { handleErrorApi } from '@/lib/utils'
 
-import { PromotionType, PromotionTypeValues } from '@/constants/type'
+import { PromotionCategoryValues, DiscountTypeValues, ApplicableToValues } from '@/constants/type'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Badge } from '@/components/ui/badge'
 
 import { toast } from 'sonner'
 import revalidateApiRequest from '@/apiRequests/revalidate'
 import { CreatePromotionBody, CreatePromotionBodyType } from '@/schemaValidations/promotion.schema'
 import { useCreatePromotionMutation } from '@/queries/usePromotion'
 import { useState, useEffect } from 'react'
+import { useDishListQuery } from '@/queries/useDish'
 
 export default function AddPromotion() {
   const [open, setOpen] = useState(false)
-  const [selectedType, setSelectedType] = useState<string>(PromotionType.Discount)
+  const [selectedCategory, setSelectedCategory] = useState<string>('discount')
+  const [selectedDiscountType, setSelectedDiscountType] = useState<string>('fixed')
+  const [selectedDishes, setSelectedDishes] = useState<string[]>([])
   const createPromotionMutation = useCreatePromotionMutation()
+  const { data } = useDishListQuery()
+
+  const dishes = data?.payload.result || []
 
   const form = useForm<CreatePromotionBodyType>({
     resolver: zodResolver(CreatePromotionBody),
     defaultValues: {
       name: '',
       description: '',
-      discount_type: PromotionType.Discount,
+      category: 'discount',
+      discount_type: 'fixed',
       discount_value: 0,
-      min_spend: 0,
-      min_visits: 0,
-      min_loyalty_points: 0,
+      conditions: {
+        min_spend: 0,
+        min_visits: 0,
+        min_loyalty_points: 0,
+        buy_quantity: 0,
+        get_quantity: 0,
+        applicable_items: []
+      },
       start_date: new Date(),
       end_date: new Date(),
-      is_active: true
+      is_active: true,
+      applicable_to: 'both'
     }
   })
 
-  // Reset form and selected type
+  // Reset form and selected states
   const reset = () => {
     form.reset()
-    setSelectedType(PromotionType.Discount)
+    setSelectedCategory('discount')
+    setSelectedDiscountType('fixed')
+    setSelectedDishes([])
   }
 
-  // Update the form when promotion type changes
+  // Update the form when category or discount type changes
   useEffect(() => {
-    // Reset relevant fields when promotion type changes
-    switch (selectedType) {
-      case PromotionType.Discount:
-        form.setValue('min_loyalty_points', 0)
+    // Reset relevant fields when category changes
+    switch (selectedCategory) {
+      case 'discount':
+        form.setValue('conditions.buy_quantity', 0)
+        form.setValue('conditions.get_quantity', 0)
+        form.setValue('conditions.applicable_items', [])
+        setSelectedDishes([])
         break
-      case PromotionType.LoyaltyPoints:
+      case 'loyalty_points':
         form.setValue('discount_value', 0)
-        form.setValue('min_spend', 0)
+        form.setValue('conditions.min_spend', 0)
+        form.setValue('discount_type', undefined)
+        form.setValue('conditions.applicable_items', [])
+        setSelectedDishes([])
         break
-      case PromotionType.Percent:
-        form.setValue('min_loyalty_points', 0)
-        break
-      case PromotionType.FreeItem:
+      case 'buy_x_get_y':
         form.setValue('discount_value', 0)
+        form.setValue('discount_type', undefined)
+        // Keep applicable_items for buy_x_get_y
+        break
+      case 'freeship':
+        form.setValue('discount_value', 0)
+        form.setValue('discount_type', undefined)
+        form.setValue('conditions.buy_quantity', 0)
+        form.setValue('conditions.get_quantity', 0)
+        form.setValue('conditions.applicable_items', [])
+        setSelectedDishes([])
         break
     }
-  }, [selectedType, form])
+  }, [selectedCategory, form])
+
+  // Update form when selectedDishes changes
+  useEffect(() => {
+    form.setValue('conditions.applicable_items', selectedDishes)
+  }, [selectedDishes, form])
 
   const onSubmit = async (values: CreatePromotionBodyType) => {
+    console.log(values)
     if (createPromotionMutation.isPending) return
     try {
-      const result = await createPromotionMutation.mutateAsync(values)
+      // Clean up the conditions object - remove zero/empty values
+      const cleanConditions = Object.fromEntries(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        Object.entries(values.conditions || {}).filter(([_, value]) => {
+          if (Array.isArray(value)) return value.length > 0
+          return value !== 0 && value !== undefined && value !== null
+        })
+      )
+
+      const payload = {
+        ...values,
+        conditions: Object.keys(cleanConditions).length > 0 ? cleanConditions : undefined
+      }
+
+      const result = await createPromotionMutation.mutateAsync(payload)
       await revalidateApiRequest('promotions')
       toast('Success', {
         description: result.payload.message
@@ -85,15 +134,13 @@ export default function AddPromotion() {
     }
   }
 
-  // Helper function to render appropriate value field label based on promotion type
+  // Helper function to render appropriate value field label based on discount type
   const getValueFieldLabel = (): string => {
-    switch (selectedType) {
-      case PromotionType.Discount:
+    switch (selectedDiscountType) {
+      case 'fixed':
         return 'Discount Amount ($)'
-      case PromotionType.Percent:
+      case 'percentage':
         return 'Discount Percentage (%)'
-      case PromotionType.FreeItem:
-        return 'Minimum Purchase Amount ($)'
       default:
         return 'Value'
     }
@@ -102,25 +149,57 @@ export default function AddPromotion() {
   // Helper function to determine if a field should be shown
   const shouldShowField = (fieldName: string): boolean => {
     switch (fieldName) {
+      case 'discount_type':
       case 'discount_value':
-        return (
-          selectedType === PromotionType.Discount ||
-          selectedType === PromotionType.Percent ||
-          selectedType === PromotionType.LoyaltyPoints
-        )
+        return selectedCategory === 'discount'
       case 'min_spend':
-        return (
-          selectedType === PromotionType.Discount ||
-          selectedType === PromotionType.Percent ||
-          selectedType === PromotionType.FreeItem
-        )
+        return selectedCategory === 'discount' || selectedCategory === 'freeship'
       case 'min_visits':
-        return true // Show for all types
+        return true // Show for all categories
       case 'min_loyalty_points':
-        return selectedType === PromotionType.LoyaltyPoints
+        return selectedCategory === 'loyalty_points'
+      case 'buy_quantity':
+      case 'get_quantity':
+        return selectedCategory === 'buy_x_get_y'
+      case 'applicable_items':
+        return selectedCategory === 'buy_x_get_y' || selectedCategory === 'combo'
       default:
         return true
     }
+  }
+
+  // Helper function to get category description
+  const getCategoryDescription = (category: string): string => {
+    switch (category) {
+      case 'discount':
+        return 'Fixed amount or percentage discount'
+      case 'loyalty_points':
+        return 'Earn loyalty points with purchase'
+      case 'buy_x_get_y':
+        return 'Buy X items, get Y items (free or discounted)'
+      case 'freeship':
+        return 'Free shipping with minimum purchase'
+      default:
+        return ''
+    }
+  }
+
+  // Handle dish selection
+  const handleDishSelect = (dishId: string) => {
+    if (!selectedDishes.includes(dishId)) {
+      setSelectedDishes([...selectedDishes, dishId])
+    }
+  }
+
+  // Handle dish removal
+  const handleDishRemove = (dishId: string) => {
+    setSelectedDishes(selectedDishes.filter((id) => id !== dishId))
+  }
+
+  // Get dish name by ID
+  const getDishName = (dishId: string) => {
+    const dish = dishes.find((d) => d._id === dishId)
+    return dish?.name || 'Unknown Dish'
   }
 
   return (
@@ -171,6 +250,7 @@ export default function AddPromotion() {
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name='description'
@@ -193,58 +273,83 @@ export default function AddPromotion() {
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
-                name='discount_type'
+                name='category'
                 render={({ field }) => (
                   <FormItem>
                     <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
-                      <Label htmlFor='discount_type' className='text-sm font-bold'>
-                        Promotion Type
+                      <Label htmlFor='category' className='text-sm font-bold'>
+                        Promotion Category
                       </Label>
                       <div className='col-span-3 w-full space-y-2'>
                         <Select
                           onValueChange={(value) => {
                             field.onChange(value)
-                            setSelectedType(value)
+                            setSelectedCategory(value)
                           }}
                           defaultValue={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder='Select Type' />
+                              <SelectValue placeholder='Select Category' />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {PromotionTypeValues.map((type) => (
-                              <SelectItem key={type} value={type}>
-                                {getPromotionType(type)}
+                            {PromotionCategoryValues.map((category) => (
+                              <SelectItem key={category} value={category}>
+                                {category.charAt(0).toUpperCase() + category.slice(1).replace('_', ' ')}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        <FormDescription>
-                          {(() => {
-                            switch (selectedType) {
-                              case PromotionType.Discount:
-                                return 'Fixed amount discount (e.g. $5 off)'
-                              case PromotionType.Percent:
-                                return 'Percentage discount (e.g. 10% off)'
-                              case PromotionType.LoyaltyPoints:
-                                return 'Earn loyalty points with purchase'
-                              case PromotionType.FreeItem:
-                                return 'Free item with minimum purchase'
-                              default:
-                                return ''
-                            }
-                          })()}
-                        </FormDescription>
+                        <FormDescription>{getCategoryDescription(selectedCategory)}</FormDescription>
                         <FormMessage />
                       </div>
                     </div>
                   </FormItem>
                 )}
               />
+
+              {shouldShowField('discount_type') && (
+                <FormField
+                  control={form.control}
+                  name='discount_type'
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
+                        <Label htmlFor='discount_type' className='text-sm font-bold'>
+                          Discount Type
+                        </Label>
+                        <div className='col-span-3 w-full space-y-2'>
+                          <Select
+                            onValueChange={(value) => {
+                              field.onChange(value)
+                              setSelectedDiscountType(value)
+                            }}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder='Select Discount Type' />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {DiscountTypeValues.map((type) => (
+                                <SelectItem key={type} value={type}>
+                                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </div>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              )}
 
               {shouldShowField('discount_value') && (
                 <FormField
@@ -263,16 +368,9 @@ export default function AddPromotion() {
                                 <HelpCircle className='h-4 w-4 opacity-70' />
                               </TooltipTrigger>
                               <TooltipContent>
-                                {(() => {
-                                  switch (selectedType) {
-                                    case PromotionType.Discount:
-                                      return 'Enter the fixed discount amount in dollars'
-                                    case PromotionType.Percent:
-                                      return 'Enter a percentage (1-100)'
-                                    default:
-                                      return 'Enter value'
-                                  }
-                                })()}
+                                {selectedDiscountType === 'fixed'
+                                  ? 'Enter the fixed discount amount in dollars'
+                                  : 'Enter a percentage (1-100)'}
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -283,11 +381,132 @@ export default function AddPromotion() {
                             type='number'
                             className='w-full'
                             min={0}
-                            max={selectedType === PromotionType.Percent ? 100 : undefined}
-                            step={selectedType === PromotionType.Percent ? 1 : 0.01}
-                            placeholder={selectedType === PromotionType.Percent ? '10' : '5.00'}
+                            max={selectedDiscountType === 'percentage' ? 100 : undefined}
+                            step={selectedDiscountType === 'percentage' ? 1 : 0.01}
+                            placeholder={selectedDiscountType === 'percentage' ? '10' : '5.00'}
                             {...field}
                           />
+                          <FormMessage />
+                        </div>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {shouldShowField('buy_quantity') && (
+                <FormField
+                  control={form.control}
+                  name='conditions.buy_quantity'
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
+                        <Label htmlFor='buy_quantity' className='text-sm font-bold'>
+                          Buy Quantity
+                        </Label>
+                        <div className='col-span-3 w-full space-y-2'>
+                          <Input
+                            id='buy_quantity'
+                            type='number'
+                            className='w-full'
+                            min={1}
+                            placeholder='2'
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          />
+                          <FormMessage />
+                        </div>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {shouldShowField('get_quantity') && (
+                <FormField
+                  control={form.control}
+                  name='conditions.get_quantity'
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
+                        <Label htmlFor='get_quantity' className='text-sm font-bold'>
+                          Get Quantity
+                        </Label>
+                        <div className='col-span-3 w-full space-y-2'>
+                          <Input
+                            id='get_quantity'
+                            type='number'
+                            className='w-full'
+                            min={1}
+                            placeholder='1'
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          />
+                          <FormMessage />
+                        </div>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {shouldShowField('applicable_items') && (
+                <FormField
+                  control={form.control}
+                  name='conditions.applicable_items'
+                  render={() => (
+                    <FormItem>
+                      <div className='grid grid-cols-4 items-start justify-items-start gap-4'>
+                        <div className='flex items-center gap-2'>
+                          <Label className='text-sm font-bold'>Applicable Dishes</Label>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <HelpCircle className='h-4 w-4 opacity-70' />
+                              </TooltipTrigger>
+                              <TooltipContent>Select dishes that this promotion applies to</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                        <div className='col-span-3 w-full space-y-2'>
+                          <Select onValueChange={handleDishSelect} value=''>
+                            <SelectTrigger data-dish-select-edit>
+                              <SelectValue placeholder='Select dishes...' />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {dishes
+                                .filter((dish) => !selectedDishes.includes(dish._id))
+                                .map((dish) => (
+                                  <SelectItem key={dish._id} value={dish._id}>
+                                    {dish.name} - ${dish.price}
+                                  </SelectItem>
+                                ))}
+                              {dishes.filter((dish) => !selectedDishes.includes(dish._id)).length === 0 && (
+                                <div className='py-2 px-2 text-sm text-gray-500'>No more dishes to select</div>
+                              )}
+                            </SelectContent>
+                          </Select>
+
+                          {selectedDishes.length > 0 && (
+                            <div className='flex flex-wrap gap-2 mt-2'>
+                              {selectedDishes.map((dishId) => (
+                                <Badge key={dishId} variant='secondary' className='flex items-center gap-1'>
+                                  {getDishName(dishId)}
+                                  <button
+                                    type='button'
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      handleDishRemove(dishId)
+                                    }}
+                                    className='ml-1 hover:bg-gray-200 rounded-full p-0.5'
+                                  >
+                                    <X className='h-3 w-3 cursor-pointer' />
+                                  </button>
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                          <FormDescription>Selected dishes: {selectedDishes.length}</FormDescription>
                           <FormMessage />
                         </div>
                       </div>
@@ -299,7 +518,7 @@ export default function AddPromotion() {
               {shouldShowField('min_spend') && (
                 <FormField
                   control={form.control}
-                  name='min_spend'
+                  name='conditions.min_spend'
                   render={({ field }) => (
                     <FormItem>
                       <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
@@ -327,7 +546,7 @@ export default function AddPromotion() {
               {shouldShowField('min_visits') && (
                 <FormField
                   control={form.control}
-                  name='min_visits'
+                  name='conditions.min_visits'
                   render={({ field }) => (
                     <FormItem>
                       <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
@@ -352,7 +571,7 @@ export default function AddPromotion() {
                             min={0}
                             placeholder='0'
                             {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                           />
                           <FormMessage />
                         </div>
@@ -365,7 +584,7 @@ export default function AddPromotion() {
               {shouldShowField('min_loyalty_points') && (
                 <FormField
                   control={form.control}
-                  name='min_loyalty_points'
+                  name='conditions.min_loyalty_points'
                   render={({ field }) => (
                     <FormItem>
                       <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
@@ -390,7 +609,7 @@ export default function AddPromotion() {
                             min={0}
                             placeholder='100'
                             {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                           />
                           <FormMessage />
                         </div>
@@ -399,6 +618,37 @@ export default function AddPromotion() {
                   )}
                 />
               )}
+
+              <FormField
+                control={form.control}
+                name='applicable_to'
+                render={({ field }) => (
+                  <FormItem>
+                    <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
+                      <Label htmlFor='applicable_to' className='text-sm font-bold'>
+                        Applicable To
+                      </Label>
+                      <div className='col-span-3 w-full space-y-2'>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder='Select Applicability' />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {ApplicableToValues.map((value) => (
+                              <SelectItem key={value} value={value}>
+                                {value.charAt(0).toUpperCase() + value.slice(1).replace('_', ' ')}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </div>
+                    </div>
+                  </FormItem>
+                )}
+              />
 
               <div className='border-t border-gray-200 pt-4 mt-2'>
                 <h3 className='font-medium mb-2'>Promotion Period</h3>

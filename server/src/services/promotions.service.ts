@@ -1,32 +1,37 @@
 import { ObjectId } from 'mongodb'
-import { CreatePromotionReqBody, GetPromotionsQueryParams } from '~/models/requests/Promotion.request'
+import {
+  CreatePromotionReqBody,
+  GetPromotionsQueryParams,
+  UpdatePromotionReqBody
+} from '~/models/requests/Promotion.request'
 import Promotion from '~/models/schemas/Promotion.schema'
 import databaseService from '~/services/databases.service'
 
 class PromotionsService {
   async createPromotion(promotion: CreatePromotionReqBody) {
-    const result = await databaseService.promotions.insertOne(
-      new Promotion({
-        name: promotion.name,
-        description: promotion.description,
-        discount_type: promotion.discount_type,
-        discount_value: promotion.discount_value,
-        min_spend: promotion.min_spend,
-        min_visits: promotion.min_visits,
-        min_loyalty_points: promotion.min_loyalty_points,
-        start_date: promotion.start_date,
-        end_date: promotion.end_date,
-        is_active: promotion.is_active
-      })
-    )
+    const promotionData = {
+      ...promotion,
+      conditions: promotion.conditions
+        ? {
+            ...promotion.conditions,
+            applicable_items: promotion.conditions.applicable_items?.map((id) => new ObjectId(id))
+          }
+        : undefined
+    }
+    const result = await databaseService.promotions.insertOne(new Promotion(promotionData))
     return await databaseService.promotions.findOne({ _id: result.insertedId })
   }
 
   async getPromotions(query: GetPromotionsQueryParams) {
-    const active = query.active === 'true' ? true : query.active === 'false' ? false : undefined
-    const filter = query.active ? { is_active: active } : {}
-    const promotions = await databaseService.promotions.find(filter).toArray()
-    return promotions
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const filter: any = {}
+
+    if (query.active === 'true') filter.is_active = true
+    if (query.active === 'false') filter.is_active = false
+    if (query.category) filter.category = query.category
+    if (query.applicable_to) filter.applicable_to = query.applicable_to
+
+    return await databaseService.promotions.find(filter).toArray()
   }
 
   async getPromotionById(id: string) {
@@ -34,27 +39,24 @@ class PromotionsService {
     return promotion
   }
 
-  async updatePromotion(id: string, promotion: CreatePromotionReqBody) {
+  async updatePromotion(id: string, promotion: UpdatePromotionReqBody) {
+    const promotionData = {
+      ...promotion,
+      conditions: promotion.conditions
+        ? {
+            ...promotion.conditions,
+            applicable_items: promotion.conditions.applicable_items?.map((id) => new ObjectId(id))
+          }
+        : undefined
+    }
     const result = await databaseService.promotions.findOneAndUpdate(
       { _id: new ObjectId(id) },
       {
-        $set: {
-          name: promotion.name,
-          description: promotion.description,
-          discount_type: promotion.discount_type,
-          discount_value: promotion.discount_value,
-          min_spend: promotion.min_spend,
-          min_visits: promotion.min_visits,
-          min_loyalty_points: promotion.min_loyalty_points,
-          start_date: promotion.start_date,
-          end_date: promotion.end_date,
-          is_active: promotion.is_active
-        },
+        $set: promotionData,
         $currentDate: { updated_at: true }
       },
       { returnDocument: 'after' }
     )
-
     return result
   }
 

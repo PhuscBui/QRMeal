@@ -2,7 +2,6 @@ import { checkSchema, ParamSchema } from 'express-validator'
 import { ObjectId } from 'mongodb'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { COMMON_MESSAGES, PROMOTIONS_MESSAGE } from '~/constants/messages'
-import { PromotionTypeValues } from '~/constants/type'
 import { ErrorWithStatus } from '~/models/Error'
 import promotionsService from '~/services/promotions.service'
 import { validate } from '~/utils/validation'
@@ -28,101 +27,71 @@ const descriptionSchema: ParamSchema = {
   },
   trim: true
 }
-const discountTypeSchema: ParamSchema = {
-  notEmpty: {
-    errorMessage: PROMOTIONS_MESSAGE.DISCOUNT_TYPE_IS_REQUIRED
-  },
-  isString: {
-    errorMessage: PROMOTIONS_MESSAGE.DISCOUNT_TYPE_MUST_BE_A_STRING
-  },
-  isLength: {
-    options: { min: 1 },
-    errorMessage: PROMOTIONS_MESSAGE.DISCOUNT_TYPE_LENGTH_MUST_BE_GREATER_THAN_0
-  },
-  trim: true,
+
+const categorySchema: ParamSchema = {
+  notEmpty: { errorMessage: PROMOTIONS_MESSAGE.CATEGORY_IS_REQUIRED },
+  isString: { errorMessage: PROMOTIONS_MESSAGE.CATEGORY_MUST_BE_A_STRING },
   custom: {
-    options: (value) => PromotionTypeValues.includes(value),
-    errorMessage: PROMOTIONS_MESSAGE.DISCOUNT_TYPE_MUST_BE_DISCOUNT_OR_LOYALTYPOINTS_OR_FREEITEM_OR_PERCENT
+    options: (value) => ['discount', 'buy_x_get_y', 'combo', 'freeship'].includes(value),
+    errorMessage: PROMOTIONS_MESSAGE.CATEGORY_INVALID
+  }
+}
+
+const discountTypeSchema: ParamSchema = {
+  optional: true,
+  isString: { errorMessage: PROMOTIONS_MESSAGE.DISCOUNT_TYPE_MUST_BE_A_STRING },
+  custom: {
+    options: (value) => ['percentage', 'fixed'].includes(value),
+    errorMessage: PROMOTIONS_MESSAGE.DISCOUNT_TYPE_INVALID
   }
 }
 
 const discountValueSchema: ParamSchema = {
-  notEmpty: {
-    errorMessage: PROMOTIONS_MESSAGE.DISCOUNT_VALUE_IS_REQUIRED
-  },
-  isNumeric: {
-    errorMessage: PROMOTIONS_MESSAGE.DISCOUNT_VALUE_MUST_BE_A_NUMBER
-  },
-  isFloat: {
-    errorMessage: PROMOTIONS_MESSAGE.DISCOUNT_VALUE_MUST_BE_A_FLOAT
-  },
-  isLength: {
-    options: { min: 1 },
-    errorMessage: PROMOTIONS_MESSAGE.DISCOUNT_VALUE_MUST_BE_GREATER_THAN_0
-  },
+  optional: true,
+  isFloat: { errorMessage: PROMOTIONS_MESSAGE.DISCOUNT_VALUE_MUST_BE_A_FLOAT },
   custom: {
     options: (value) => parseFloat(value) >= 0,
     errorMessage: PROMOTIONS_MESSAGE.DISCOUNT_VALUE_MUST_BE_GREATER_THAN_OR_EQUAL_TO_0
   }
 }
 
-const minSpendSchema: ParamSchema = {
-  notEmpty: {
-    errorMessage: PROMOTIONS_MESSAGE.MIN_SPEND_IS_REQUIRED
+// Conditions (nested)
+const conditionsSchema = {
+  'conditions.min_spend': {
+    optional: true,
+    isFloat: { errorMessage: PROMOTIONS_MESSAGE.MIN_SPEND_MUST_BE_A_FLOAT },
+    custom: {
+      options: (value: string) => parseFloat(value) >= 0,
+      errorMessage: PROMOTIONS_MESSAGE.MIN_SPEND_MUST_BE_GREATER_THAN_OR_EQUAL_TO_0
+    }
   },
-  isNumeric: {
-    errorMessage: PROMOTIONS_MESSAGE.MIN_SPEND_MUST_BE_A_NUMBER
+  'conditions.min_visits': {
+    optional: true,
+    isInt: { errorMessage: PROMOTIONS_MESSAGE.MIN_VISITS_MUST_BE_AN_INTEGER },
+    custom: {
+      options: (value: string) => parseInt(value) >= 0,
+      errorMessage: PROMOTIONS_MESSAGE.MIN_VISITS_MUST_BE_GREATER_THAN_OR_EQUAL_TO_0
+    }
   },
-  isFloat: {
-    errorMessage: PROMOTIONS_MESSAGE.MIN_SPEND_MUST_BE_A_FLOAT
+  'conditions.min_loyalty_points': {
+    optional: true,
+    isInt: { errorMessage: PROMOTIONS_MESSAGE.MIN_LOYALTY_POINTS_MUST_BE_AN_INTEGER },
+    custom: {
+      options: (value: string) => parseInt(value) >= 0,
+      errorMessage: PROMOTIONS_MESSAGE.MIN_LOYALTY_POINTS_MUST_BE_GREATER_THAN_OR_EQUAL_TO_0
+    }
   },
-  isLength: {
-    options: { min: 1 },
-    errorMessage: PROMOTIONS_MESSAGE.MIN_SPEND_LENGTH_MUST_BE_GREATER_THAN_0
+  'conditions.buy_quantity': {
+    optional: true,
+    isInt: { errorMessage: PROMOTIONS_MESSAGE.BUY_QUANTITY_MUST_BE_AN_INTEGER }
   },
-  custom: {
-    options: (value) => parseFloat(value) >= 0,
-    errorMessage: PROMOTIONS_MESSAGE.MIN_SPEND_MUST_BE_GREATER_THAN_OR_EQUAL_TO_0
-  }
-}
-
-const minVisitsSchema: ParamSchema = {
-  notEmpty: {
-    errorMessage: PROMOTIONS_MESSAGE.MIN_VISITS_IS_REQUIRED
+  'conditions.get_quantity': {
+    optional: true,
+    isInt: { errorMessage: PROMOTIONS_MESSAGE.GET_QUANTITY_MUST_BE_AN_INTEGER }
   },
-  isNumeric: {
-    errorMessage: PROMOTIONS_MESSAGE.MIN_VISITS_MUST_BE_A_NUMBER
-  },
-  isInt: {
-    errorMessage: PROMOTIONS_MESSAGE.MIN_VISITS_MUST_BE_AN_INTEGER
-  },
-  isLength: {
-    options: { min: 1 },
-    errorMessage: PROMOTIONS_MESSAGE.MIN_VISITS_LENGTH_MUST_BE_GREATER_THAN_0
-  },
-  custom: {
-    options: (value) => parseInt(value) >= 0,
-    errorMessage: PROMOTIONS_MESSAGE.MIN_VISITS_MUST_BE_GREATER_THAN_OR_EQUAL_TO_0
-  }
-}
-
-const minLoyaltyPointsSchema: ParamSchema = {
-  notEmpty: {
-    errorMessage: PROMOTIONS_MESSAGE.MIN_LOYALTY_POINTS_IS_REQUIRED
-  },
-  isNumeric: {
-    errorMessage: PROMOTIONS_MESSAGE.MIN_LOYALTY_POINTS_MUST_BE_A_NUMBER
-  },
-  isInt: {
-    errorMessage: PROMOTIONS_MESSAGE.MIN_LOYALTY_POINTS_MUST_BE_AN_INTEGER
-  },
-  isLength: {
-    options: { min: 1 },
-    errorMessage: PROMOTIONS_MESSAGE.MIN_LOYALTY_POINTS_LENGTH_MUST_BE_GREATER_THAN_0
-  },
-  custom: {
-    options: (value) => parseInt(value) >= 0,
-    errorMessage: PROMOTIONS_MESSAGE.MIN_LOYALTY_POINTS_MUST_BE_GREATER_THAN_OR_EQUAL_TO_0
+  'conditions.applicable_items': {
+    optional: true,
+    isArray: { errorMessage: PROMOTIONS_MESSAGE.APPLICABLE_ITEMS_MUST_BE_AN_ARRAY }
   }
 }
 
@@ -165,19 +134,28 @@ const isActiveSchema: ParamSchema = {
   }
 }
 
+const applicableToSchema: ParamSchema = {
+  notEmpty: { errorMessage: PROMOTIONS_MESSAGE.APPLICABLE_TO_IS_REQUIRED },
+  isString: { errorMessage: PROMOTIONS_MESSAGE.APPLICABLE_TO_MUST_BE_A_STRING },
+  custom: {
+    options: (value) => ['guest', 'customer', 'both'].includes(value),
+    errorMessage: PROMOTIONS_MESSAGE.APPLICABLE_TO_INVALID
+  }
+}
+
 export const createPromotionValidator = validate(
   checkSchema(
     {
       name: nameSchema,
       description: descriptionSchema,
+      category: categorySchema,
       discount_type: discountTypeSchema,
       discount_value: discountValueSchema,
-      min_spend: minSpendSchema,
-      min_visits: minVisitsSchema,
-      min_loyalty_points: minLoyaltyPointsSchema,
+      ...conditionsSchema,
       start_date: startDateSchema,
       end_date: endDateSchema,
-      is_active: isActiveSchema
+      is_active: isActiveSchema,
+      applicable_to: applicableToSchema
     },
     ['body']
   )
@@ -221,16 +199,16 @@ export const promotionIdValidator = validate(
 export const updatePromotionValidator = validate(
   checkSchema(
     {
-      name: nameSchema,
+      name: { ...nameSchema, optional: true },
       description: descriptionSchema,
+      category: { ...categorySchema, optional: true },
       discount_type: discountTypeSchema,
       discount_value: discountValueSchema,
-      min_spend: minSpendSchema,
-      min_visits: minVisitsSchema,
-      min_loyalty_points: minLoyaltyPointsSchema,
-      start_date: startDateSchema,
-      end_date: endDateSchema,
-      is_active: isActiveSchema
+      ...conditionsSchema,
+      start_date: { ...startDateSchema, optional: true },
+      end_date: { ...endDateSchema, optional: true },
+      is_active: { ...isActiveSchema, optional: true },
+      applicable_to: { ...applicableToSchema, optional: true }
     },
     ['body']
   )

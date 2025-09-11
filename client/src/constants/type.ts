@@ -54,19 +54,34 @@ export const OrderStatusValues = [
 
 export const ManagerRoom = 'manager' as const
 
-export const PromotionType = {
-  Discount: 'Discount',
-  LoyaltyPoints: 'LoyaltyPoints',
-  Percent: 'Percent',
-  FreeItem: 'FreeItem'
+export const PromotionCategory = {
+  Discount: 'discount',
+  BuyXGetY: 'buy_x_get_y',
+  Combo: 'combo',
+  FreeShip: 'freeship'
 } as const
 
-export const PromotionTypeValues = [
-  PromotionType.Discount,
-  PromotionType.LoyaltyPoints,
-  PromotionType.Percent,
-  PromotionType.FreeItem
+export const PromotionCategoryValues = [
+  PromotionCategory.Discount,
+  PromotionCategory.BuyXGetY,
+  PromotionCategory.Combo,
+  PromotionCategory.FreeShip
 ] as const
+
+export const DiscountType = {
+  Percentage: 'percentage',
+  Fixed: 'fixed'
+} as const
+
+export const DiscountTypeValues = [DiscountType.Percentage, DiscountType.Fixed] as const
+
+export const ApplicableTo = {
+  Guest: 'guest',
+  Customer: 'customer',
+  Both: 'both'
+} as const
+
+export const ApplicableToValues = [ApplicableTo.Guest, ApplicableTo.Customer, ApplicableTo.Both] as const
 
 export const AuthorType = {
   Customer: 'Customer',

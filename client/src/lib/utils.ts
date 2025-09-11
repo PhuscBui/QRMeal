@@ -5,7 +5,7 @@ import { type ClassValue, clsx } from 'clsx'
 import { UseFormSetError } from 'react-hook-form'
 import { twMerge } from 'tailwind-merge'
 import jwt from 'jsonwebtoken'
-import { DishStatus, OrderStatus, PromotionType, Role, TableStatus } from '@/constants/type'
+import { DishStatus, OrderStatus, Role, TableStatus } from '@/constants/type'
 import { toast } from 'sonner'
 import envConfig from '@/config'
 import { format, isValid } from 'date-fns'
@@ -148,18 +148,18 @@ export const getDishStatus = (status: (typeof DishStatus)[keyof typeof DishStatu
   }
 }
 
-export const getPromotionType = (type: (typeof PromotionType)[keyof typeof PromotionType]) => {
-  switch (type) {
-    case PromotionType.Percent:
-      return 'Percent'
-    case PromotionType.FreeItem:
-      return 'Free Item'
-    case PromotionType.LoyaltyPoints:
-      return 'Loyalty Points'
-    default:
-      return 'Discount'
-  }
-}
+// export const getPromotionType = (type: (typeof PromotionType)[keyof typeof PromotionType]) => {
+//   switch (type) {
+//     case PromotionType.Percent:
+//       return 'Percent'
+//     case PromotionType.FreeItem:
+//       return 'Free Item'
+//     case PromotionType.LoyaltyPoints:
+//       return 'Loyalty Points'
+//     default:
+//       return 'Discount'
+//   }
+// }
 
 export const getVietnameseOrderStatus = (status: (typeof OrderStatus)[keyof typeof OrderStatus]) => {
   switch (status) {
@@ -236,18 +236,18 @@ export const OrderStatusIcon = {
   [OrderStatus.Paid]: HandCoins
 }
 
-export const calculateDiscount = (promotion: PromotionResType['result'], totalPrice: number, freeItem?: number) => {
-  if (promotion.discount_type === PromotionType.Percent) {
-    return (totalPrice * promotion.discount_value) / 100
-  } else if (promotion.discount_type === PromotionType.Discount) {
-    return promotion.discount_value
-  } else if (promotion.discount_type === PromotionType.FreeItem) {
-    return freeItem ?? 0
-  } else if (promotion.discount_type === PromotionType.LoyaltyPoints) {
-    return promotion.discount_value
-  }
-  return 0
-}
+// export const calculateDiscount = (promotion: PromotionResType['result'], totalPrice: number, freeItem?: number) => {
+//   if (promotion.discount_type === PromotionType.Percent) {
+//     return (totalPrice * promotion.discount_value) / 100
+//   } else if (promotion.discount_type === PromotionType.Discount) {
+//     return promotion.discount_value
+//   } else if (promotion.discount_type === PromotionType.FreeItem) {
+//     return freeItem ?? 0
+//   } else if (promotion.discount_type === PromotionType.LoyaltyPoints) {
+//     return promotion.discount_value
+//   }
+//   return 0
+// }
 
 export const generateSocket = (token: string) => {
   return io(envConfig.NEXT_PUBLIC_API_ENDPOINT, {
