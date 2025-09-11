@@ -20,7 +20,6 @@ export default function UpdateProfileForm() {
   const [file, setFile] = useState<File | null>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const { data, refetch } = useAccountMe()
-  console.log(data)
   const updateMeMutation = useUpdateMeMutation()
   const uploadMediaMutation = useUploadMediaMutation()
   const form = useForm<UpdateMeBodyType>({
