@@ -6,7 +6,7 @@ import {
   getPromotionsController,
   updatePromotionController
 } from '~/controllers/promotions.controller'
-import { isAdminValidator, isEmployeeValidator } from '~/middlewares/account.middlewares'
+import { isEmployeeValidator } from '~/middlewares/account.middlewares'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import { filterMiddleware } from '~/middlewares/common.middlewares'
 import {
@@ -42,9 +42,9 @@ promotionsRoutes.put(
     'description',
     'discount_type',
     'discount_value',
-    'min_spend',
-    'min_visits',
-    'min_loyalty_points',
+    'applicable_to',
+    'conditions',
+    'category',
     'start_date',
     'end_date',
     'is_active'

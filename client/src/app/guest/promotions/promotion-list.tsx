@@ -1,32 +1,28 @@
 'use client'
 
 import { useMemo } from 'react'
-import { Award, CreditCard, ShoppingBag, Star } from 'lucide-react'
+import { ShoppingBag } from 'lucide-react'
 
 import PromotionCard from '@/app/guest/promotions/promotion-card'
 import { useGuestMe } from '@/queries/useGuest'
-import { useGetGuestLoyaltyQuery } from '@/queries/useGuestLoyalty'
 import { useGetGuestPromotionByPhoneQuery, useGetGuestPromotionQuery } from '@/queries/useGuestPromotion'
 import { usePromotionListQuery } from '@/queries/usePromotion'
-import type { GuestLoyalty } from '@/schemaValidations/guest-loyalty.schema'
-import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PromotionResType } from '@/schemaValidations/promotion.schema'
 import { GuestPromotion } from '@/schemaValidations/guest-promotion.schema'
 
 export default function PromotionList() {
   const { data, isLoading: isPromotionsLoading } = usePromotionListQuery()
-  const promotions = useMemo(() => data?.payload.result ?? [], [data])
+  const promotions = useMemo(
+    () =>
+      data?.payload.result.filter(
+        (promotion) => promotion.applicable_to === 'guest' || promotion.applicable_to === 'both'
+      ) ?? [],
+    [data]
+  )
 
   const { data: guestResult, isLoading: isGuestLoading } = useGuestMe()
   const guest = useMemo(() => guestResult?.payload.result ?? null, [guestResult])
-
-  const { data: guestLoyaltyData, isLoading: isLoyaltyLoading } = useGetGuestLoyaltyQuery({
-    guestPhone: guest?.phone ?? '',
-    enabled: Boolean(guest)
-  })
-
-  const guestLoyalty = useMemo(() => (guestLoyaltyData?.payload.result ?? null) as GuestLoyalty, [guestLoyaltyData])
 
   const { data: guestPromotionResult, isLoading: isGuestPromotionsLoading } = useGetGuestPromotionQuery({
     enabled: Boolean(guest),
@@ -48,121 +44,140 @@ export default function PromotionList() {
     [guestPromotionByPhoneResult]
   )
 
-  console.log('guestPromotionsByPhone', guestPromotionsByPhone)
-
-  // Lọc ra các chương trình khuyến mãi đã sử dụng
+  // Filter used promotions
   const usedPromotionIds = useMemo(() => {
     const usedPromotions = guestPromotionsByPhone.filter((promotion) => promotion.used)
     return usedPromotions.map((promotion) => promotion.promotion_id)
   }, [guestPromotionsByPhone])
 
-  console.log('usedPromotionIds', usedPromotionIds)
-
   const isApply = (promotionId: string) => {
     return guestPromotions.some((promotion: { promotion_id: string }) => promotion.promotion_id === promotionId)
   }
 
-  function canApplyPromotion(promotion: PromotionResType['result'], loyalty: GuestLoyalty | null): boolean {
-    if (!loyalty) return false
-
+  function canApplyPromotion(promotion: PromotionResType['result']): boolean {
     const now = new Date()
 
-    // Kiểm tra ngày hiệu lực
+    // Check validity period
     if (promotion.start_date && new Date(promotion.start_date) > now) return false
     if (promotion.end_date && new Date(promotion.end_date) < now) return false
 
-    // Kiểm tra điều kiện về loyalty
-    if (promotion.min_visits && loyalty.visit_count < promotion.min_visits) return false
-    if (promotion.min_loyalty_points && loyalty.loyalty_points < promotion.min_loyalty_points) return false
+    // Check if promotion is active
+    if (!promotion.is_active) return false
+
+    // Check applicable_to constraint
+    if (promotion.applicable_to === 'customer') return false
 
     return true
   }
 
   const isUsed = (promotionId: string) => {
-    return usedPromotionIds.some((promotion) => promotion === promotionId)
+    return usedPromotionIds.includes(promotionId)
   }
 
-  const isLoading = isPromotionsLoading || isGuestLoading || isLoyaltyLoading || isGuestPromotionsLoading
+  const isLoading = isPromotionsLoading || isGuestLoading || isGuestPromotionsLoading
 
-  if (isLoading) {
-    return <PromotionListSkeleton />
-  }
+  // Group promotions by category for better organization
+  const groupedPromotions = useMemo(() => {
+    const groups: Record<string, typeof promotions> = {
+      discount: [],
+      buy_x_get_y: [],
+      loyalty: [],
+      other: []
+    }
+
+    if (isLoading) {
+      return <PromotionListSkeleton />
+    }
+
+    promotions.forEach((promotion) => {
+      if (groups[promotion.category]) {
+        groups[promotion.category].push(promotion)
+      } else {
+        groups.other.push(promotion)
+      }
+    })
+
+    return groups
+  }, [isLoading, promotions])
 
   return (
     <div className='space-y-6'>
       <div className='flex items-center justify-between'>
-        <h2 className='text-2xl font-bold tracking-tight'>Current Promotions</h2>
         {guest && (
           <div className='text-sm text-muted-foreground'>
-            Welcome back, <span className='font-bold'>{guest.name || 'Guest'}</span>
+            Hello, <span className='font-bold'>{guest.name || 'Guest'}</span>
           </div>
         )}
       </div>
 
-      {guestLoyalty && <LoyaltyCard loyalty={guestLoyalty} />}
-
-      {promotions.length === 0 ? (
+      {Array.isArray(promotions) && promotions.length === 0 ? (
         <EmptyPromotions />
       ) : (
-        <div className='grid grid-cols-1 md:grid-cols-1 gap-4'>
-          {promotions.map((promotion) => (
-            <PromotionCard
-              key={promotion._id}
-              promotion={promotion}
-              guestId={guest?._id ?? ''}
-              guestPhone={guest?.phone ?? ''}
-              isApply={isApply(promotion._id)}
-              canApply={canApplyPromotion(promotion, guestLoyalty)}
-              isUsed={isUsed(promotion._id)}
-            />
-          ))}
+        <div className='space-y-8'>
+          {Object.entries(groupedPromotions).map(([category, categoryPromotions]) => {
+            if (categoryPromotions?.length === 0) return null
+
+            const getCategoryTitle = (cat: string) => {
+              switch (cat) {
+                case 'discount':
+                  return 'Discount promotion'
+                case 'buy_x_get_y':
+                  return 'Buy X get Y'
+                case 'loyalty':
+                  return 'Membership promotion'
+                default:
+                  return 'Other promotion'
+              }
+            }
+
+            return (
+              <div key={category}>
+                <h3 className='text-xl font-semibold mb-4 text-muted-foreground'>
+                  {getCategoryTitle(category)} ({categoryPromotions?.length})
+                </h3>
+                <div className='grid grid-cols-1 md:grid-cols-1 gap-4'>
+                  {Array.isArray(categoryPromotions) &&
+                    categoryPromotions.map(
+                      (promotion: {
+                        _id: string
+                        name: string
+                        description: string
+                        category: 'discount' | 'buy_x_get_y' | 'combo' | 'freeship'
+                        start_date: Date
+                        end_date: Date
+                        is_active: boolean
+                        applicable_to: 'guest' | 'customer' | 'both'
+                        discount_type?: 'percentage' | 'fixed' | undefined
+                        discount_value?: number | undefined
+                        conditions?:
+                          | {
+                              min_spend?: number | undefined
+                              min_visits?: number | undefined
+                              min_loyalty_points?: number | undefined
+                              buy_quantity?: number | undefined
+                              get_quantity?: number | undefined
+                              applicable_items?: string[] | undefined
+                            }
+                          | undefined
+                      }) => (
+                        <PromotionCard
+                          key={promotion._id}
+                          promotion={promotion}
+                          guestId={guest?._id ?? ''}
+                          guestPhone={guest?.phone ?? ''}
+                          isApply={isApply(promotion._id)}
+                          canApply={canApplyPromotion(promotion)}
+                          isUsed={isUsed(promotion._id)}
+                        />
+                      )
+                    )}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
-  )
-}
-
-function LoyaltyCard({ loyalty }: { loyalty: GuestLoyalty }) {
-  return (
-    <Card className='bg-gradient-to-r from-violet-50 to-purple-50 border-violet-100'>
-      <CardContent className='p-6'>
-        <h3 className='text-lg font-semibold mb-3 flex items-center gap-2'>
-          <Award className='h-5 w-5 text-violet-500' />
-          Your Loyalty Status
-        </h3>
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-          {/* <div className='flex items-center gap-3'>
-            <div className='bg-violet-100 p-2 rounded-full'>
-              <ShoppingBag className='h-5 w-5 text-violet-600' />
-            </div>
-            <div>
-              <p className='text-sm text-muted-foreground'>Total Spend</p>
-              <p className='font-semibold text-lg'>${loyalty.total_spend}</p>
-            </div>
-          </div> */}
-
-          <div className='flex items-center gap-3'>
-            <div className='bg-violet-100 p-2 rounded-full'>
-              <CreditCard className='h-5 w-5 text-violet-600' />
-            </div>
-            <div>
-              <p className='text-sm text-muted-foreground'>Visit Count</p>
-              <p className='font-semibold text-lg'>{loyalty.visit_count}</p>
-            </div>
-          </div>
-
-          <div className='flex items-center gap-3'>
-            <div className='bg-violet-100 p-2 rounded-full'>
-              <Star className='h-5 w-5 text-violet-600' />
-            </div>
-            <div>
-              <p className='text-sm text-muted-foreground'>Loyalty Points</p>
-              <p className='font-semibold text-lg'>{loyalty.loyalty_points}</p>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
   )
 }
 
@@ -170,9 +185,9 @@ function EmptyPromotions() {
   return (
     <div className='text-center py-16 px-4 rounded-lg border border-dashed'>
       <ShoppingBag className='h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50' />
-      <h3 className='text-lg font-medium mb-2'>No Promotions Available</h3>
+      <h3 className='text-lg font-medium mb-2'>No promotions available</h3>
       <p className='text-muted-foreground max-w-md mx-auto'>
-        There are no active promotions at the moment. Please check back later for exclusive offers and deals.
+        There are currently no promotions running. Please check back later for exclusive deals and discounts.
       </p>
     </div>
   )

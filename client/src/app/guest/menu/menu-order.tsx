@@ -178,7 +178,7 @@ export default function MenuOrder() {
           // ✅ Khi không search: hiển thị theo category
           <Accordion type='single' collapsible className='w-full space-y-2'>
             {categoryData?.payload.result.map((cat) => {
-              const dishesInCategory = filteredDishes.filter((dish) => dish.category_ids.includes(cat._id))
+              const dishesInCategory = filteredDishes.filter((dish) => dish.category_id === cat._id)
               if (dishesInCategory.length === 0) return null
 
               return (

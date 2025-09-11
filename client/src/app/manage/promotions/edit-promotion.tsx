@@ -393,7 +393,7 @@ export default function EditPromotion({
                               field.onChange(value)
                               setSelectedDiscountType(value)
                             }}
-                            value={field.value}
+                            value={field.value ?? ''}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -694,7 +694,7 @@ export default function EditPromotion({
                         Applicable To
                       </Label>
                       <div className='col-span-3 w-full space-y-2'>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value ?? ''}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder='Select Applicability' />
@@ -733,7 +733,7 @@ export default function EditPromotion({
                           id='start_date'
                           type='date'
                           className='w-full'
-                          value={formatDateValue(value)}
+                          value={formatDateValue(value) || ''}
                           onChange={(e) => {
                             const dateValue = e.target.value ? new Date(e.target.value) : null
                             onChange(dateValue)
@@ -761,7 +761,7 @@ export default function EditPromotion({
                           id='end_date'
                           type='date'
                           className='w-full'
-                          value={formatDateValue(value)}
+                          value={formatDateValue(value) || ''}
                           onChange={(e) => {
                             const dateValue = e.target.value ? new Date(e.target.value) : null
                             onChange(dateValue)

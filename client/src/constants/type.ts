@@ -58,14 +58,16 @@ export const PromotionCategory = {
   Discount: 'discount',
   BuyXGetY: 'buy_x_get_y',
   Combo: 'combo',
-  FreeShip: 'freeship'
+  FreeShip: 'freeship',
+  Loyalty: 'loyalty'
 } as const
 
 export const PromotionCategoryValues = [
   PromotionCategory.Discount,
   PromotionCategory.BuyXGetY,
   PromotionCategory.Combo,
-  PromotionCategory.FreeShip
+  PromotionCategory.FreeShip,
+  PromotionCategory.Loyalty
 ] as const
 
 export const DiscountType = {
