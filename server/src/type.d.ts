@@ -1,6 +1,7 @@
 import { TokenPayload } from '~/models/requests/Account.request'
 import Account from '~/models/schemas/Account.schema'
 import Category from '~/models/schemas/Category.schema'
+import CustomerPromotion from '~/models/schemas/CustomerPromotion.Schema'
 import Dish from '~/models/schemas/Dish.schema'
 import DishReview from '~/models/schemas/DishReview.schema'
 import GuestPromotion from '~/models/schemas/GuestPromotion.schema'
@@ -20,6 +21,7 @@ declare module 'express' {
     promotion?: Promotion
     loyalty?: Loyalty
     guestPromotions?: GuestPromotion[]
+    customerPromotions?: CustomerPromotion[]
   }
 }
 

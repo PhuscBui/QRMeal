@@ -2,6 +2,7 @@ import { Collection, Db, MongoClient } from 'mongodb'
 import { envConfig } from '~/config'
 import Account from '~/models/schemas/Account.schema'
 import Category from '~/models/schemas/Category.schema'
+import CustomerPromotion from '~/models/schemas/CustomerPromotion.Schema'
 import Delivery from '~/models/schemas/Delivery.schema'
 import Dish from '~/models/schemas/Dish.schema'
 import DishReview from '~/models/schemas/DishReview.schema'
@@ -70,6 +71,10 @@ class DatabaseService {
 
   get promotions(): Collection<Promotion> {
     return this.db.collection(envConfig.dbPromotionsCollection)
+  }
+
+  get customer_promotions(): Collection<CustomerPromotion> {
+    return this.db.collection(envConfig.dbCustomerPromotionsCollection)
   }
 
   get guest_promotions(): Collection<GuestPromotion> {

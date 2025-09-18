@@ -23,6 +23,7 @@ import indicatorsRouter from '~/routes/indicators.routes'
 import categoriesRouter from '~/routes/categories.routes'
 import dishReviewsRouter from '~/routes/dish-reviews.routes'
 import loyaltiesRouter from '~/routes/loyalty.routes'
+import customer_promotionRouter from '~/routes/customer-promotion.routes'
 
 initFolder()
 
@@ -64,6 +65,7 @@ app.use('/orders', ordersRouter)
 app.use('/indicators', indicatorsRouter)
 app.use('/promotions', promotionsRoutes)
 app.use('/loyalties', loyaltiesRouter)
+app.use('/customer-promotion', customer_promotionRouter)
 app.use('/guest-promotion', guest_promotionRouter)
 app.use('/revenues', revenuesRouter)
 app.use('/categories', categoriesRouter)

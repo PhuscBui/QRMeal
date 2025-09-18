@@ -267,6 +267,22 @@ export const GUEST_PROMOTION_MESSAGE = {
   GUEST_PROMOTION_USED: 'Guest promotion used'
 } as const
 
+export const CUSTOMER_PROMOTION_MESSAGE = {
+  PROMOTION_ID_IS_INVALID: 'Promotion ID is invalid',
+  PROMOTION_ID_IS_REQUIRED: 'Promotion ID is required',
+  PROMOTION_ID_MUST_BE_A_STRING: 'Promotion ID must be a string',
+  CUSTOMER_ID_IS_INVALID: 'Customer ID is invalid',
+  CUSTOMER_ID_MUST_BE_A_STRING: 'Customer ID must be a string',
+  CUSTOMER_ID_IS_REQUIRED: 'Customer ID is required',
+  CUSTOMER_PROMOTION_NOT_FOUND: 'Customer promotion not found',
+  CUSTOMER_PROMOTION_CREATED: 'Customer promotion created',
+  CUSTOMER_PROMOTION_UPDATED: 'Customer promotion updated',
+  CUSTOMER_PROMOTION_DELETED: 'Customer promotion deleted',
+  CUSTOMER_PROMOTION_FETCHED: 'Customer promotion fetched',
+  CUSTOMER_PROMOTIONS_FETCHED: 'Customer promotions fetched',
+  CUSTOMER_PROMOTION_USED: 'Customer promotion used'
+} as const
+
 export const REVENUES_MESSAGE = {
   REVENUE_NOT_FOUND: 'Revenue not found',
   REVENUE_CREATED: 'Revenue created',
