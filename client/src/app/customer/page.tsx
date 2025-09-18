@@ -3,39 +3,23 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Search, Star, Clock, ChefHat, Award, Users, QrCode, Package, Truck } from 'lucide-react'
+import { Search, Star, ChefHat, Award, Users, QrCode, Package, Truck, BookImageIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { RestaurantInfo } from '@/components/restaurant-info'
-import { useCategoryListQuery } from '@/queries/useCategory'
 import { useDishListQuery } from '@/queries/useDish'
-
-const promotions = [
-  {
-    id: '1',
-    title: 'Giảm 20% cho đơn hàng đầu tiên',
-    description: 'Áp dụng cho khách hàng mới',
-    discount: '20%',
-    validUntil: '31/12/2024'
-  },
-  {
-    id: '2',
-    title: 'Mua 2 tặng 1',
-    description: 'Áp dụng cho tất cả món ăn',
-    discount: '50%',
-    validUntil: '15/01/2025'
-  }
-]
+import { usePromotionListQuery } from '@/queries/usePromotion'
+import { formatDateTimeToLocaleString } from '@/lib/utils'
 
 export default function CustomerHomePage() {
-  const { data: categoriesData } = useCategoryListQuery()
   const { data: dishesData } = useDishListQuery()
+  const { data: promotionsData } = usePromotionListQuery()
+  const promotions = promotionsData?.payload.result.slice(0, 4) || []
   const [searchQuery, setSearchQuery] = useState('')
-  const categories = categoriesData?.payload.result || []
   const dishes = dishesData?.payload.result || []
-  const featuredDishes = dishes.slice(0, 6) // Lấy 6 món nổi bật đầu tiên
+  const featuredDishes = dishes.slice(0, 6)
   return (
     <div className='container mx-auto px-4 py-6 space-y-8'>
       {/* Hero Section */}
@@ -49,13 +33,13 @@ export default function CustomerHomePage() {
               <Link href='/customer/order-type'>
                 <Button size='lg' className='md:w-auto w-full'>
                   <ChefHat className='mr-2 h-5 w-5' />
-                  Đặt món ngay
+                  Order now
                 </Button>
               </Link>
               <Link href='/customer/order-type'>
                 <Button size='lg' variant='secondary' className='md:w-auto w-full'>
                   <QrCode className='mr-2 h-5 w-5' />
-                  Quét QR Code
+                  Scan QR Code
                 </Button>
               </Link>
             </div>
@@ -77,28 +61,11 @@ export default function CustomerHomePage() {
       {/* Restaurant Info */}
       <RestaurantInfo />
 
-      {/* Categories */}
-      <div>
-        <h2 className='text-2xl font-bold mb-6'>Categories</h2>
-        <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-          {categories.map((category) => (
-            <Link key={category.name} href={`/customer/menu?category=${category.name}`}>
-              <Card className='hover:shadow-lg transition-shadow cursor-pointer'>
-                <CardContent className='p-6 text-center'>
-                  <h3 className='font-medium mb-1'>{category.name}</h3>
-                  <p className='text-sm text-muted-foreground'>{category.dish_count} dishes</p>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      </div>
-
       {/* Featured Dishes */}
       <div>
         <div className='flex items-center justify-between mb-6'>
           <h2 className='text-2xl font-bold'>Outstanding Dishes</h2>
-          <Link href='/customer/menu'>
+          <Link href='/customer/order-type'>
             <Button variant='outline'>View All</Button>
           </Link>
         </div>
@@ -139,22 +106,28 @@ export default function CustomerHomePage() {
 
       {/* Promotions */}
       <div>
-        <h2 className='text-2xl font-bold mb-6'>Khuyến mãi hôm nay</h2>
+        <div className='flex items-center justify-between mb-6'>
+          <h2 className='text-2xl font-bold mb-6'>Today&apos;s promotion</h2>
+          <Link href='/customer/promotions'>
+            <Button variant='outline'>View All</Button>
+          </Link>
+        </div>
         <div className='grid md:grid-cols-2 gap-6'>
           {promotions.map((promo) => (
-            <Card key={promo.id} className='border-orange-200 bg-orange-50 dark:bg-orange-950/20'>
+            <Card key={promo._id} className='border-orange-200 bg-orange-50 dark:bg-orange-950/20'>
               <CardContent className='p-6'>
                 <div className='flex items-start justify-between mb-4'>
                   <div>
-                    <h3 className='font-semibold text-lg mb-2'>{promo.title}</h3>
+                    <h3 className='font-semibold text-lg mb-2'>{promo.name}</h3>
                     <p className='text-muted-foreground'>{promo.description}</p>
                   </div>
-                  <Badge className='bg-orange-500 text-white text-lg px-3 py-1'>-{promo.discount}</Badge>
                 </div>
                 <div className='flex items-center justify-between'>
-                  <span className='text-sm text-muted-foreground'>Có hiệu lực đến: {promo.validUntil}</span>
+                  <span className='text-sm text-muted-foreground'>
+                    Valid until: {formatDateTimeToLocaleString(promo.end_date)}
+                  </span>
                   <Button size='sm' variant='outline'>
-                    Sử dụng ngay
+                    Use now
                   </Button>
                 </div>
               </CardContent>
@@ -166,8 +139,8 @@ export default function CustomerHomePage() {
       {/* Order Type Selection */}
       <Card>
         <CardHeader>
-          <CardTitle>Chọn cách thưởng thức</CardTitle>
-          <CardDescription>Chọn cách phù hợp nhất để thưởng thức món ăn</CardDescription>
+          <CardTitle>Choose the way to enjoy</CardTitle>
+          <CardDescription>Choose the most suitable way to enjoy the dish</CardDescription>
         </CardHeader>
         <CardContent>
           <div className='grid md:grid-cols-3 gap-4'>
@@ -175,9 +148,9 @@ export default function CustomerHomePage() {
               <Card className='hover:shadow-lg transition-shadow cursor-pointer border-blue-200 bg-blue-50 dark:bg-blue-950/20'>
                 <CardContent className='p-6 text-center'>
                   <QrCode className='h-12 w-12 mx-auto mb-4 text-blue-600' />
-                  <h3 className='font-semibold text-lg mb-2'>Ăn tại quán</h3>
-                  <p className='text-sm text-muted-foreground mb-4'>Quét QR code và thưởng thức tại nhà hàng</p>
-                  <Button className='w-full'>Quét QR Code</Button>
+                  <h3 className='font-semibold text-lg mb-2'>In-store Dining</h3>
+                  <p className='text-sm text-muted-foreground mb-4'>Scan QR code and enjoy at the restaurant</p>
+                  <Button className='w-full'>Scan QR Code</Button>
                 </CardContent>
               </Card>
             </Link>
@@ -186,9 +159,9 @@ export default function CustomerHomePage() {
               <Card className='hover:shadow-lg transition-shadow cursor-pointer border-orange-200 bg-orange-50 dark:bg-orange-950/20'>
                 <CardContent className='p-6 text-center'>
                   <Package className='h-12 w-12 mx-auto mb-4 text-orange-600' />
-                  <h3 className='font-semibold text-lg mb-2'>Mua mang về</h3>
-                  <p className='text-sm text-muted-foreground mb-4'>Đặt trước và đến lấy tại nhà hàng</p>
-                  <Button className='w-full'>Đặt món</Button>
+                  <h3 className='font-semibold text-lg mb-2'>Take-out</h3>
+                  <p className='text-sm text-muted-foreground mb-4'>Order in advance and pick up at the restaurant</p>
+                  <Button className='w-full'>Order</Button>
                 </CardContent>
               </Card>
             </Link>
@@ -197,9 +170,9 @@ export default function CustomerHomePage() {
               <Card className='hover:shadow-lg transition-shadow cursor-pointer border-green-200 bg-green-50 dark:bg-green-950/20'>
                 <CardContent className='p-6 text-center'>
                   <Truck className='h-12 w-12 mx-auto mb-4 text-green-600' />
-                  <h3 className='font-semibold text-lg mb-2'>Giao hàng</h3>
-                  <p className='text-sm text-muted-foreground mb-4'>Đặt món và giao tận nơi</p>
-                  <Button className='w-full'>Đặt giao hàng</Button>
+                  <h3 className='font-semibold text-lg mb-2'>Delivery</h3>
+                  <p className='text-sm text-muted-foreground mb-4'>Order and have it delivered</p>
+                  <Button className='w-full'>Order delivery</Button>
                 </CardContent>
               </Card>
             </Link>
@@ -210,33 +183,33 @@ export default function CustomerHomePage() {
       {/* Quick Actions */}
       <Card>
         <CardHeader>
-          <CardTitle>Thao tác nhanh</CardTitle>
-          <CardDescription>Dễ dàng truy cập các tính năng chính</CardDescription>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>Easy Access to Key Features</CardDescription>
         </CardHeader>
         <CardContent>
           <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
             <Link href='/customer/order-type'>
               <Button variant='outline' className='w-full h-20 flex-col gap-2'>
                 <ChefHat className='h-6 w-6' />
-                <span>Đặt món</span>
+                <span>Order</span>
               </Button>
             </Link>
-            <Link href='/customer/orders'>
+            <Link href='/customer/reservations'>
               <Button variant='outline' className='w-full h-20 flex-col gap-2'>
-                <Clock className='h-6 w-6' />
-                <span>Theo dõi đơn hàng</span>
+                <BookImageIcon className='h-6 w-6' />
+                <span>Reservations</span>
               </Button>
             </Link>
             <Link href='/customer/promotions'>
               <Button variant='outline' className='w-full h-20 flex-col gap-2'>
                 <Award className='h-6 w-6' />
-                <span>Khuyến mãi</span>
+                <span>Promotions</span>
               </Button>
             </Link>
             <Link href='/customer/account/profile'>
               <Button variant='outline' className='w-full h-20 flex-col gap-2'>
                 <Users className='h-6 w-6' />
-                <span>Tài khoản</span>
+                <span>Account</span>
               </Button>
             </Link>
           </div>
