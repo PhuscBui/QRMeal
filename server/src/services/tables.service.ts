@@ -179,7 +179,10 @@ class TablesService {
 
     return await databaseService.tables.findOneAndUpdate(
       { number: payload.table_number, token: payload.token },
-      { $set: { reservation: null, status: TableStatus.Available }, $currentDate: { updated_at: true } },
+      {
+        $set: { reservation: null, status: TableStatus.Available, current_customer_id: null },
+        $currentDate: { updated_at: true }
+      },
       { returnDocument: 'after' }
     )
   }
@@ -212,6 +215,18 @@ class TablesService {
         status: HTTP_STATUS.BAD_REQUEST
       })
     }
+
+    if (payload.status === TableStatus.Occupied && account_id === table.reservation?.customer_id?.toString()) {
+      return await databaseService.tables.findOneAndUpdate(
+        { number },
+        {
+          $set: { status: payload.status, reservation: null, current_customer_id: new ObjectId(account_id) },
+          $currentDate: { updated_at: true }
+        },
+        { returnDocument: 'after' }
+      )
+    }
+
     return await databaseService.tables.findOneAndUpdate(
       { number },
       { $set: { status: payload.status, reservation: null }, $currentDate: { updated_at: true } },

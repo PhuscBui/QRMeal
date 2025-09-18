@@ -10,15 +10,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 
-interface TimePickerDemoProps {
+interface TimePickerProps {
   date: Date
   setDate: (date: Date) => void
 }
 
-export function TimePickerDemo({ date, setDate }: TimePickerDemoProps) {
+export function TimePicker({ date, setDate }: TimePickerProps) {
   const minuteRef = React.useRef<HTMLInputElement>(null)
   const hourRef = React.useRef<HTMLInputElement>(null)
-  const secondRef = React.useRef<HTMLInputElement>(null)
 
   return (
     <Popover>

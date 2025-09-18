@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
-import { TimePickerDemo } from '@/app/(public)/booking-tables/time-picker'
+import { TimePicker } from '@/app/(public)/booking-tables/time-picker'
 import { useReserveTableMutation } from '@/queries/useTable'
 import {
   Dialog,
@@ -101,7 +101,7 @@ function AddReservationForm({ tableNumber, token }: { tableNumber: number; token
         customerId = undefined
       }
 
-      await reserveMutation.mutateAsync({
+      const result = await reserveMutation.mutateAsync({
         guest_id: guestId,
         customer_id: customerId,
         table_number: data.table_number,
@@ -111,7 +111,7 @@ function AddReservationForm({ tableNumber, token }: { tableNumber: number; token
         note: data.note
       })
 
-      toast.success('Reservation added successfully!')
+      toast.success(result.payload.message)
       router.push('/manage/tables')
     } catch (error) {
       handleErrorApi({
@@ -253,7 +253,7 @@ function AddReservationForm({ tableNumber, token }: { tableNumber: number; token
                   </Popover>
 
                   <div className='flex items-center'>
-                    <TimePickerDemo setDate={(date) => field.onChange(date)} date={field.value} />
+                    <TimePicker setDate={(date) => field.onChange(date)} date={field.value} />
                   </div>
                 </div>
                 <FormMessage />
