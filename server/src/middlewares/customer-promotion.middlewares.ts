@@ -44,7 +44,7 @@ export const customerIdValidator = validate(
 export const createCustomerPromotionValidator = validate(
   checkSchema(
     {
-      customerId: {
+      customer_id: {
         notEmpty: {
           errorMessage: CUSTOMER_PROMOTION_MESSAGE.CUSTOMER_ID_IS_REQUIRED
         },

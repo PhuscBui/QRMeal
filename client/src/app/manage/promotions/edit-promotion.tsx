@@ -51,7 +51,7 @@ export default function EditPromotion({
       name: '',
       description: '',
       category: 'discount',
-      discount_type: 'fixed',
+      discount_type: 'fixed', // Always provide a default value
       discount_value: 0,
       conditions: {
         min_spend: 0,
@@ -81,18 +81,18 @@ export default function EditPromotion({
       case 'loyalty_points':
         form.setValue('discount_value', 0)
         form.setValue('conditions.min_spend', 0)
-        form.setValue('discount_type', undefined)
+        form.setValue('discount_type', 'fixed') // Set to default instead of undefined
         form.setValue('conditions.applicable_items', [])
         setSelectedDishes([])
         break
       case 'buy_x_get_y':
         form.setValue('discount_value', 0)
-        form.setValue('discount_type', undefined)
+        form.setValue('discount_type', 'fixed') // Set to default instead of undefined
         // Keep applicable_items for buy_x_get_y
         break
       case 'freeship':
         form.setValue('discount_value', 0)
-        form.setValue('discount_type', undefined)
+        form.setValue('discount_type', 'fixed') // Set to default instead of undefined
         form.setValue('conditions.buy_quantity', 0)
         form.setValue('conditions.get_quantity', 0)
         form.setValue('conditions.applicable_items', [])
@@ -127,11 +127,11 @@ export default function EditPromotion({
       setSelectedDishes(conditions?.applicable_items || [])
 
       form.reset({
-        name,
-        description,
-        category,
-        discount_type,
-        discount_value,
+        name: name || '',
+        description: description || '',
+        category: category || 'discount',
+        discount_type: discount_type || 'fixed', // Always provide a default value
+        discount_value: discount_value || 0,
         conditions: {
           min_spend: conditions?.min_spend || 0,
           min_visits: conditions?.min_visits || 0,
@@ -142,8 +142,8 @@ export default function EditPromotion({
         },
         start_date: start_date ? new Date(start_date) : undefined,
         end_date: end_date ? new Date(end_date) : undefined,
-        is_active,
-        applicable_to
+        is_active: is_active ?? true,
+        applicable_to: applicable_to || 'both'
       })
     }
   }, [data, form])
@@ -153,7 +153,25 @@ export default function EditPromotion({
     setSelectedCategory('discount')
     setSelectedDiscountType('fixed')
     setSelectedDishes([])
-    form.reset()
+    form.reset({
+      name: '',
+      description: '',
+      category: 'discount',
+      discount_type: 'fixed', // Always provide a default value
+      discount_value: 0,
+      conditions: {
+        min_spend: 0,
+        min_visits: 0,
+        min_loyalty_points: 0,
+        buy_quantity: 0,
+        get_quantity: 0,
+        applicable_items: []
+      },
+      start_date: undefined,
+      end_date: undefined,
+      is_active: true,
+      applicable_to: 'both'
+    })
   }
 
   const onSubmit = async (values: UpdatePromotionBodyType) => {
@@ -354,7 +372,7 @@ export default function EditPromotion({
                             field.onChange(value)
                             setSelectedCategory(value)
                           }}
-                          value={field.value}
+                          value={field.value || ''} // Ensure never undefined
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -393,7 +411,7 @@ export default function EditPromotion({
                               field.onChange(value)
                               setSelectedDiscountType(value)
                             }}
-                            value={field.value ?? ''}
+                            value={field.value || 'fixed'} // Always provide fallback
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -450,6 +468,7 @@ export default function EditPromotion({
                             step={selectedDiscountType === 'percentage' ? 1 : 0.01}
                             placeholder={selectedDiscountType === 'percentage' ? '10' : '5.00'}
                             {...field}
+                            value={field.value || 0} // Ensure controlled
                           />
                           <FormMessage />
                         </div>
@@ -477,6 +496,7 @@ export default function EditPromotion({
                             min={1}
                             placeholder='2'
                             {...field}
+                            value={field.value || 0} // Ensure controlled
                             onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                           />
                           <FormMessage />
@@ -505,6 +525,7 @@ export default function EditPromotion({
                             min={1}
                             placeholder='1'
                             {...field}
+                            value={field.value || 0} // Ensure controlled
                             onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                           />
                           <FormMessage />
@@ -599,6 +620,7 @@ export default function EditPromotion({
                             step={0.01}
                             placeholder='25.00'
                             {...field}
+                            value={field.value || 0} // Ensure controlled
                           />
                           <FormMessage />
                         </div>
@@ -636,6 +658,7 @@ export default function EditPromotion({
                             min={0}
                             placeholder='0'
                             {...field}
+                            value={field.value || 0} // Ensure controlled
                             onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                           />
                           <FormMessage />
@@ -674,6 +697,7 @@ export default function EditPromotion({
                             min={0}
                             placeholder='100'
                             {...field}
+                            value={field.value || 0} // Ensure controlled
                             onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                           />
                           <FormMessage />
@@ -694,7 +718,9 @@ export default function EditPromotion({
                         Applicable To
                       </Label>
                       <div className='col-span-3 w-full space-y-2'>
-                        <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                        <Select onValueChange={field.onChange} value={field.value || 'both'}>
+                          {' '}
+                          {/* Provide fallback */}
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder='Select Applicability' />
@@ -733,9 +759,9 @@ export default function EditPromotion({
                           id='start_date'
                           type='date'
                           className='w-full'
-                          value={formatDateValue(value) || ''}
+                          value={formatDateValue(value)}
                           onChange={(e) => {
-                            const dateValue = e.target.value ? new Date(e.target.value) : null
+                            const dateValue = e.target.value ? new Date(e.target.value) : undefined
                             onChange(dateValue)
                           }}
                           {...restField}
@@ -761,9 +787,9 @@ export default function EditPromotion({
                           id='end_date'
                           type='date'
                           className='w-full'
-                          value={formatDateValue(value) || ''}
+                          value={formatDateValue(value)}
                           onChange={(e) => {
-                            const dateValue = e.target.value ? new Date(e.target.value) : null
+                            const dateValue = e.target.value ? new Date(e.target.value) : undefined
                             onChange(dateValue)
                           }}
                           {...restField}

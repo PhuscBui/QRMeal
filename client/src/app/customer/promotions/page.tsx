@@ -11,6 +11,13 @@ import { useGetLoyaltyQuery } from '@/queries/useLoyalty'
 import { useAccountMe } from '@/queries/useAccount'
 import { usePromotionListQuery } from '@/queries/usePromotion'
 import { PromotionResType } from '@/schemaValidations/promotion.schema'
+import {
+  useAddCustomerPromotionMutation,
+  useDeleteCustomerPromotionMutation,
+  useGetCustomerPromotionQuery
+} from '@/queries/useCustomerPromotion'
+import { toast } from 'sonner'
+import { handleErrorApi } from '@/lib/utils'
 
 // Updated to match schema categories
 const promotionCategories = {
@@ -39,6 +46,13 @@ export default function PromotionsPage() {
     enabled: !!user
   })
   const { data: promotionsData, isLoading: isLoadingPromotions } = usePromotionListQuery()
+  const { data } = useGetCustomerPromotionQuery({
+    customerId: user?._id ?? '',
+    enabled: !!user?._id
+  })
+  const customerPromotions = data?.payload.result || []
+  const addCustomerPromotion = useAddCustomerPromotionMutation()
+  const deleteCustomerPromotion = useDeleteCustomerPromotionMutation()
   const promotions = promotionsData?.payload.result || []
   const loyalty = loyaltyData?.payload.result
 
@@ -73,6 +87,15 @@ export default function PromotionsPage() {
     return 'Offer'
   }
 
+  const isUsed = (promotionId: string) => {
+    if (Array.isArray(customerPromotions)) {
+      return customerPromotions.some((promotion: { promotion_id: string; used: boolean }) => {
+        return promotion.promotion_id === promotionId && promotion.used
+      })
+    }
+    return false
+  }
+
   const getLoyaltyInfo = () => {
     if (!loyalty) return null
     const level = getLoyaltyLevel(loyalty.loyalty_points)
@@ -81,6 +104,60 @@ export default function PromotionsPage() {
       currentPoints: loyalty.loyalty_points,
       totalSpend: loyalty.total_spend,
       visitCount: loyalty.visit_count
+    }
+  }
+
+  const isApply = (promotionId: string) => {
+    if (Array.isArray(customerPromotions)) {
+      return customerPromotions.some((promotion: { promotion_id: string }) => promotion.promotion_id === promotionId)
+    }
+    return false
+  }
+
+  const canApplyPromotion = (promotion: PromotionResType['result']): boolean => {
+    const now = new Date()
+
+    // Check validity period
+    if (promotion.start_date && new Date(promotion.start_date) > now) return false
+    if (promotion.end_date && new Date(promotion.end_date) < now) return false
+
+    // Check if promotion is active
+    if (!promotion.is_active) return false
+
+    // Check applicable_to constraint
+    if (promotion.applicable_to === 'guest') return false
+
+    if ((promotion.conditions?.min_visits ?? 0) > (loyalty?.visit_count ?? 0)) return false
+
+    return true
+  }
+
+  const applyPromotion = async (promotionId: string) => {
+    if (!user) return
+    try {
+      const result = await addCustomerPromotion.mutateAsync({
+        customer_id: user._id ? user._id : '',
+        promotion_id: promotionId
+      })
+      toast.success(result.payload.message)
+    } catch (error) {
+      toast.error('Failed to apply promotion')
+      console.error('Error applying promotion:', error)
+    }
+  }
+
+  const removePromotion = async (promotionId: string) => {
+    if (!user) return
+    try {
+      const result = await deleteCustomerPromotion.mutateAsync({
+        customer_id: user._id ? user._id : '',
+        promotion_id: promotionId
+      })
+      toast.success(result.payload.message)
+    } catch (error) {
+      toast.error('Failed to remove promotion')
+      console.error('Error removing promotion:', error)
+      handleErrorApi({ error })
     }
   }
 
@@ -261,9 +338,26 @@ export default function PromotionsPage() {
                 </div>
 
                 {/* Action Button */}
-                <Button className='w-full' disabled={!promo.is_active}>
-                  {promo.is_active ? 'Use Now' : 'Not Available'}
-                </Button>
+                <div>
+                  {isUsed(promo._id) ? (
+                    <Button variant='outline' className='w-full' disabled>
+                      Already used
+                    </Button>
+                  ) : isApply(promo._id) ? (
+                    <Button variant='destructive' className='w-full' onClick={() => removePromotion(promo._id)}>
+                      Remove
+                    </Button>
+                  ) : (
+                    <Button
+                      variant='default'
+                      className='w-full'
+                      disabled={!canApplyPromotion(promo)}
+                      onClick={() => applyPromotion(promo._id)}
+                    >
+                      Apply Now
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
           )
