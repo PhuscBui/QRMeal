@@ -7,7 +7,7 @@ import { OrderStatus } from '@/constants/type'
 import { Star } from 'lucide-react'
 import { useState } from 'react'
 
-import { formatCurrency, getVietnameseOrderStatus } from '@/lib/utils'
+import { formatCurrency, getOrderStatus } from '@/lib/utils'
 import { useGuestGetOrderListQuery } from '@/queries/useGuest'
 import { useGetDishReviewsByMeQuery } from '@/queries/useDishReview'
 import { PayOrdersResType, UpdateOrderResType } from '@/schemaValidations/order.schema'
@@ -95,7 +95,7 @@ export default function OrdersCart() {
         quantity
       } = data
       toast('Success', {
-        description: `The item ${name} (SL: ${quantity}) has just been updated with the status "${getVietnameseOrderStatus(
+        description: `The item ${name} (SL: ${quantity}) has just been updated with the status "${getOrderStatus(
           data.status
         )}"`
       })
@@ -152,7 +152,7 @@ export default function OrdersCart() {
           <div className='text-sm font-medium text-gray-500 mb-3 border-b pb-2'>
             Order group #{groupIndex + 1} • {new Date(orderGroup.created_at).toLocaleDateString('vi-VN')}
             <Badge variant='outline' className='ml-2'>
-              {getVietnameseOrderStatus(orderGroup.status)}
+              {getOrderStatus(orderGroup.status)}
             </Badge>
           </div>
 
@@ -181,7 +181,7 @@ export default function OrdersCart() {
                 </div>
                 <div className='flex-shrink-0 ml-auto flex flex-col justify-center items-end gap-2'>
                   <Badge variant={order.status === OrderStatus.Paid ? 'default' : 'outline'}>
-                    {getVietnameseOrderStatus(order.status)}
+                    {getOrderStatus(order.status)}
                   </Badge>
 
                   {/* Nút đánh giá cho món ăn đã thanh toán - CHỈ hiện khi CHƯA có review */}

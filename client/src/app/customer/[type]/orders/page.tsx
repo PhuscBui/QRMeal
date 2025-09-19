@@ -32,7 +32,7 @@ import { useGetOrderListQuery, usePayOrderMutation } from '@/queries/useOrder'
 import { useAccountMe } from '@/queries/useAccount'
 import { toast } from 'sonner'
 import { useAppContext } from '@/components/app-provider'
-import { getVietnameseOrderStatus } from '@/lib/utils'
+import { getOrderStatus } from '@/lib/utils'
 
 const statusConfig = {
   [OrderStatus.Pending]: {
@@ -291,7 +291,7 @@ export default function OrdersPage() {
         quantity
       } = data
       toast('Success', {
-        description: `The item ${name} (SL: ${quantity}) has just been updated with the status "${getVietnameseOrderStatus(
+        description: `The item ${name} (SL: ${quantity}) has just been updated with the status "${getOrderStatus(
           data.status
         )}"`
       })

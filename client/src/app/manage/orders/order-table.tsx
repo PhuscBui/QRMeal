@@ -25,7 +25,7 @@ import EditOrder from '@/app/manage/orders/edit-order'
 import { createContext, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import AutoPagination from '@/components/auto-pagination'
-import { getVietnameseOrderStatus, handleErrorApi } from '@/lib/utils'
+import { getOrderStatus, handleErrorApi } from '@/lib/utils'
 import { OrderStatusValues } from '@/constants/type'
 import OrderStatics from '@/app/manage/orders/order-statics'
 import orderTableColumns from '@/app/manage/orders/order-table-columns'
@@ -200,9 +200,7 @@ export default function OrderTable() {
         quantity
       } = data
       toast('Success', {
-        description: `Item ${name} (SL: ${quantity}) has just been updated to status "${getVietnameseOrderStatus(
-          data.status
-        )}"`
+        description: `Item ${name} (SL: ${quantity}) has just been updated to status "${getOrderStatus(data.status)}"`
       })
       refetch()
     }
@@ -317,9 +315,7 @@ export default function OrderTable() {
                 className='w-[150px] text-sm justify-between'
               >
                 {table.getColumn('status')?.getFilterValue()
-                  ? getVietnameseOrderStatus(
-                      table.getColumn('status')?.getFilterValue() as (typeof OrderStatusValues)[number]
-                    )
+                  ? getOrderStatus(table.getColumn('status')?.getFilterValue() as (typeof OrderStatusValues)[number])
                   : 'Group Status'}
                 <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
               </Button>
@@ -347,7 +343,7 @@ export default function OrderTable() {
                             table.getColumn('status')?.getFilterValue() === status ? 'opacity-100' : 'opacity-0'
                           )}
                         />
-                        {getVietnameseOrderStatus(status)}
+                        {getOrderStatus(status)}
                       </CommandItem>
                     ))}
                   </CommandList>

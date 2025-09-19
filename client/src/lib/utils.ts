@@ -91,9 +91,6 @@ export const removeTokensFromLocalStorage = () => {
 }
 
 export const checkAndRefreshToken = async (param?: { onError?: () => void; onSuccess?: () => void }) => {
-  // Không nên đưa logic lấy access và refresh token ra khỏi cái function `checkAndRefreshToken`
-  // Vì để mỗi lần mà checkAndRefreshToken() được gọi thì chúng ta se có một access và refresh token mới
-  // Tránh hiện tượng bug nó lấy access và refresh token cũ ở lần đầu rồi gọi cho các lần tiếp theo
   const access_token = getAccessTokenFromLocalStorage()
   const refresh_token = getRefreshTokenFromLocalStorage()
   // Chưa đăng nhập thì cũng không cho chạy
@@ -148,20 +145,7 @@ export const getDishStatus = (status: (typeof DishStatus)[keyof typeof DishStatu
   }
 }
 
-// export const getPromotionType = (type: (typeof PromotionType)[keyof typeof PromotionType]) => {
-//   switch (type) {
-//     case PromotionType.Percent:
-//       return 'Percent'
-//     case PromotionType.FreeItem:
-//       return 'Free Item'
-//     case PromotionType.LoyaltyPoints:
-//       return 'Loyalty Points'
-//     default:
-//       return 'Discount'
-//   }
-// }
-
-export const getVietnameseOrderStatus = (status: (typeof OrderStatus)[keyof typeof OrderStatus]) => {
+export const getOrderStatus = (status: (typeof OrderStatus)[keyof typeof OrderStatus]) => {
   switch (status) {
     case OrderStatus.Delivered:
       return 'Delivered'
@@ -235,19 +219,6 @@ export const OrderStatusIcon = {
   [OrderStatus.Delivered]: Truck,
   [OrderStatus.Paid]: HandCoins
 }
-
-// export const calculateDiscount = (promotion: PromotionResType['result'], totalPrice: number, freeItem?: number) => {
-//   if (promotion.discount_type === PromotionType.Percent) {
-//     return (totalPrice * promotion.discount_value) / 100
-//   } else if (promotion.discount_type === PromotionType.Discount) {
-//     return promotion.discount_value
-//   } else if (promotion.discount_type === PromotionType.FreeItem) {
-//     return freeItem ?? 0
-//   } else if (promotion.discount_type === PromotionType.LoyaltyPoints) {
-//     return promotion.discount_value
-//   }
-//   return 0
-// }
 
 export const generateSocket = (token: string) => {
   return io(envConfig.NEXT_PUBLIC_API_ENDPOINT, {

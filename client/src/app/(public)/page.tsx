@@ -46,7 +46,7 @@ export default async function Home() {
                 Explore Menu
               </Button>
             </Link>
-            <Link href='/booking'>
+            <Link href='/booking-tables'>
               <Button size='lg'>Book a Table</Button>
             </Link>
           </div>

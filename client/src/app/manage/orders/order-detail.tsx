@@ -6,7 +6,7 @@ import {
   formatCurrency,
   formatDateTimeToLocaleString,
   formatDateTimeToTimeString,
-  getVietnameseOrderStatus,
+  getOrderStatus,
   handleErrorApi
 } from '@/lib/utils'
 import { useGetGuestPromotionQuery, useUsedPromotionMutation } from '@/queries/useGuestPromotion'
@@ -160,7 +160,7 @@ export default function OrderDetail({
         <div className='font-medium text-xs text-gray-600'>
           Order Group #{groupIndex + 1}
           <Badge variant='outline' className='ml-2'>
-            {getVietnameseOrderStatus(orderGroup.status)}
+            {getOrderStatus(orderGroup.status)}
           </Badge>
           {orderGroup.delivery && (
             <Badge variant='secondary' className='ml-1'>
@@ -173,7 +173,7 @@ export default function OrderDetail({
             <span className='w-[15px]'>
               {groupIndex + 1}.{orderIndex + 1}
             </span>
-            <span title={getVietnameseOrderStatus(order.status)}>
+            <span title={getOrderStatus(order.status)}>
               {order.status === OrderStatus.Pending && <OrderStatusIcon.Pending className='w-4 h-4' />}
               {order.status === OrderStatus.Processing && <OrderStatusIcon.Processing className='w-4 h-4' />}
               {order.status === OrderStatus.Cancelled && <OrderStatusIcon.Cancelled className='w-4 h-4 text-red-400' />}

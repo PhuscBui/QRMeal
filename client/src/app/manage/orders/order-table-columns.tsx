@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { GetOrdersResType } from '@/schemaValidations/order.schema'
 import { useContext } from 'react'
-import { formatCurrency, formatDateTimeToLocaleString, getVietnameseOrderStatus, simpleMatchText } from '@/lib/utils'
+import { formatCurrency, formatDateTimeToLocaleString, getOrderStatus, simpleMatchText } from '@/lib/utils'
 import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 import { OrderStatus, OrderStatusValues } from '@/constants/type'
@@ -121,7 +121,7 @@ const orderTableColumns: ColumnDef<OrderGroup>[] = [
                       <div className='italic'>{formatCurrency(order.dish_snapshot.price)}</div>
                       <div>{order.dish_snapshot.description}</div>
                       <Badge variant='secondary'>x{order.quantity}</Badge>
-                      <div>Status: {getVietnameseOrderStatus(order.status)}</div>
+                      <div>Status: {getOrderStatus(order.status)}</div>
                     </div>
                   </div>
                 </PopoverContent>
@@ -149,7 +149,7 @@ const orderTableColumns: ColumnDef<OrderGroup>[] = [
     cell: function Cell({ row }) {
       return (
         <Badge variant={row.original.status === OrderStatus.Delivered ? 'default' : 'secondary'}>
-          {getVietnameseOrderStatus(row.original.status)}
+          {getOrderStatus(row.original.status)}
         </Badge>
       )
     }
@@ -256,7 +256,7 @@ function IndividualOrderStatusSelect({ order }: { order: GetOrdersResType['resul
       <SelectContent>
         {OrderStatusValues.map((status) => (
           <SelectItem key={status} value={status}>
-            {getVietnameseOrderStatus(status)}
+            {getOrderStatus(status)}
           </SelectItem>
         ))}
       </SelectContent>

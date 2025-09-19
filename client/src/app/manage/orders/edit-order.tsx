@@ -6,7 +6,7 @@ import { UpdateOrderBody, type UpdateOrderBodyType } from '@/schemaValidations/o
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { formatCurrency, getVietnameseOrderStatus, handleErrorApi } from '@/lib/utils'
+import { formatCurrency, getOrderStatus, handleErrorApi } from '@/lib/utils'
 import { OrderStatus, OrderStatusValues } from '@/constants/type'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DishesDialog } from '@/app/manage/orders/dishes-dialog'
@@ -177,7 +177,7 @@ export default function EditOrder({ id, setId, onSubmitSuccess }: EditOrderProps
                         <div className='flex items-center justify-between'>
                           <CardTitle className='text-lg'>Order Summary</CardTitle>
                           <Badge variant={orderGroup.status === OrderStatus.Delivered ? 'default' : 'secondary'}>
-                            {getVietnameseOrderStatus(orderGroup.status)}
+                            {getOrderStatus(orderGroup.status)}
                           </Badge>
                         </div>
                       </CardHeader>
@@ -297,7 +297,7 @@ export default function EditOrder({ id, setId, onSubmitSuccess }: EditOrderProps
                                         {formatCurrency(order.dish_snapshot.price * order.quantity)}
                                       </div>
                                       <Badge variant='outline' className='mt-2 text-xs'>
-                                        {getVietnameseOrderStatus(order.status)}
+                                        {getOrderStatus(order.status)}
                                       </Badge>
                                     </div>
                                     {selectedOrderIndex === index && (
@@ -329,7 +329,7 @@ export default function EditOrder({ id, setId, onSubmitSuccess }: EditOrderProps
                                 )}
                               </div>
                               <Badge variant='outline' className='mt-1 text-xs'>
-                                {getVietnameseOrderStatus(orderGroup.orders[0].status)}
+                                {getOrderStatus(orderGroup.orders[0].status)}
                               </Badge>
                             </div>
                           </div>
@@ -464,7 +464,7 @@ export default function EditOrder({ id, setId, onSubmitSuccess }: EditOrderProps
                                                 status === OrderStatus.Delivered ? 'bg-green-500' : 'bg-gray-400'
                                               }`}
                                             />
-                                            <span>{getVietnameseOrderStatus(status)}</span>
+                                            <span>{getOrderStatus(status)}</span>
                                           </div>
                                         </SelectItem>
                                       ))}
