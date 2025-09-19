@@ -34,12 +34,18 @@ class RevenuesService {
     return revenue
   }
 
+  async getRevenueByCustomerId(customer_id: string) {
+    const revenue = await databaseService.revenues.find({ customer_id: customer_id }).toArray()
+    return revenue
+  }
+
   async createRevenue(revenue: CreateRevenueReqBody) {
     const result = await databaseService.revenues.insertOne(
       new Revenue({
         guest_id: revenue.guest_id,
         guest_phone: revenue.guest_phone,
-        total_amount: revenue.total_amount
+        total_amount: revenue.total_amount,
+        customer_id: revenue.customer_id
       })
     )
     if (!result.acknowledged) {

@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import {
   createRevenueController,
+  getRevenueByCustomerIdController,
   getRevenueByGuestPhoneController,
   getRevenuesController
 } from '~/controllers/revenues.controller'
@@ -25,6 +26,13 @@ revenuesRouter.get(
   accessTokenValidator,
   isEmployeeValidator,
   wrapRequestHandler(getRevenueByGuestPhoneController)
+)
+
+revenuesRouter.get(
+  '/customer/:customerId',
+  accessTokenValidator,
+  isEmployeeValidator,
+  wrapRequestHandler(getRevenueByCustomerIdController)
 )
 
 revenuesRouter.post(

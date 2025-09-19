@@ -5,6 +5,7 @@ import { REVENUES_MESSAGE } from '~/constants/messages'
 import { ErrorWithStatus } from '~/models/Error'
 import {
   CreateRevenueReqBody,
+  GetRevenueByCustomerIdParams,
   GetRevenueByGuestPhoneParams,
   GetRevenuesQueryParams
 } from '~/models/requests/Revenue.request'
@@ -23,7 +24,20 @@ export const getRevenuesController = async (
 
 export const getRevenueByGuestPhoneController = async (req: Request<GetRevenueByGuestPhoneParams>, res: Response) => {
   const result = await revenuesService.getRevenueByGuestPhone(req.params.guestPhone)
-  console.log(result)
+  if (result.length === 0) {
+    throw new ErrorWithStatus({
+      message: REVENUES_MESSAGE.REVENUE_NOT_FOUND,
+      status: HTTP_STATUS.NOT_FOUND
+    })
+  }
+  res.status(HTTP_STATUS.OK).json({
+    message: REVENUES_MESSAGE.REVENUE_FETCHED,
+    result: result
+  })
+}
+
+export const getRevenueByCustomerIdController = async (req: Request<GetRevenueByCustomerIdParams>, res: Response) => {
+  const result = await revenuesService.getRevenueByCustomerId(req.params.customerId)
   if (result.length === 0) {
     throw new ErrorWithStatus({
       message: REVENUES_MESSAGE.REVENUE_NOT_FOUND,
