@@ -32,7 +32,7 @@ const categorySchema: ParamSchema = {
   notEmpty: { errorMessage: PROMOTIONS_MESSAGE.CATEGORY_IS_REQUIRED },
   isString: { errorMessage: PROMOTIONS_MESSAGE.CATEGORY_MUST_BE_A_STRING },
   custom: {
-    options: (value) => ['discount', 'buy_x_get_y', 'combo', 'freeship'].includes(value),
+    options: (value) => ['discount', 'buy_x_get_y', 'combo', 'freeship', 'loyalty'].includes(value),
     errorMessage: PROMOTIONS_MESSAGE.CATEGORY_INVALID
   }
 }

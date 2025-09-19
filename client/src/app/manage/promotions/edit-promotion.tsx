@@ -22,7 +22,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import revalidateApiRequest from '@/apiRequests/revalidate'
-import { PromotionCategoryValues, DiscountTypeValues, ApplicableToValues } from '@/constants/type'
+import { PromotionCategoryValues, DiscountTypeValues, ApplicableToValues, PromotionCategory } from '@/constants/type'
 import { UpdatePromotionBody, UpdatePromotionBodyType } from '@/schemaValidations/promotion.schema'
 import { usePromotionDetailQuery, useUpdatePromotionMutation } from '@/queries/usePromotion'
 import { useDishListQuery } from '@/queries/useDish'
@@ -72,25 +72,25 @@ export default function EditPromotion({
   useEffect(() => {
     // Reset relevant fields when category changes
     switch (selectedCategory) {
-      case 'discount':
+      case PromotionCategory.Discount:
         form.setValue('conditions.buy_quantity', 0)
         form.setValue('conditions.get_quantity', 0)
         form.setValue('conditions.applicable_items', [])
         setSelectedDishes([])
         break
-      case 'loyalty_points':
+      case PromotionCategory.Loyalty:
         form.setValue('discount_value', 0)
         form.setValue('conditions.min_spend', 0)
         form.setValue('discount_type', 'fixed') // Set to default instead of undefined
         form.setValue('conditions.applicable_items', [])
         setSelectedDishes([])
         break
-      case 'buy_x_get_y':
+      case PromotionCategory.BuyXGetY:
         form.setValue('discount_value', 0)
         form.setValue('discount_type', 'fixed') // Set to default instead of undefined
         // Keep applicable_items for buy_x_get_y
         break
-      case 'freeship':
+      case PromotionCategory.FreeShip:
         form.setValue('discount_value', 0)
         form.setValue('discount_type', 'fixed') // Set to default instead of undefined
         form.setValue('conditions.buy_quantity', 0)
@@ -225,18 +225,22 @@ export default function EditPromotion({
     switch (fieldName) {
       case 'discount_type':
       case 'discount_value':
-        return selectedCategory === 'discount'
+        return (
+          selectedCategory === PromotionCategory.Discount ||
+          selectedCategory === PromotionCategory.Loyalty ||
+          selectedCategory === PromotionCategory.Combo
+        )
       case 'min_spend':
-        return selectedCategory === 'discount' || selectedCategory === 'freeship'
+        return selectedCategory === PromotionCategory.Discount || selectedCategory === PromotionCategory.FreeShip
       case 'min_visits':
         return true // Show for all categories
       case 'min_loyalty_points':
-        return selectedCategory === 'loyalty_points'
+        return selectedCategory === PromotionCategory.Loyalty
       case 'buy_quantity':
       case 'get_quantity':
-        return selectedCategory === 'buy_x_get_y'
+        return selectedCategory === PromotionCategory.BuyXGetY
       case 'applicable_items':
-        return selectedCategory === 'buy_x_get_y' || selectedCategory === 'combo'
+        return selectedCategory === PromotionCategory.BuyXGetY || selectedCategory === PromotionCategory.Combo
       default:
         return true
     }
@@ -245,13 +249,13 @@ export default function EditPromotion({
   // Helper function to get category description
   const getCategoryDescription = (category: string): string => {
     switch (category) {
-      case 'discount':
+      case PromotionCategory.Discount:
         return 'Fixed amount or percentage discount'
-      case 'loyalty_points':
+      case PromotionCategory.Loyalty:
         return 'Earn loyalty points with purchase'
-      case 'buy_x_get_y':
+      case PromotionCategory.BuyXGetY:
         return 'Buy X items, get Y items (free or discounted)'
-      case 'freeship':
+      case PromotionCategory.FreeShip:
         return 'Free shipping with minimum purchase'
       default:
         return ''

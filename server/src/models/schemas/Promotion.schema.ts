@@ -2,7 +2,7 @@ import { ObjectId } from 'mongodb'
 
 type ApplicableTo = 'guest' | 'customer' | 'both'
 
-type PromotionCategory = 'discount' | 'buy_x_get_y' | 'combo' | 'freeship'
+type PromotionCategory = 'discount' | 'buy_x_get_y' | 'combo' | 'freeship' | 'loyalty'
 
 interface PromotionCondition {
   min_spend?: number

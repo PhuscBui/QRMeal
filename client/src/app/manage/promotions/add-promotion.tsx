@@ -9,7 +9,7 @@ import { useForm } from 'react-hook-form'
 import { Form, FormControl, FormField, FormItem, FormMessage, FormDescription } from '@/components/ui/form'
 import { handleErrorApi } from '@/lib/utils'
 
-import { PromotionCategoryValues, DiscountTypeValues, ApplicableToValues } from '@/constants/type'
+import { PromotionCategoryValues, DiscountTypeValues, ApplicableToValues, PromotionCategory } from '@/constants/type'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -151,18 +151,22 @@ export default function AddPromotion() {
     switch (fieldName) {
       case 'discount_type':
       case 'discount_value':
-        return selectedCategory === 'discount'
+        return (
+          selectedCategory === PromotionCategory.Discount ||
+          selectedCategory === PromotionCategory.Loyalty ||
+          selectedCategory === PromotionCategory.Combo
+        )
       case 'min_spend':
-        return selectedCategory === 'discount' || selectedCategory === 'freeship'
+        return selectedCategory === PromotionCategory.Discount || selectedCategory === PromotionCategory.FreeShip
       case 'min_visits':
         return true // Show for all categories
       case 'min_loyalty_points':
-        return selectedCategory === 'loyalty_points'
+        return selectedCategory === PromotionCategory.Loyalty
       case 'buy_quantity':
       case 'get_quantity':
-        return selectedCategory === 'buy_x_get_y'
+        return selectedCategory === PromotionCategory.BuyXGetY
       case 'applicable_items':
-        return selectedCategory === 'buy_x_get_y' || selectedCategory === 'combo'
+        return selectedCategory === PromotionCategory.BuyXGetY || selectedCategory === PromotionCategory.Combo
       default:
         return true
     }
@@ -171,13 +175,13 @@ export default function AddPromotion() {
   // Helper function to get category description
   const getCategoryDescription = (category: string): string => {
     switch (category) {
-      case 'discount':
+      case PromotionCategory.Discount:
         return 'Fixed amount or percentage discount'
-      case 'loyalty_points':
+      case PromotionCategory.Loyalty:
         return 'Earn loyalty points with purchase'
-      case 'buy_x_get_y':
+      case PromotionCategory.BuyXGetY:
         return 'Buy X items, get Y items (free or discounted)'
-      case 'freeship':
+      case PromotionCategory.FreeShip:
         return 'Free shipping with minimum purchase'
       default:
         return ''

@@ -1,6 +1,6 @@
 import { ParamsDictionary, Query } from 'express-serve-static-core'
 
-type PromotionCategory = 'discount' | 'buy_x_get_y' | 'combo' | 'freeship'
+type PromotionCategory = 'discount' | 'buy_x_get_y' | 'combo' | 'freeship' | 'loyalty'
 type DiscountType = 'percentage' | 'fixed'
 type ApplicableTo = 'guest' | 'customer' | 'both'
 

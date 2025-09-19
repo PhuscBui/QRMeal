@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { OrderStatus } from '@/constants/type'
+import { calculateFinalAmount, calculateTotalDiscount } from '@/lib/promotion-utils'
 import {
   OrderStatusIcon,
   formatCurrency,
@@ -9,11 +10,14 @@ import {
   getOrderStatus,
   handleErrorApi
 } from '@/lib/utils'
+import { useGetCustomerPromotionQuery } from '@/queries/useCustomerPromotion'
 import { useGetGuestPromotionQuery, useUsedPromotionMutation } from '@/queries/useGuestPromotion'
+import { useGetLoyaltyQuery } from '@/queries/useLoyalty'
 import { usePayOrderMutation } from '@/queries/useOrder'
 import { usePromotionListQuery } from '@/queries/usePromotion'
 import { useCreateRevenueMutation } from '@/queries/useRevenue'
-import { GuestPromotion, GuestPromotionResType } from '@/schemaValidations/guest-promotion.schema'
+import { CustomerPromotionResType } from '@/schemaValidations/customer-promotion.schema'
+import { GuestPromotionResType } from '@/schemaValidations/guest-promotion.schema'
 import { GetOrdersResType, PayOrdersResType } from '@/schemaValidations/order.schema'
 import { PromotionResType } from '@/schemaValidations/promotion.schema'
 import { Check, X } from 'lucide-react'
@@ -24,13 +28,14 @@ import { toast } from 'sonner'
 // Updated types to work with OrderGroup structure
 type GuestOrCustomer = GetOrdersResType['result'][0]['guest'] | GetOrdersResType['result'][0]['customer']
 type OrderGroups = GetOrdersResType['result']
+type CustomerOrGuestPromotion = CustomerPromotionResType['result'] | GuestPromotionResType['result']
 
 export default function OrderDetail({
-  guest,
+  user,
   orders: orderGroups,
   onPaySuccess
 }: {
-  guest: GuestOrCustomer
+  user: GuestOrCustomer
   orders: OrderGroups
   onPaySuccess?: (data: PayOrdersResType) => void
 }) {
@@ -40,12 +45,25 @@ export default function OrderDetail({
   }, [orderGroups])
 
   const ordersFilterToPurchase = useMemo(() => {
-    return guest
+    return user
       ? allOrders.filter((order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Cancelled)
       : []
-  }, [guest, allOrders])
+  }, [user, allOrders])
 
-  const purchasedOrderFilter = guest ? allOrders.filter((order) => order.status === OrderStatus.Paid) : []
+  const dishItems = useMemo(() => {
+    return allOrders
+      .map((order) => ({
+        id: order.dish_snapshot.dish_id,
+        price: order.dish_snapshot.price
+      }))
+      .filter((item) => typeof item.id === 'string' && item.id !== null) as { id: string; price: number }[]
+  }, [allOrders])
+
+  const { data } = useGetLoyaltyQuery({ customerId: user?._id as string, enabled: Boolean(user) })
+  const loyaltyPoints = data?.payload.result.loyalty_points || 0
+  const userVisits = data?.payload.result.visit_count || 0
+
+  const purchasedOrderFilter = user ? allOrders.filter((order) => order.status === OrderStatus.Paid) : []
 
   const payOrderMutation = usePayOrderMutation()
   const createRevenueMutation = useCreateRevenueMutation()
@@ -55,65 +73,57 @@ export default function OrderDetail({
 
   const updateGuestUsedPromotionMutation = useUsedPromotionMutation()
 
-  const { data: guestPromotionResult } = useGetGuestPromotionQuery({
-    enabled: Boolean(guest),
-    guestId: guest?._id as string
+  const guestPromotionResult = useGetGuestPromotionQuery({
+    enabled: Boolean(user),
+    guestId: user?._id as string
   })
 
-  const guestPromotions = useMemo(
-    () => (guestPromotionResult?.payload.result ?? []) as Array<GuestPromotion>,
-    [guestPromotionResult]
-  )
+  const customerPromotionResult = useGetCustomerPromotionQuery({
+    enabled: Boolean(user),
+    customerId: user?._id as string
+  })
+
+  const userPromotions = useMemo(() => {
+    if (user && 'role' in user && user.role === 'Customer') {
+      return (customerPromotionResult.data?.payload.result ?? []) as Array<CustomerOrGuestPromotion>
+    }
+    return guestPromotionResult.data?.payload.result ?? []
+  }, [customerPromotionResult.data?.payload.result, guestPromotionResult.data?.payload.result, user])
 
   const usePromotionIds = useMemo(() => {
-    const usePromotions = guestPromotions.filter(
-      (promotion: GuestPromotionResType['result']) => promotion.used === false
-    )
-    return usePromotions.map((promotion) => promotion.promotion_id)
-  }, [guestPromotions])
+    const usePromotions = Array.isArray(userPromotions)
+      ? userPromotions.filter(
+          (promotion: CustomerOrGuestPromotion) => typeof promotion.used === 'boolean' && promotion.used === false
+        )
+      : []
+    return usePromotions.map((promotion: CustomerOrGuestPromotion) => promotion.promotion_id)
+  }, [userPromotions])
 
   const usePromotions = useMemo(() => {
     return promotions.filter((promotion) => usePromotionIds.includes(promotion._id))
   }, [promotions, usePromotionIds])
 
-  const minPrice = useMemo(() => {
-    return ordersFilterToPurchase.reduce((min, order) => {
-      return Math.min(min, order.dish_snapshot.price)
-    }, Infinity)
-  }, [ordersFilterToPurchase])
-
   const calculateTotalAmount = (price: number, promotion: PromotionResType['result'][]) => {
-    // if (promotion.length === 0) return price
+    return calculateFinalAmount(price, promotion, loyaltyPoints, dishItems, userVisits)
+  }
 
-    // const totalDiscount = promotion.reduce((acc, promotion) => {
-    //   if (promotion.discount_type === PromotionType.FreeItem) {
-    //     // For free item promotions, find the cheapest item in the order
-    //     const cheapestItem = ordersFilterToPurchase.reduce((min, order) => {
-    //       const itemPrice = order.dish_snapshot.price
-    //       return itemPrice < min ? itemPrice : min
-    //     }, Infinity)
-    //     return acc + cheapestItem
-    //   }
-    //   return acc + calculateDiscount(promotion, price)
-    // }, 0)
-
-    // return price - totalDiscount
-    return 0
+  const calculateTotalDiscountValue = (price: number, promotion: PromotionResType['result'][]) => {
+    return calculateTotalDiscount(promotion, price, loyaltyPoints, dishItems, userVisits)
   }
 
   const pay = async () => {
-    if (payOrderMutation.isPending || !guest) return
+    if (payOrderMutation.isPending || !user) return
     try {
-      const is_customer = 'role' in guest && guest.role === 'Customer'
+      const is_customer = 'role' in user && user.role === 'Customer'
       let result = null
       if (is_customer) {
         result = await payOrderMutation.mutateAsync({
-          customer_id: guest._id,
+          customer_id: user._id,
           is_customer
         })
       } else {
         result = await payOrderMutation.mutateAsync({
-          guest_id: guest._id,
+          guest_id: user._id,
           is_customer
         })
       }
@@ -133,14 +143,14 @@ export default function OrderDetail({
 
       await Promise.all([
         createRevenueMutation.mutateAsync({
-          guest_id: guest._id,
-          guest_phone: guest.phone,
+          guest_id: user._id,
+          guest_phone: user.phone,
           total_amount: total_amount
         }),
         await Promise.all(
           usePromotions.map((promotion) =>
             updateGuestUsedPromotionMutation.mutateAsync({
-              guest_id: guest._id,
+              guest_id: user._id,
               promotion_id: promotion._id
             })
           )
@@ -230,29 +240,29 @@ export default function OrderDetail({
 
   return (
     <div className='space-y-2 text-sm'>
-      {guest && (
+      {user && (
         <Fragment>
           <div className='space-x-1'>
             <span className='font-semibold'>Name:</span>
-            <span>{guest.name}</span>
-            <span className='font-semibold'>(#{guest._id})</span>
-            {'role' in guest && guest.role === 'customer' && <Badge variant='secondary'>Customer</Badge>}
+            <span>{user.name}</span>
+            <span className='font-semibold'>(#{user._id})</span>
+            {'role' in user && user.role === 'Customer' && <Badge variant='secondary'>Customer</Badge>}
             <span>|</span>
             <span className='font-semibold'>Table:</span>
-            <span>{'table_number' in guest ? guest.table_number : orderGroups[0]?.table_number ?? 'N/A'}</span>
+            <span>{'table_number' in user ? user.table_number : orderGroups[0]?.table_number ?? 'N/A'}</span>
           </div>
           <div className='space-x-1'>
             <span className='font-semibold'>Phone:</span>
-            <span>{guest.phone}</span>
+            <span>{user.phone}</span>
           </div>
           <div className='space-x-1'>
             <span className='font-semibold'>Create at:</span>
-            <span>{formatDateTimeToLocaleString(guest.created_at)}</span>
+            <span>{formatDateTimeToLocaleString(user.created_at)}</span>
           </div>
-          {'email' in guest && (
+          {'email' in user && (
             <div className='space-x-1'>
               <span className='font-semibold'>Email:</span>
-              <span>{guest.email}</span>
+              <span>{user.email}</span>
             </div>
           )}
         </Fragment>
@@ -298,21 +308,14 @@ export default function OrderDetail({
         {usePromotions.length > 0 && (
           <Badge variant={'outline'}>
             <span>
-              - 0 đ
-              {/* {formatCurrency(
-                usePromotions.reduce((acc, promotion) => {
-                  return (
-                    acc +
-                    calculateDiscount(
-                      promotion,
-                      ordersFilterToPurchase.reduce((acc, order) => {
-                        return acc + order.quantity * order.dish_snapshot.price
-                      }, 0),
-                      minPrice
-                    )
-                  )
-                }, 0)
-              )} */}
+              {formatCurrency(
+                calculateTotalDiscountValue(
+                  ordersFilterToPurchase.reduce((acc, order) => {
+                    return acc + order.quantity * order.dish_snapshot.price
+                  }, 0),
+                  usePromotions
+                )
+              )}
             </span>
           </Badge>
         )}

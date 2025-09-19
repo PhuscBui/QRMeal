@@ -68,7 +68,7 @@ const orderTableColumns: ColumnDef<OrderGroup>[] = [
                 </div>
               </PopoverTrigger>
               <PopoverContent className='w-[320px] sm:w-[440px]'>
-                <OrderDetail guest={displayInfo} orders={guestId ? orderObjectByGuestId[guestId] || [] : []} />
+                <OrderDetail user={displayInfo} orders={guestId ? orderObjectByGuestId[guestId] || [] : []} />
               </PopoverContent>
             </Popover>
           )}

@@ -46,7 +46,7 @@ export default function OrderStatics({
                 return (
                   <div key={guestId}>
                     <OrderDetail
-                      guest={orderGroups[0].guest || orderGroups[0].customer}
+                      user={orderGroups[0].guest || orderGroups[0].customer}
                       orders={orderGroups}
                       onPaySuccess={() => {
                         setSelectedTableNumber(0)
