@@ -8,7 +8,7 @@ import {
 import { isEmployeeValidator } from '~/middlewares/account.middlewares'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import { dateQueryValidator } from '~/middlewares/common.middlewares'
-import { createRevenueValidator } from '~/middlewares/revenues.middlewares'
+import { checkUserRoleValidator, createRevenueValidator } from '~/middlewares/revenues.middlewares'
 import { wrapRequestHandler } from '~/utils/handlers'
 
 const revenuesRouter = Router()
@@ -39,7 +39,7 @@ revenuesRouter.post(
   '/',
   accessTokenValidator,
   createRevenueValidator,
-  isEmployeeValidator,
+  checkUserRoleValidator,
   wrapRequestHandler(createRevenueController)
 )
 

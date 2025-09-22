@@ -9,7 +9,7 @@ export const useGetCustomerPromotionQuery = ({ customerId, enabled }: { customer
   })
 }
 
-export const useUsedPromotionMutation = () => {
+export const useCustomerUsedPromotionMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: customerPromotionApiRequest.usedPromotion,

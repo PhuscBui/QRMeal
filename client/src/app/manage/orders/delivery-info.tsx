@@ -53,7 +53,6 @@ const formatForDateTimeLocal = (dateString: string) => {
 }
 
 export const DeliveryInfoComponent: React.FC<DeliveryInfoComponentProps> = ({ order_group_id, delivery }) => {
-  console.log(delivery)
   const [isEditing, setIsEditing] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [editData, setEditData] = useState({

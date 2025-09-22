@@ -1,4 +1,4 @@
-import { LucideIcon } from 'lucide-react'
+import { Calendar, Gift, Heart, LucideIcon, Package, Search, ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 
@@ -11,23 +11,14 @@ interface EmptyStateProps {
   className?: string
 }
 
-export function EmptyState({
-  icon: Icon,
-  title,
-  description,
-  actionLabel,
-  onAction,
-  className = ''
-}: EmptyStateProps) {
+export function EmptyState({ icon: Icon, title, description, actionLabel, onAction, className = '' }: EmptyStateProps) {
   return (
     <Card className={className}>
       <CardContent className='text-center py-12'>
         <Icon className='h-12 w-12 mx-auto text-muted-foreground mb-4' />
         <h3 className='text-lg font-medium mb-2'>{title}</h3>
         <p className='text-muted-foreground mb-4'>{description}</p>
-        {actionLabel && onAction && (
-          <Button onClick={onAction}>{actionLabel}</Button>
-        )}
+        {actionLabel && onAction && <Button onClick={onAction}>{actionLabel}</Button>}
       </CardContent>
     </Card>
   )
@@ -37,7 +28,7 @@ export function EmptyState({
 export function EmptyOrders() {
   return (
     <EmptyState
-      icon={require('lucide-react').Package}
+      icon={Package}
       title='Chưa có đơn hàng nào'
       description='Bạn chưa có đơn hàng nào. Hãy đặt món ăn đầu tiên của bạn!'
       actionLabel='Đặt hàng ngay'
@@ -52,7 +43,7 @@ export function EmptyOrders() {
 export function EmptyReservations() {
   return (
     <EmptyState
-      icon={require('lucide-react').Calendar}
+      icon={Calendar}
       title='Chưa có đặt bàn nào'
       description='Bạn chưa đặt bàn nào. Hãy đặt bàn để thưởng thức bữa ăn tại nhà hàng!'
       actionLabel='Đặt bàn ngay'
@@ -67,7 +58,7 @@ export function EmptyReservations() {
 export function EmptyPromotions() {
   return (
     <EmptyState
-      icon={require('lucide-react').Gift}
+      icon={Gift}
       title='Không có khuyến mãi nào'
       description='Hiện tại không có khuyến mãi nào trong danh mục này'
       actionLabel='Xem tất cả khuyến mãi'
@@ -82,7 +73,7 @@ export function EmptyPromotions() {
 export function EmptySearch() {
   return (
     <EmptyState
-      icon={require('lucide-react').Search}
+      icon={Search}
       title='Không tìm thấy kết quả'
       description='Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc để tìm thấy những gì bạn cần'
       actionLabel='Xóa bộ lọc'
@@ -97,7 +88,7 @@ export function EmptySearch() {
 export function EmptyFavorites() {
   return (
     <EmptyState
-      icon={require('lucide-react').Heart}
+      icon={Heart}
       title='Chưa có món yêu thích'
       description='Bạn chưa thêm món ăn nào vào danh sách yêu thích'
       actionLabel='Khám phá thực đơn'
@@ -112,7 +103,7 @@ export function EmptyFavorites() {
 export function EmptyCart() {
   return (
     <EmptyState
-      icon={require('lucide-react').ShoppingCart}
+      icon={ShoppingCart}
       title='Giỏ hàng trống'
       description='Thêm món ăn vào giỏ hàng để bắt đầu đặt hàng'
       actionLabel='Xem thực đơn'

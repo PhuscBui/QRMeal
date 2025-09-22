@@ -9,8 +9,9 @@ export type GetRevenuesQueryParamsType = z.TypeOf<typeof GetRevenuesQueryParams>
 
 export const RevenueSchema = z.object({
   _id: z.string(),
-  guest_id: z.string(),
-  guest_phone: z.string(),
+  guest_id: z.string().nullable(),
+  guest_phone: z.string().nullable(),
+  customer_id: z.string().nullable(),
   total_amount: z.number(),
   create_at: z.date()
 })
@@ -31,8 +32,9 @@ export type RevenueListResType = z.TypeOf<typeof RevenueListRes>
 
 export const CreateRevenueBody = z
   .object({
-    guest_id: z.string(),
-    guest_phone: z.string().nullable(),
+    guest_id: z.string().nullable().optional(),
+    customer_id: z.string().nullable().optional(),
+    guest_phone: z.string().nullable().optional(),
     total_amount: z.coerce.number()
   })
   .strict()

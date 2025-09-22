@@ -91,6 +91,7 @@ export const calculateDiscount = (
   loyaltyPoints?: number,
   dishItems?: { id: string; price: number }[],
   userVisits?: number,
+  orderType: 'dine-in' | 'takeaway' | 'delivery' = 'dine-in',
   shippingFee: number = 15000
 ): number => {
   if (!isPromotionActive(promotion)) return 0
@@ -118,6 +119,11 @@ export const calculateDiscount = (
       if (!checkPromotionConditions(promotion.conditions, originalAmount, loyaltyPoints, userVisits)) {
         return 0
       }
+
+      if (orderType !== 'delivery') {
+        return 0 // Free shipping only applies to delivery orders
+      }
+
       return Math.min(shippingFee, originalAmount)
 
     case PromotionCategory.Loyalty:
@@ -247,6 +253,7 @@ export const calculateTotalDiscount = (
   loyaltyPoints?: number,
   dishItems?: { id: string; price: number }[],
   userVisits?: number,
+  orderType: 'dine-in' | 'takeaway' | 'delivery' = 'dine-in',
   shippingFee: number = 15000,
   allowStacking: boolean = true // Option to enable/disable promotion stacking
 ): number => {
@@ -254,7 +261,15 @@ export const calculateTotalDiscount = (
     // If stacking not allowed, find the best single promotion
     let maxDiscount = 0
     for (const promotion of promotions) {
-      const discount = calculateDiscount(promotion, originalAmount, loyaltyPoints, dishItems, userVisits, shippingFee)
+      const discount = calculateDiscount(
+        promotion,
+        originalAmount,
+        loyaltyPoints,
+        dishItems,
+        userVisits,
+        orderType,
+        shippingFee
+      )
       maxDiscount = Math.max(maxDiscount, discount)
     }
     return Math.min(maxDiscount, originalAmount)
@@ -262,8 +277,8 @@ export const calculateTotalDiscount = (
 
   // Stacking allowed - apply promotions in order of effectiveness
   const sortedPromotions = [...promotions].sort((a, b) => {
-    const discountA = calculateDiscount(a, originalAmount, loyaltyPoints, dishItems, userVisits, shippingFee)
-    const discountB = calculateDiscount(b, originalAmount, loyaltyPoints, dishItems, userVisits, shippingFee)
+    const discountA = calculateDiscount(a, originalAmount, loyaltyPoints, dishItems, userVisits, orderType, shippingFee)
+    const discountB = calculateDiscount(b, originalAmount, loyaltyPoints, dishItems, userVisits, orderType, shippingFee)
     return discountB - discountA
   })
 
@@ -277,7 +292,15 @@ export const calculateTotalDiscount = (
     // while others (like FreeShip) should use original amount
     const baseAmount = promotion.category === PromotionCategory.FreeShip ? originalAmount : remainingAmount
 
-    const discount = calculateDiscount(promotion, baseAmount, loyaltyPoints, dishItems, userVisits, shippingFee)
+    const discount = calculateDiscount(
+      promotion,
+      baseAmount,
+      loyaltyPoints,
+      dishItems,
+      userVisits,
+      orderType,
+      shippingFee
+    )
 
     if (discount > 0) {
       const actualDiscount = Math.min(discount, remainingAmount)
@@ -295,6 +318,7 @@ export const calculateFinalAmount = (
   loyaltyPoints?: number,
   dishItems?: { id: string; price: number }[],
   userVisits?: number,
+  orderType: 'dine-in' | 'takeaway' | 'delivery' = 'dine-in',
   shippingFee: number = 15000,
   allowStacking: boolean = true
 ): number => {
@@ -304,6 +328,7 @@ export const calculateFinalAmount = (
     loyaltyPoints,
     dishItems,
     userVisits,
+    orderType,
     shippingFee,
     allowStacking
   )

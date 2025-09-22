@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
   Clock,
@@ -33,6 +33,16 @@ import { useAccountMe } from '@/queries/useAccount'
 import { toast } from 'sonner'
 import { useAppContext } from '@/components/app-provider'
 import { getOrderStatus } from '@/lib/utils'
+import { useGetLoyaltyQuery } from '@/queries/useLoyalty'
+import { usePromotionListQuery } from '@/queries/usePromotion'
+import { useGetCustomerPromotionQuery } from '@/queries/useCustomerPromotion'
+import { calculateFinalAmount, calculateTotalDiscount } from '@/lib/promotion-utils'
+import { PromotionResType } from '@/schemaValidations/promotion.schema'
+import { useCreateRevenueMutation } from '@/queries/useRevenue'
+
+// Types for payment handling
+type OrderGroupForPayment = GetOrderDetailResType['result']
+type PaymentOrders = OrderGroupForPayment | OrderGroupForPayment[]
 
 const statusConfig = {
   [OrderStatus.Pending]: {
@@ -47,7 +57,6 @@ const statusConfig = {
     icon: Package,
     description: 'Order is being processed'
   },
-
   [OrderStatus.Delivered]: {
     label: 'Delivered',
     color: 'bg-green-500',
@@ -88,7 +97,6 @@ export default function OrdersPage() {
   const { data: userData, isLoading: isUserLoading } = useAccountMe()
   const user = userData?.payload.result
   const { mutateAsync: payOrder, isPending: isProcessing } = usePayOrderMutation()
-
   const [selectedTab, setSelectedTab] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedOrderGroup, setSelectedOrderGroup] = useState<GetOrderDetailResType['result'] | null>(null)
@@ -96,10 +104,60 @@ export default function OrdersPage() {
   const [reviewText, setReviewText] = useState('')
   const [rating, setRating] = useState(0)
   const [isPayDialogOpen, setIsPayDialogOpen] = useState(false)
-  const [orderGroupToPay, setOrderGroupToPay] = useState<GetOrderDetailResType['result'] | null>(null)
+  // Updated type to handle both single and multiple orders
+  const [ordersToPay, setOrdersToPay] = useState<PaymentOrders | null>(null)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('cash')
   const [sortBy, setSortBy] = useState('newest')
   const { socket } = useAppContext()
+  const { data } = useGetLoyaltyQuery({ customerId: user?._id as string, enabled: Boolean(user) })
+  const promotionListQuery = usePromotionListQuery()
+  const promotions = useMemo(() => promotionListQuery.data?.payload.result ?? [], [promotionListQuery.data])
+  const { data: customerPromotionsQuery } = useGetCustomerPromotionQuery({
+    enabled: Boolean(user),
+    customerId: user?._id as string
+  })
+
+  const createRevenueMutation = useCreateRevenueMutation()
+
+  const loyaltyPoints = data?.payload.result.loyalty_points || 0
+  const userVisits = data?.payload.result.visit_count || 0
+
+  const customerPromotions = useMemo(() => {
+    const result = customerPromotionsQuery?.payload.result
+    return Array.isArray(result) ? result.filter((promo) => promo.used === false) : []
+  }, [customerPromotionsQuery])
+
+  const usePromotions = useMemo(() => {
+    type CustomerPromotionType = { promotion_id: string } | string
+    const customerPromotionIds = Array.isArray(customerPromotions)
+      ? (customerPromotions as CustomerPromotionType[]).map((promo) =>
+          typeof promo === 'string' ? promo : promo.promotion_id
+        )
+      : []
+    return promotions.filter((promotion) => customerPromotionIds.includes(promotion._id))
+  }, [promotions, customerPromotions])
+
+  const calculateTotalAmount = (
+    price: number,
+    promotion: PromotionResType['result'][],
+    dishItems: {
+      id: string
+      price: number
+    }[]
+  ) => {
+    return calculateFinalAmount(price, promotion, loyaltyPoints, dishItems, userVisits, orderType)
+  }
+
+  const calculateTotalDiscountValue = (
+    price: number,
+    promotion: PromotionResType['result'][],
+    dishItems: {
+      id: string
+      price: number
+    }[]
+  ) => {
+    return calculateTotalDiscount(promotion, price, loyaltyPoints, dishItems, userVisits, orderType)
+  }
 
   const {
     data: ordersResponse,
@@ -141,6 +199,52 @@ export default function OrdersPage() {
     return orders.reduce((total, order) => {
       return total + order.dish_snapshot.price * order.quantity
     }, 0)
+  }
+
+  // Helper function to get all order groups from PaymentOrders
+  const getAllOrderGroups = (paymentOrders: PaymentOrders): OrderGroupForPayment[] => {
+    if (Array.isArray(paymentOrders)) {
+      return paymentOrders
+    }
+    return [paymentOrders]
+  }
+
+  // Helper function to calculate total for multiple orders
+  const calculateTotalForOrders = (paymentOrders: PaymentOrders): number => {
+    const orderGroups = getAllOrderGroups(paymentOrders)
+    return orderGroups.reduce((total, orderGroup) => total + calculateTotal(orderGroup.orders), 0)
+  }
+
+  // Helper function to calculate discount for multiple orders
+  const calculateTotalDiscountForOrders = (paymentOrders: PaymentOrders): number => {
+    const orderGroups = getAllOrderGroups(paymentOrders)
+    return orderGroups.reduce((total, orderGroup) => {
+      const orderTotal = calculateTotal(orderGroup.orders)
+      const dishItems = orderGroup.orders.map((order) => ({
+        id: order.dish_snapshot._id,
+        price: order.dish_snapshot.price
+      }))
+      return total + calculateTotalDiscountValue(orderTotal, usePromotions, dishItems)
+    }, 0)
+  }
+
+  // Helper function to calculate final amount for multiple orders
+  const calculateFinalAmountForOrders = (paymentOrders: PaymentOrders): number => {
+    const orderGroups = getAllOrderGroups(paymentOrders)
+    return orderGroups.reduce((total, orderGroup) => {
+      const orderTotal = calculateTotal(orderGroup.orders)
+      const dishItems = orderGroup.orders.map((order) => ({
+        id: order.dish_snapshot._id,
+        price: order.dish_snapshot.price
+      }))
+      return total + calculateTotalAmount(orderTotal, usePromotions, dishItems)
+    }, 0)
+  }
+
+  // Helper function to get order IDs for payment
+  const getOrderIds = (paymentOrders: PaymentOrders): string[] => {
+    const orderGroups = getAllOrderGroups(paymentOrders)
+    return orderGroups.flatMap((orderGroup) => orderGroup._id)
   }
 
   // Filter and sort order groups
@@ -250,24 +354,43 @@ export default function OrdersPage() {
     router.push('/menu')
   }
 
-  const openPayDialog = (orderGroup: GetOrderDetailResType['result']) => {
-    setOrderGroupToPay(orderGroup)
+  // Updated to handle both single and multiple orders
+  const openPayDialog = (orders: PaymentOrders) => {
+    setOrdersToPay(orders)
     setSelectedPaymentMethod('cash')
     setIsPayDialogOpen(true)
   }
 
+  // Updated to handle payment for multiple orders
   const confirmPay = async () => {
-    if (!orderGroupToPay) return
-    console.log('Processing payment for order group:', orderGroupToPay._id)
-    // Call API to process payment
+    if (!ordersToPay) return
+
     try {
-      const result = await payOrder({ is_customer: true, customer_id: user?._id })
-      toast.success(result.payload.message)
+      const orderIds = getOrderIds(ordersToPay)
+      console.log('Processing payment for orders:', orderIds, 'with method:', selectedPaymentMethod)
+
+      // Assuming the API accepts an array of order IDs for bulk payment
+      // You might need to adjust this based on your actual API structure
+      const result = await payOrder({
+        is_customer: true,
+        customer_id: user?._id
+      })
+
+      // Create revenue record
+      const totalAmount = calculateFinalAmountForOrders(ordersToPay)
+      await createRevenueMutation.mutateAsync({
+        total_amount: totalAmount,
+        customer_id: user?._id as string
+      })
+
+      const orderCount = Array.isArray(ordersToPay) ? ordersToPay.length : 1
+      toast.success(result.payload.message || `Successfully paid for ${orderCount} order${orderCount > 1 ? 's' : ''}!`)
+
       setIsPayDialogOpen(false)
-      setOrderGroupToPay(null)
+      setOrdersToPay(null)
       refetch()
     } catch (error) {
-      toast.error('Payment failed')
+      toast.error('Payment failed. Please try again.')
       console.error('Payment error:', error)
     }
   }
@@ -327,6 +450,7 @@ export default function OrdersPage() {
   function handleClose() {
     setIsDetailDialogOpen(false)
     setIsPayDialogOpen(false)
+    setOrdersToPay(null)
   }
 
   if (isLoading || isUserLoading) {
@@ -356,6 +480,47 @@ export default function OrdersPage() {
           </div>
         </div>
       </div>
+
+      {/* Applied Promotions & Bulk Payment Section */}
+      {usePromotions.length > 0 && (
+        <Card className='mb-8 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800'>
+          <CardHeader>
+            <CardTitle className='text-lg flex items-center gap-2'>
+              <Star className='h-5 w-5 text-purple-600' />
+              Applied Promotions
+            </CardTitle>
+            <CardDescription>You have {usePromotions.length} active promotion(s)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className='space-y-3'>
+              {usePromotions.map((promotion) => (
+                <div
+                  key={promotion._id}
+                  className='flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-lg border border-purple-200 dark:border-purple-800'
+                >
+                  <div className='flex items-center gap-3'>
+                    <div className='w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center'>
+                      <Star className='h-5 w-5 text-purple-600' />
+                    </div>
+                    <div>
+                      <h4 className='font-medium text-sm'>{promotion.name}</h4>
+                      <p className='text-xs text-muted-foreground'>{promotion.description}</p>
+                    </div>
+                  </div>
+                  <Badge
+                    variant='secondary'
+                    className='bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                  >
+                    {promotion.discount_type === 'percentage'
+                      ? `${promotion.discount_value ?? 0}% OFF`
+                      : `${(promotion.discount_value ?? 0).toLocaleString('vi-VN')}đ OFF`}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Search and Filters */}
       <div className='flex flex-col md:flex-row gap-4 mb-8'>
@@ -627,6 +792,109 @@ export default function OrdersPage() {
         )}
       </div>
 
+      {/* Bulk Payment Section */}
+      {filteredOrderGroups.some(
+        (order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Cancelled
+      ) && (
+        <Card className='mt-8 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20 border-green-200 dark:border-green-800'>
+          <CardHeader>
+            <CardTitle className='text-lg flex items-center gap-2'>
+              <CreditCard className='h-5 w-5 text-green-600' />
+              Bulk Payment
+            </CardTitle>
+            <CardDescription>Pay for all unpaid orders at once</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className='space-y-4'>
+              {/* Payment Summary */}
+              <div className='bg-white dark:bg-gray-900 p-4 rounded-lg border border-green-200 dark:border-green-800'>
+                <div className='flex justify-between items-center mb-3'>
+                  <span className='text-sm font-medium'>Unpaid Orders:</span>
+                  <span className='text-sm'>
+                    {
+                      filteredOrderGroups.filter(
+                        (order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Cancelled
+                      ).length
+                    }{' '}
+                    orders
+                  </span>
+                </div>
+                <div className='flex justify-between items-center mb-3'>
+                  <span className='text-sm font-medium'>Subtotal:</span>
+                  <span className='text-sm'>
+                    {filteredOrderGroups
+                      .filter((order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Cancelled)
+                      .reduce((total, orderGroup) => total + calculateTotal(orderGroup.orders), 0)
+                      .toLocaleString('vi-VN')}
+                    đ
+                  </span>
+                </div>
+                {usePromotions.length > 0 && (
+                  <div className='flex justify-between items-center mb-3 text-green-600'>
+                    <span className='text-sm font-medium'>Total Discount:</span>
+                    <span className='text-sm'>
+                      -
+                      {calculateTotalDiscountForOrders(
+                        filteredOrderGroups.filter(
+                          (order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Cancelled
+                        ) as PaymentOrders
+                      ).toLocaleString('vi-VN')}
+                      đ
+                    </span>
+                  </div>
+                )}
+                <div className='border-t pt-3'>
+                  <div className='flex justify-between items-center'>
+                    <span className='font-semibold'>Final Total:</span>
+                    <span className='font-semibold text-lg text-green-600'>
+                      {calculateFinalAmountForOrders(
+                        filteredOrderGroups.filter(
+                          (order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Cancelled
+                        ) as PaymentOrders
+                      ).toLocaleString('vi-VN')}
+                      đ
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bulk Payment Button */}
+              <Button
+                size='lg'
+                className='w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700'
+                disabled={isProcessing}
+                onClick={() => {
+                  const unpaidOrders = filteredOrderGroups.filter(
+                    (order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Cancelled
+                  )
+                  if (unpaidOrders.length > 0) {
+                    openPayDialog(unpaidOrders as PaymentOrders)
+                  }
+                }}
+              >
+                {isProcessing ? (
+                  <>
+                    <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2' />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className='h-5 w-5 mr-2' />
+                    Pay All Orders (
+                    {
+                      filteredOrderGroups.filter(
+                        (order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Cancelled
+                      ).length
+                    }
+                    )
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Order Detail Dialog */}
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
         <DialogContent className='max-w-2xl max-h-[80vh] overflow-y-auto'>
@@ -775,7 +1043,7 @@ export default function OrdersPage() {
                 <div className='space-y-2'>
                   <div className='flex justify-between'>
                     <span>Temporary:</span>
-                    <span>{calculateTotal(selectedOrderGroup.orders).toLocaleString('vi-VN')}d</span>
+                    <span>{calculateTotal(selectedOrderGroup.orders).toLocaleString('vi-VN')}đ</span>
                   </div>
                   <div className='flex justify-between'>
                     <span>Shipping fee:</span>
@@ -783,7 +1051,7 @@ export default function OrdersPage() {
                   </div>
                   <div className='flex justify-between font-semibold text-lg border-t pt-2'>
                     <span>Total:</span>
-                    <span>{calculateTotal(selectedOrderGroup.orders).toLocaleString('vi-VN')}d</span>
+                    <span>{calculateTotal(selectedOrderGroup.orders).toLocaleString('vi-VN')}đ</span>
                   </div>
                 </div>
               </div>
@@ -844,58 +1112,73 @@ export default function OrdersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Pay Dialog */}
+      {/* Pay Dialog - Updated for multiple orders */}
       <Dialog open={isPayDialogOpen} onOpenChange={setIsPayDialogOpen}>
         <DialogContent className='max-w-md'>
           <DialogHeader>
             <DialogTitle className='flex items-center gap-2'>
               <CreditCard className='h-5 w-5' />
-              Order Payment
+              {ordersToPay && Array.isArray(ordersToPay) ? 'Bulk Payment' : 'Order Payment'}
             </DialogTitle>
             <DialogDescription>
-              Order: {selectedOrderGroup ? generateOrderNumber(selectedOrderGroup._id) : ''}
+              {ordersToPay && Array.isArray(ordersToPay)
+                ? `Paying for ${ordersToPay.length} orders`
+                : ordersToPay && generateOrderNumber((ordersToPay as OrderGroupForPayment)._id)}
             </DialogDescription>
           </DialogHeader>
 
-          {orderGroupToPay && (
+          {ordersToPay && (
             <div className='space-y-6'>
-              {/* Order Summary */}
+              {/* Order Summary - Updated for multiple orders */}
               <div className='bg-muted p-4 rounded-lg space-y-3'>
-                <h4 className='font-medium text-sm'>Payment Details</h4>
+                <h4 className='font-medium text-sm'>
+                  {Array.isArray(ordersToPay) ? `Payment Details (${ordersToPay.length} orders)` : 'Payment Details'}
+                </h4>
 
                 <div className='space-y-2 text-sm'>
                   <div className='flex justify-between'>
-                    <span>Subtotal ({orderGroupToPay.orders.length} items):</span>
                     <span>
-                      {orderGroupToPay ? calculateTotal(orderGroupToPay.orders).toLocaleString('vi-VN') : '0'}đ
+                      Subtotal (
+                      {Array.isArray(ordersToPay)
+                        ? ordersToPay.reduce((total, order) => total + order.orders.length, 0)
+                        : (ordersToPay as OrderGroupForPayment).orders.length}{' '}
+                      items):
                     </span>
+                    <span>{calculateTotalForOrders(ordersToPay).toLocaleString('vi-VN')}đ</span>
                   </div>
 
-                  <div className='flex justify-between'>
-                    <span>Shipping Fee:</span>
-                    <span>15,000 đ</span>
-                  </div>
+                  {/* Shipping fee for delivery orders */}
+                  {Array.isArray(ordersToPay)
+                    ? ordersToPay.some((order) => order.order_type === 'delivery') && (
+                        <div className='flex justify-between'>
+                          <span>Shipping Fee:</span>
+                          <span>
+                            {(
+                              ordersToPay.filter((order) => order.order_type === 'delivery').length * 15000
+                            ).toLocaleString('vi-VN')}
+                            đ
+                          </span>
+                        </div>
+                      )
+                    : (ordersToPay as OrderGroupForPayment).order_type === 'delivery' && (
+                        <div className='flex justify-between'>
+                          <span>Shipping Fee:</span>
+                          <span>15,000đ</span>
+                        </div>
+                      )}
 
-                  <div className='flex justify-between'>
-                    <span>Service Fee (5%):</span>
-                    <span>
-                      {orderGroupToPay ? (calculateTotal(orderGroupToPay.orders) * 0.05).toLocaleString('vi-VN') : '0'}đ
-                    </span>
-                  </div>
-
-                  <div className='flex justify-between text-green-600'>
-                    <span>Discount:</span>
-                    <span>-0 đ</span>
-                  </div>
+                  {usePromotions.length > 0 && (
+                    <div className='flex justify-between text-green-600'>
+                      <span>Discount:</span>
+                      <span>-{calculateTotalDiscountForOrders(ordersToPay).toLocaleString('vi-VN')}đ</span>
+                    </div>
+                  )}
 
                   <div className='border-t pt-2 mt-2'>
                     <div className='flex justify-between items-center font-semibold text-base'>
                       <span>Total:</span>
                       <span className='text-lg text-primary'>
-                        {orderGroupToPay
-                          ? (calculateTotal(orderGroupToPay.orders) * 1.05 + 15000).toLocaleString('vi-VN')
-                          : '0'}
-                        đ
+                        {calculateFinalAmountForOrders(ordersToPay).toLocaleString('vi-VN')}đ
                       </span>
                     </div>
                   </div>
@@ -918,7 +1201,7 @@ export default function OrdersPage() {
                         className={`flex items-start space-x-3 p-3 border rounded-lg cursor-pointer transition-colors ${
                           selectedPaymentMethod === key ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
                         } 
-                      ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         <RadioGroupItem value={key} className='mt-1' />
                         <div className='flex items-start gap-3 flex-1'>
@@ -934,24 +1217,34 @@ export default function OrdersPage() {
               </div>
 
               {/* Special Instructions for certain payment methods */}
-              {selectedPaymentMethod === 'banking' && (
+              {selectedPaymentMethod === 'banking' && ordersToPay && (
                 <div className='bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg text-sm'>
                   <p className='font-medium text-blue-800 dark:text-blue-200 mb-2'>Transfer Information:</p>
                   <div className='text-blue-700 dark:text-blue-300 space-y-1'>
                     <p>• Bank: Vietcombank</p>
                     <p>• Account Number: 1234567890</p>
                     <p>• Account Name: RESTAURANT ABC</p>
-                    <p>• Content: {generateOrderNumber(orderGroupToPay._id)}</p>
+                    <p>
+                      • Content:{' '}
+                      {Array.isArray(ordersToPay)
+                        ? `BULK-${ordersToPay.length}-ORDERS`
+                        : generateOrderNumber((ordersToPay as OrderGroupForPayment)._id)}
+                    </p>
                   </div>
                 </div>
               )}
 
-              {selectedPaymentMethod === 'momo' && (
+              {selectedPaymentMethod === 'momo' && ordersToPay && (
                 <div className='bg-pink-50 dark:bg-pink-950/20 p-3 rounded-lg text-sm'>
                   <p className='font-medium text-pink-800 dark:text-pink-200 mb-1'>MoMo Payment:</p>
                   <p className='text-pink-700 dark:text-pink-300'>
                     Scan the QR code or transfer to the number: 0123456789
                   </p>
+                  {Array.isArray(ordersToPay) && (
+                    <p className='text-xs text-pink-600 dark:text-pink-400 mt-1'>
+                      Bulk payment for {ordersToPay.length} orders
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -969,7 +1262,7 @@ export default function OrdersPage() {
                   ) : (
                     <>
                       <CreditCard className='h-4 w-4 mr-2' />
-                      Confirm Payment
+                      {Array.isArray(ordersToPay) ? `Pay ${ordersToPay.length} Orders` : 'Confirm Payment'}
                     </>
                   )}
                 </Button>

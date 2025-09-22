@@ -16,6 +16,13 @@ export const useGetRevenueByGuestPhoneQuery = (guestPhone: string) => {
   })
 }
 
+export const useGetRevenueByCustomerIdQuery = (customerId: string) => {
+  return useQuery({
+    queryFn: () => revenueApiRequest.getRevenueByCustomerId(customerId),
+    queryKey: ['revenue', customerId]
+  })
+}
+
 export const useCreateRevenueMutation = () => {
   return useMutation({
     mutationFn: revenueApiRequest.createRevenue

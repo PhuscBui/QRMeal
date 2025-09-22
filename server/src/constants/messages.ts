@@ -284,6 +284,9 @@ export const CUSTOMER_PROMOTION_MESSAGE = {
 } as const
 
 export const REVENUES_MESSAGE = {
+  CUSTOMER_ID_IS_REQUIRED: 'Customer ID is required',
+  CUSTOMER_ID_MUST_BE_A_STRING: 'Customer ID must be a string',
+  CUSTOMER_ID_IS_INVALID: 'Customer ID is invalid',
   REVENUE_NOT_FOUND: 'Revenue not found',
   REVENUE_CREATED: 'Revenue created',
   REVENUE_UPDATED: 'Revenue updated',

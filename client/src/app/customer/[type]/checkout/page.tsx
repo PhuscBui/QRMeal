@@ -179,8 +179,7 @@ export default function CheckoutPage() {
   // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const deliveryFee = orderType === 'delivery' ? 15000 : 0
-  const serviceFee = Math.round(subtotal * 0.05) // 5% service fee, rounded
-  const total = subtotal + deliveryFee + serviceFee
+  const total = subtotal + deliveryFee
 
   // Update cart in localStorage
   const updateCartInStorage = (newCartItems: CartItem[]) => {
@@ -566,10 +565,7 @@ export default function CheckoutPage() {
                       <span>{deliveryFee.toLocaleString('vi-VN')}đ</span>
                     </div>
                   )}
-                  <div className='flex justify-between text-sm'>
-                    <span>Service Fee (5%)</span>
-                    <span>{serviceFee.toLocaleString('vi-VN')}đ</span>
-                  </div>
+
                   <Separator />
                   <div className='flex justify-between font-semibold text-lg'>
                     <span>Total</span>

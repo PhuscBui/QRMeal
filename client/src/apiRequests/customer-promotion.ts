@@ -3,9 +3,9 @@ import {
   CreateCustomerPromotionBodyType,
   CustomerPromotionResType,
   DeleteCustomerPromotionBodyType,
-  DeleteCustomerPromotionResType
+  DeleteCustomerPromotionResType,
+  UsedPromotionBodyType
 } from '@/schemaValidations/customer-promotion.schema'
-import { UsedPromotionBodyType } from '@/schemaValidations/guest-promotion.schema'
 
 const customerPromotionApiRequest = {
   add: (body: CreateCustomerPromotionBodyType) => http.post<CustomerPromotionResType>('customer-promotion', body),

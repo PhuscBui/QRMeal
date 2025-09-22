@@ -17,6 +17,7 @@ const revenueApiRequest = {
         })
     ),
   getRevenueByGuestPhone: (guestPhone: string) => http.get<RevenueListResType>(`/revenues/${guestPhone}`),
+  getRevenueByCustomerId: (customerId: string) => http.get<RevenueListResType>(`/revenues/customer/${customerId}`),
   createRevenue: (body: CreateRevenueBodyType) => http.post<RevenueResType>('/revenues', body)
 }
 

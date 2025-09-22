@@ -10,7 +10,7 @@ import {
   getOrderStatus,
   handleErrorApi
 } from '@/lib/utils'
-import { useGetCustomerPromotionQuery } from '@/queries/useCustomerPromotion'
+import { useCustomerUsedPromotionMutation, useGetCustomerPromotionQuery } from '@/queries/useCustomerPromotion'
 import { useGetGuestPromotionQuery, useUsedPromotionMutation } from '@/queries/useGuestPromotion'
 import { useGetLoyaltyQuery } from '@/queries/useLoyalty'
 import { usePayOrderMutation } from '@/queries/useOrder'
@@ -59,7 +59,11 @@ export default function OrderDetail({
       .filter((item) => typeof item.id === 'string' && item.id !== null) as { id: string; price: number }[]
   }, [allOrders])
 
-  const { data } = useGetLoyaltyQuery({ customerId: user?._id as string, enabled: Boolean(user) })
+  const orderType = orderGroups[0]?.order_type || 'dine-in'
+
+  const isCustomer = user && 'role' in user && user.role === 'Customer'
+
+  const { data } = useGetLoyaltyQuery({ customerId: user?._id as string, enabled: Boolean(isCustomer && user) })
   const loyaltyPoints = data?.payload.result.loyalty_points || 0
   const userVisits = data?.payload.result.visit_count || 0
 
@@ -72,23 +76,24 @@ export default function OrderDetail({
   const promotions = useMemo(() => promotionListQuery.data?.payload.result ?? [], [promotionListQuery.data])
 
   const updateGuestUsedPromotionMutation = useUsedPromotionMutation()
+  const updateCustomerUsedPromotionMutation = useCustomerUsedPromotionMutation()
 
   const guestPromotionResult = useGetGuestPromotionQuery({
-    enabled: Boolean(user),
+    enabled: Boolean(user && !isCustomer),
     guestId: user?._id as string
   })
 
   const customerPromotionResult = useGetCustomerPromotionQuery({
-    enabled: Boolean(user),
+    enabled: Boolean(user && isCustomer),
     customerId: user?._id as string
   })
 
   const userPromotions = useMemo(() => {
-    if (user && 'role' in user && user.role === 'Customer') {
+    if (isCustomer) {
       return (customerPromotionResult.data?.payload.result ?? []) as Array<CustomerOrGuestPromotion>
     }
     return guestPromotionResult.data?.payload.result ?? []
-  }, [customerPromotionResult.data?.payload.result, guestPromotionResult.data?.payload.result, user])
+  }, [customerPromotionResult.data?.payload.result, guestPromotionResult.data?.payload.result, isCustomer])
 
   const usePromotionIds = useMemo(() => {
     const usePromotions = Array.isArray(userPromotions)
@@ -104,11 +109,11 @@ export default function OrderDetail({
   }, [promotions, usePromotionIds])
 
   const calculateTotalAmount = (price: number, promotion: PromotionResType['result'][]) => {
-    return calculateFinalAmount(price, promotion, loyaltyPoints, dishItems, userVisits)
+    return calculateFinalAmount(price, promotion, loyaltyPoints, dishItems, userVisits, orderType)
   }
 
   const calculateTotalDiscountValue = (price: number, promotion: PromotionResType['result'][]) => {
-    return calculateTotalDiscount(promotion, price, loyaltyPoints, dishItems, userVisits)
+    return calculateTotalDiscount(promotion, price, loyaltyPoints, dishItems, userVisits, orderType)
   }
 
   const pay = async () => {
@@ -142,19 +147,33 @@ export default function OrderDetail({
       )
 
       await Promise.all([
-        createRevenueMutation.mutateAsync({
-          guest_id: user._id,
-          guest_phone: user.phone,
-          total_amount: total_amount
-        }),
-        await Promise.all(
-          usePromotions.map((promotion) =>
-            updateGuestUsedPromotionMutation.mutateAsync({
-              guest_id: user._id,
-              promotion_id: promotion._id
+        isCustomer
+          ? createRevenueMutation.mutateAsync({
+              customer_id: user._id,
+              total_amount
             })
-          )
-        )
+          : createRevenueMutation.mutateAsync({
+              guest_id: user._id,
+              guest_phone: user.phone,
+              total_amount
+            }),
+        isCustomer
+          ? await Promise.all(
+              usePromotions.map((promotion) =>
+                updateCustomerUsedPromotionMutation.mutateAsync({
+                  customer_id: user._id,
+                  promotion_id: promotion._id
+                })
+              )
+            )
+          : await Promise.all(
+              usePromotions.map((promotion) =>
+                updateGuestUsedPromotionMutation.mutateAsync({
+                  guest_id: user._id,
+                  promotion_id: promotion._id
+                })
+              )
+            )
       ])
     } catch (error) {
       handleErrorApi({
