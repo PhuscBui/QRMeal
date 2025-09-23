@@ -227,3 +227,22 @@ export const generateSocket = (token: string) => {
     }
   })
 }
+
+// Helper function to get today's date in YYYY-MM-DD format
+export const getTodayDate = () => {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// Helper function to format date for display
+export const formatDateForDisplay = (dateString: string) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  })
+}

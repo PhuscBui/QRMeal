@@ -33,11 +33,13 @@ type CustomerOrGuestPromotion = CustomerPromotionResType['result'] | GuestPromot
 export default function OrderDetail({
   user,
   orders: orderGroups,
-  onPaySuccess
+  onPaySuccess,
+  orderType
 }: {
   user: GuestOrCustomer
   orders: OrderGroups
   onPaySuccess?: (data: PayOrdersResType) => void
+  orderType?: 'dine-in' | 'takeaway' | 'delivery'
 }) {
   // Flatten all orders from all order groups
   const allOrders = useMemo(() => {
@@ -58,8 +60,6 @@ export default function OrderDetail({
       }))
       .filter((item) => typeof item.id === 'string' && item.id !== null) as { id: string; price: number }[]
   }, [allOrders])
-
-  const orderType = orderGroups[0]?.order_type || 'dine-in'
 
   const isCustomer = user && 'role' in user && user.role === 'Customer'
 
@@ -139,7 +139,7 @@ export default function OrderDetail({
         onPaySuccess(result.payload)
       }
 
-      const total_amount = calculateTotalAmount(
+      const { finalAmount: total_amount, promotionsApplied: usedPromotions } = calculateTotalAmount(
         ordersFilterToPurchase.reduce((acc, order) => {
           return acc + order.quantity * order.dish_snapshot.price
         }, 0),
@@ -159,18 +159,18 @@ export default function OrderDetail({
             }),
         isCustomer
           ? await Promise.all(
-              usePromotions.map((promotion) =>
+              usedPromotions.map((promotion) =>
                 updateCustomerUsedPromotionMutation.mutateAsync({
                   customer_id: user._id,
-                  promotion_id: promotion._id
+                  promotion_id: promotion
                 })
               )
             )
           : await Promise.all(
-              usePromotions.map((promotion) =>
+              usedPromotions.map((promotion) =>
                 updateGuestUsedPromotionMutation.mutateAsync({
                   guest_id: user._id,
-                  promotion_id: promotion._id
+                  promotion_id: promotion
                 })
               )
             )
@@ -324,16 +324,23 @@ export default function OrderDetail({
           </span>
         </Badge>
 
+        {orderType === 'delivery' && (
+          <Badge variant={'outline'}>
+            <span>+ Shipping Fee: {formatCurrency(15000)}</span>
+          </Badge>
+        )}
+
         {usePromotions.length > 0 && (
           <Badge variant={'outline'}>
             <span>
+              -{' '}
               {formatCurrency(
                 calculateTotalDiscountValue(
                   ordersFilterToPurchase.reduce((acc, order) => {
                     return acc + order.quantity * order.dish_snapshot.price
                   }, 0),
                   usePromotions
-                )
+                ).discount
               )}
             </span>
           </Badge>
@@ -350,7 +357,7 @@ export default function OrderDetail({
                   return acc + order.quantity * order.dish_snapshot.price
                 }, 0),
                 usePromotions
-              )
+              ).finalAmount
             )}
           </span>
         </Badge>

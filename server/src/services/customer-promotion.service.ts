@@ -34,7 +34,7 @@ class CustomerPromotionService {
         customer_id: new ObjectId(customer_id),
         promotion_id: new ObjectId(promotion_id)
       },
-      { $set: { used: true } },
+      { $set: { used: true }, $currentDate: { updated_at: true } },
       { returnDocument: 'after' }
     )
     return result

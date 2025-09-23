@@ -4,7 +4,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
-  Clock,
   CheckCircle,
   XCircle,
   Package,
@@ -15,7 +14,8 @@ import {
   MessageCircle,
   Search,
   CreditCard,
-  Truck
+  Truck,
+  Calendar
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,63 +32,20 @@ import { useGetOrderListQuery, usePayOrderMutation } from '@/queries/useOrder'
 import { useAccountMe } from '@/queries/useAccount'
 import { toast } from 'sonner'
 import { useAppContext } from '@/components/app-provider'
-import { getOrderStatus } from '@/lib/utils'
+import { formatDateForDisplay, getOrderStatus, getTodayDate } from '@/lib/utils'
 import { useGetLoyaltyQuery } from '@/queries/useLoyalty'
 import { usePromotionListQuery } from '@/queries/usePromotion'
-import { useGetCustomerPromotionQuery } from '@/queries/useCustomerPromotion'
+import { useCustomerUsedPromotionMutation, useGetCustomerPromotionQuery } from '@/queries/useCustomerPromotion'
 import { calculateFinalAmount, calculateTotalDiscount } from '@/lib/promotion-utils'
 import { PromotionResType } from '@/schemaValidations/promotion.schema'
 import { useCreateRevenueMutation } from '@/queries/useRevenue'
-
-// Types for payment handling
-type OrderGroupForPayment = GetOrderDetailResType['result']
-type PaymentOrders = OrderGroupForPayment | OrderGroupForPayment[]
-
-const statusConfig = {
-  [OrderStatus.Pending]: {
-    label: 'Waiting for confirmation',
-    color: 'bg-yellow-500',
-    icon: Clock,
-    description: 'Order is waiting for confirmation'
-  },
-  [OrderStatus.Processing]: {
-    label: 'Processing',
-    color: 'bg-blue-500',
-    icon: Package,
-    description: 'Order is being processed'
-  },
-  [OrderStatus.Delivered]: {
-    label: 'Delivered',
-    color: 'bg-green-500',
-    icon: CheckCircle,
-    description: 'Order has been successfully delivered'
-  },
-  [OrderStatus.Cancelled]: {
-    label: 'Cancelled',
-    color: 'bg-red-500',
-    icon: XCircle,
-    description: 'Order has been cancel'
-  },
-  [OrderStatus.Paid]: {
-    label: 'Paid',
-    color: 'bg-purple-500',
-    icon: CheckCircle,
-    description: 'Order paid'
-  }
-}
-
-const orderTypeConfig = {
-  'dine-in': { label: 'In-place', icon: MapPin, color: 'bg-blue-100 text-blue-800' },
-  takeaway: { label: 'Take home', icon: Package, color: 'bg-orange-100 text-orange-800' },
-  delivery: { label: 'Delivery', icon: Truck, color: 'bg-green-100 text-green-800' }
-}
-
-const paymentMethodConfig = {
-  cash: { label: 'Cash', icon: CreditCard },
-  card: { label: 'Credit Card', icon: CreditCard },
-  banking: { label: 'Bank Transfer', icon: CreditCard },
-  momo: { label: 'MoMo Wallet', icon: CreditCard }
-}
+import {
+  OrderGroupForPayment,
+  orderTypeConfig,
+  paymentMethodConfig,
+  PaymentOrders,
+  statusConfig
+} from '@/app/customer/[type]/orders/type'
 
 export default function OrdersPage() {
   const params = useParams()
@@ -108,6 +65,12 @@ export default function OrdersPage() {
   const [ordersToPay, setOrdersToPay] = useState<PaymentOrders | null>(null)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('cash')
   const [sortBy, setSortBy] = useState('newest')
+
+  // Date filter states - default to today
+  const [fromDate, setFromDate] = useState(getTodayDate())
+  const [toDate, setToDate] = useState(getTodayDate())
+  const [dateFilterPreset, setDateFilterPreset] = useState('today')
+
   const { socket } = useAppContext()
   const { data } = useGetLoyaltyQuery({ customerId: user?._id as string, enabled: Boolean(user) })
   const promotionListQuery = usePromotionListQuery()
@@ -122,11 +85,19 @@ export default function OrdersPage() {
   const loyaltyPoints = data?.payload.result.loyalty_points || 0
   const userVisits = data?.payload.result.visit_count || 0
 
+  // Get used promotions from customer promotions
+  const usedPromotions = useMemo(() => {
+    const result = customerPromotionsQuery?.payload.result
+    return Array.isArray(result) ? result.filter((promo) => promo.used === true) : []
+  }, [customerPromotionsQuery])
+
+  // Get unused promotions from customer promotions
   const customerPromotions = useMemo(() => {
     const result = customerPromotionsQuery?.payload.result
     return Array.isArray(result) ? result.filter((promo) => promo.used === false) : []
   }, [customerPromotionsQuery])
 
+  // Get available promotions (unused ones)
   const usePromotions = useMemo(() => {
     type CustomerPromotionType = { promotion_id: string } | string
     const customerPromotionIds = Array.isArray(customerPromotions)
@@ -137,6 +108,91 @@ export default function OrdersPage() {
     return promotions.filter((promotion) => customerPromotionIds.includes(promotion._id))
   }, [promotions, customerPromotions])
 
+  // Get used promotion details for applying to paid orders
+  const usedPromotionDetails = useMemo(() => {
+    type UsedPromotionType = { promotion_id: string; used_at?: string } | string
+    const usedPromotionIds = Array.isArray(usedPromotions)
+      ? (usedPromotions as UsedPromotionType[]).map((promo) => (typeof promo === 'string' ? promo : promo.promotion_id))
+      : []
+    return promotions.filter((promotion) => usedPromotionIds.includes(promotion._id))
+  }, [promotions, usedPromotions])
+
+  const useCustomerUsedPromotion = useCustomerUsedPromotionMutation()
+
+  // Update query params to include date filters
+  const queryParams = useMemo(
+    () => ({
+      order_type: orderType,
+      customer_id: user?._id,
+      fromDate: new Date(fromDate + 'T00:00:00'),
+      toDate: new Date(toDate + 'T23:59:59')
+    }),
+    [orderType, user?._id, fromDate, toDate]
+  )
+
+  const { data: ordersResponse, isLoading, refetch } = useGetOrderListQuery(queryParams)
+
+  // Get orders from API response
+  const orderGroups = useMemo(() => ordersResponse?.payload?.result || [], [ordersResponse])
+
+  // Separate paid and unpaid orders
+  const paidOrders = useMemo(
+    () =>
+      orderGroups
+        .filter((order) => order.status === OrderStatus.Paid)
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    [orderGroups]
+  )
+
+  const unpaidOrders = useMemo(
+    () => orderGroups.filter((order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Cancelled),
+    [orderGroups]
+  )
+
+  // Function to calculate total for orders
+  const calculateTotal = (orders: GetOrderDetailResType['result']['orders']) => {
+    return orders.reduce((total, order) => {
+      return total + order.dish_snapshot.price * order.quantity
+    }, 0)
+  }
+
+  // Function to calculate discount for paid orders using used promotions
+  const calculateDiscountForPaidOrder = (
+    orderGroup: GetOrderDetailResType['result']
+  ): { discount: number; appliedPromotions: string[] } => {
+    if (usedPromotionDetails.length === 0) {
+      return { discount: 0, appliedPromotions: [] }
+    }
+
+    const orderTotal = calculateTotal(orderGroup.orders)
+    const dishItems = orderGroup.orders.map((order) => ({
+      id: order.dish_snapshot._id,
+      price: order.dish_snapshot.price
+    }))
+
+    const discountResult = calculateTotalDiscount(
+      usedPromotionDetails,
+      orderTotal,
+      loyaltyPoints,
+      dishItems,
+      userVisits,
+      orderType
+    )
+
+    return {
+      discount: discountResult.discount,
+      appliedPromotions: usedPromotionDetails.map((promo) => promo._id)
+    }
+  }
+
+  // Function to calculate final amount for paid orders with used promotions
+  const calculateFinalAmountForPaidOrder = (orderGroup: GetOrderDetailResType['result']) => {
+    const originalTotal = calculateTotal(orderGroup.orders)
+    const { discount } = calculateDiscountForPaidOrder(orderGroup)
+    return Math.max(0, originalTotal - discount)
+  }
+
+  // Functions for unpaid orders (using available promotions)
   const calculateTotalAmount = (
     price: number,
     promotion: PromotionResType['result'][],
@@ -145,7 +201,10 @@ export default function OrdersPage() {
       price: number
     }[]
   ) => {
-    return calculateFinalAmount(price, promotion, loyaltyPoints, dishItems, userVisits, orderType)
+    return {
+      finalAmount: calculateFinalAmount(price, promotion, loyaltyPoints, dishItems, userVisits, orderType),
+      promotionApplies: promotion.map((promo) => promo._id)
+    }
   }
 
   const calculateTotalDiscountValue = (
@@ -159,14 +218,45 @@ export default function OrdersPage() {
     return calculateTotalDiscount(promotion, price, loyaltyPoints, dishItems, userVisits, orderType)
   }
 
-  const {
-    data: ordersResponse,
-    isLoading,
-    refetch
-  } = useGetOrderListQuery({
-    order_type: orderType,
-    customer_id: user?._id
-  })
+  // Date preset handler
+  const handleDatePreset = (preset: string) => {
+    setDateFilterPreset(preset)
+    const today = new Date()
+
+    switch (preset) {
+      case 'today':
+        setFromDate(getTodayDate())
+        setToDate(getTodayDate())
+        break
+      case 'yesterday':
+        const yesterday = new Date(today)
+        yesterday.setDate(today.getDate() - 1)
+        const yesterdayStr = yesterday.toISOString().split('T')[0]
+        setFromDate(yesterdayStr)
+        setToDate(yesterdayStr)
+        break
+      case 'last7days':
+        const last7Days = new Date(today)
+        last7Days.setDate(today.getDate() - 6)
+        setFromDate(last7Days.toISOString().split('T')[0])
+        setToDate(getTodayDate())
+        break
+      case 'last30days':
+        const last30Days = new Date(today)
+        last30Days.setDate(today.getDate() - 29)
+        setFromDate(last30Days.toISOString().split('T')[0])
+        setToDate(getTodayDate())
+        break
+      case 'thisMonth':
+        const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+        setFromDate(thisMonthStart.toISOString().split('T')[0])
+        setToDate(getTodayDate())
+        break
+      case 'custom':
+        // Keep current dates for custom selection
+        break
+    }
+  }
 
   // Order type specific configurations (UI)
   const orderTypeUiConfig = {
@@ -192,15 +282,6 @@ export default function OrdersPage() {
 
   const currentConfig = orderTypeUiConfig[orderType]
 
-  // Get orders from API response
-  const orderGroups = ordersResponse?.payload?.result || []
-
-  const calculateTotal = (orders: GetOrderDetailResType['result']['orders']) => {
-    return orders.reduce((total, order) => {
-      return total + order.dish_snapshot.price * order.quantity
-    }, 0)
-  }
-
   // Helper function to get all order groups from PaymentOrders
   const getAllOrderGroups = (paymentOrders: PaymentOrders): OrderGroupForPayment[] => {
     if (Array.isArray(paymentOrders)) {
@@ -224,27 +305,33 @@ export default function OrdersPage() {
         id: order.dish_snapshot._id,
         price: order.dish_snapshot.price
       }))
-      return total + calculateTotalDiscountValue(orderTotal, usePromotions, dishItems)
+      return total + calculateTotalDiscountValue(orderTotal, usePromotions, dishItems).discount
     }, 0)
   }
 
   // Helper function to calculate final amount for multiple orders
-  const calculateFinalAmountForOrders = (paymentOrders: PaymentOrders): number => {
+  const calculateFinalAmountForOrders = (
+    paymentOrders: PaymentOrders
+  ): { finalAmount: number; promotionApplies: string[] } => {
     const orderGroups = getAllOrderGroups(paymentOrders)
+
+    // Initialize accumulator with proper structure
+    const initialValue = { finalAmount: 0, promotionApplies: [] as string[] }
+
     return orderGroups.reduce((total, orderGroup) => {
       const orderTotal = calculateTotal(orderGroup.orders)
       const dishItems = orderGroup.orders.map((order) => ({
         id: order.dish_snapshot._id,
         price: order.dish_snapshot.price
       }))
-      return total + calculateTotalAmount(orderTotal, usePromotions, dishItems)
-    }, 0)
-  }
 
-  // Helper function to get order IDs for payment
-  const getOrderIds = (paymentOrders: PaymentOrders): string[] => {
-    const orderGroups = getAllOrderGroups(paymentOrders)
-    return orderGroups.flatMap((orderGroup) => orderGroup._id)
+      const orderResult = calculateTotalAmount(orderTotal, usePromotions, dishItems)
+
+      return {
+        finalAmount: total.finalAmount + orderResult.finalAmount.finalAmount,
+        promotionApplies: [...total.promotionApplies, ...orderResult.promotionApplies]
+      }
+    }, initialValue)
   }
 
   // Filter and sort order groups
@@ -317,7 +404,7 @@ export default function OrdersPage() {
         phone: orderGroup.takeaway_info.customer_phone
       }
     }
-    return { name: 'Khách hàng', phone: '' }
+    return { name: 'Customer', phone: '' }
   }
 
   const handleViewDetails = (orderGroup: GetOrderDetailResType['result']) => {
@@ -366,22 +453,26 @@ export default function OrdersPage() {
     if (!ordersToPay) return
 
     try {
-      const orderIds = getOrderIds(ordersToPay)
-      console.log('Processing payment for orders:', orderIds, 'with method:', selectedPaymentMethod)
-
-      // Assuming the API accepts an array of order IDs for bulk payment
-      // You might need to adjust this based on your actual API structure
       const result = await payOrder({
         is_customer: true,
         customer_id: user?._id
       })
 
       // Create revenue record
-      const totalAmount = calculateFinalAmountForOrders(ordersToPay)
+      const { finalAmount, promotionApplies } = calculateFinalAmountForOrders(ordersToPay)
       await createRevenueMutation.mutateAsync({
-        total_amount: totalAmount,
+        total_amount: finalAmount,
         customer_id: user?._id as string
       })
+
+      await Promise.all(
+        promotionApplies.map((promo) =>
+          useCustomerUsedPromotion.mutateAsync({
+            customer_id: user?._id as string,
+            promotion_id: promo
+          })
+        )
+      )
 
       const orderCount = Array.isArray(ordersToPay) ? ordersToPay.length : 1
       toast.success(result.payload.message || `Successfully paid for ${orderCount} order${orderCount > 1 ? 's' : ''}!`)
@@ -481,15 +572,220 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {/* Applied Promotions & Bulk Payment Section */}
+      {/* Date Filter Section */}
+      <Card className='mb-6'>
+        <CardHeader>
+          <CardTitle className='text-lg flex items-center gap-2'>
+            <Calendar className='h-5 w-5' />
+            Filter by Date
+          </CardTitle>
+          <CardDescription>
+            Currently showing orders from {formatDateForDisplay(fromDate)}
+            {fromDate !== toDate && ` to ${formatDateForDisplay(toDate)}`}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className='space-y-4'>
+            {/* Date Presets */}
+            <div className='flex flex-wrap gap-2'>
+              {[
+                { value: 'today', label: 'Today' },
+                { value: 'yesterday', label: 'Yesterday' },
+                { value: 'last7days', label: 'Last 7 Days' },
+                { value: 'last30days', label: 'Last 30 Days' },
+                { value: 'thisMonth', label: 'This Month' },
+                { value: 'custom', label: 'Custom Range' }
+              ].map((preset) => (
+                <Button
+                  key={preset.value}
+                  variant={dateFilterPreset === preset.value ? 'default' : 'outline'}
+                  size='sm'
+                  onClick={() => handleDatePreset(preset.value)}
+                >
+                  {preset.label}
+                </Button>
+              ))}
+            </div>
+
+            {/* Custom Date Range */}
+            {dateFilterPreset === 'custom' && (
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                <div className='space-y-2'>
+                  <label className='text-sm font-medium'>From Date</label>
+                  <Input type='date' value={fromDate} onChange={(e) => setFromDate(e.target.value)} max={toDate} />
+                </div>
+                <div className='space-y-2'>
+                  <label className='text-sm font-medium'>To Date</label>
+                  <Input
+                    type='date'
+                    value={toDate}
+                    onChange={(e) => setToDate(e.target.value)}
+                    min={fromDate}
+                    max={getTodayDate()}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Quick Stats */}
+            <div className='grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 border-t'>
+              <div className='text-center'>
+                <div className='text-2xl font-bold text-primary'>{filteredOrderGroups.length}</div>
+                <div className='text-xs text-muted-foreground'>Total Orders</div>
+              </div>
+              <div className='text-center'>
+                <div className='text-2xl font-bold text-green-600'>
+                  {filteredOrderGroups.filter((order) => order.status === OrderStatus.Delivered).length}
+                </div>
+                <div className='text-xs text-muted-foreground'>Delivered</div>
+              </div>
+              <div className='text-center'>
+                <div className='text-2xl font-bold text-yellow-600'>
+                  {filteredOrderGroups.filter((order) => order.status === OrderStatus.Pending).length}
+                </div>
+                <div className='text-xs text-muted-foreground'>Pending</div>
+              </div>
+              <div className='text-center'>
+                <div className='text-2xl font-bold text-purple-600'>
+                  {filteredOrderGroups
+                    .reduce((total, orderGroup) => {
+                      // Apply different calculation based on payment status
+                      if (orderGroup.status === OrderStatus.Paid) {
+                        return (
+                          total + calculateFinalAmountForPaidOrder({ ...orderGroup, table: orderGroup.table ?? null })
+                        )
+                      } else {
+                        return total + calculateTotal(orderGroup.orders)
+                      }
+                    }, 0)
+                    .toLocaleString('vi-VN')}
+                  đ
+                </div>
+                <div className='text-xs text-muted-foreground'>Total Value</div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Used Promotions Section - Show discount applied to recent paid orders */}
+      {usedPromotionDetails.length > 0 && paidOrders.length > 0 && (
+        <Card className='mb-8 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800'>
+          <CardHeader>
+            <CardTitle className='text-lg flex items-center gap-2'>
+              <CheckCircle className='h-5 w-5 text-green-600' />
+              Applied Discounts on Recent Paid Orders
+            </CardTitle>
+            <CardDescription>
+              Your recent promotions have been applied to {paidOrders.slice(0, 3).length} recent paid orders
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className='space-y-4'>
+              {/* Show used promotions */}
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+                {usedPromotionDetails.map((promotion) => (
+                  <div
+                    key={promotion._id}
+                    className='flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-lg border border-green-200 dark:border-green-800'
+                  >
+                    <div className='flex items-center gap-3'>
+                      <div className='w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center'>
+                        <CheckCircle className='h-4 w-4 text-green-600' />
+                      </div>
+                      <div>
+                        <h4 className='font-medium text-sm'>{promotion.name}</h4>
+                        <p className='text-xs text-muted-foreground'>Used on recent orders</p>
+                      </div>
+                    </div>
+                    <Badge
+                      variant='secondary'
+                      className='bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                    >
+                      {promotion.discount_type === 'percentage'
+                        ? `${promotion.discount_value ?? 0}% OFF`
+                        : `${(promotion.discount_value ?? 0).toLocaleString('vi-VN')}đ OFF`}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+
+              {/* Show affected recent orders */}
+              <div className='space-y-3'>
+                <h4 className='font-medium text-sm'>Recent Paid Orders with Applied Discounts:</h4>
+                {paidOrders.slice(0, 3).map((orderGroup) => {
+                  const originalTotal = calculateTotal(orderGroup.orders)
+                  const finalAmount = calculateFinalAmountForPaidOrder({
+                    ...orderGroup,
+                    table: orderGroup.table ?? null
+                  })
+                  const discount = originalTotal - finalAmount
+
+                  return (
+                    <div
+                      key={orderGroup._id}
+                      className='flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-lg border border-green-200 dark:border-green-800'
+                    >
+                      <div>
+                        <h5 className='font-medium text-sm'>{generateOrderNumber(orderGroup._id)}</h5>
+                        <p className='text-xs text-muted-foreground'>
+                          {formatDateTime(orderGroup.created_at)} • {orderGroup.orders.length} items
+                        </p>
+                      </div>
+                      <div className='text-right'>
+                        <div className='text-sm'>
+                          <span className='line-through text-muted-foreground'>
+                            {originalTotal.toLocaleString('vi-VN')}đ
+                          </span>
+                          <span className='ml-2 font-medium text-green-600'>
+                            {finalAmount.toLocaleString('vi-VN')}đ
+                          </span>
+                        </div>
+                        <p className='text-xs text-green-600'>Saved: {discount.toLocaleString('vi-VN')}đ</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Total savings */}
+              <div className='bg-green-100 dark:bg-green-900/30 p-4 rounded-lg border border-green-200 dark:border-green-800'>
+                <div className='flex justify-between items-center'>
+                  <span className='font-medium text-green-800 dark:text-green-200'>
+                    Total Savings from Recent Orders:
+                  </span>
+                  <span className='text-lg font-bold text-green-600'>
+                    {paidOrders
+                      .slice(0, 3)
+                      .reduce((total, orderGroup) => {
+                        const originalTotal = calculateTotal(orderGroup.orders)
+                        const finalAmount = calculateFinalAmountForPaidOrder({
+                          ...orderGroup,
+                          table: orderGroup.table ?? null
+                        })
+                        return total + (originalTotal - finalAmount)
+                      }, 0)
+                      .toLocaleString('vi-VN')}
+                    đ
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Available Promotions & Bulk Payment Section */}
       {usePromotions.length > 0 && (
         <Card className='mb-8 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800'>
           <CardHeader>
             <CardTitle className='text-lg flex items-center gap-2'>
               <Star className='h-5 w-5 text-purple-600' />
-              Applied Promotions
+              Available Promotions
             </CardTitle>
-            <CardDescription>You have {usePromotions.length} active promotion(s)</CardDescription>
+            <CardDescription>
+              You have {usePromotions.length} available promotion(s) for upcoming orders
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className='space-y-3'>
@@ -564,7 +860,7 @@ export default function OrdersPage() {
           <Card>
             <CardContent className='text-center py-12'>
               <Package className='h-12 w-12 mx-auto text-muted-foreground mb-4' />
-              <h3 className='text-lg font-medium mb-2'>No orders yet</h3>
+              <h3 className='text-lg font-medium mb-2'>No orders found</h3>
               <p className='text-muted-foreground mb-4'>
                 {searchQuery ? 'No matching orders found' : 'You have no orders in this category'}
               </p>
@@ -576,7 +872,18 @@ export default function OrdersPage() {
             const statusInfo = getStatusInfo(orderGroup.status)
             const orderTypeInfo = getOrderTypeInfo(orderGroup.order_type)
             const customerInfo = getCustomerInfo({ ...orderGroup, table: orderGroup.table ?? null })
-            const total = calculateTotal(orderGroup.orders)
+
+            // Calculate different totals based on order status
+            const originalTotal = calculateTotal(orderGroup.orders)
+            let displayTotal = originalTotal
+            let discount = 0
+
+            if (orderGroup.status === OrderStatus.Paid) {
+              // For paid orders, show final amount after applying used promotions
+              displayTotal = calculateFinalAmountForPaidOrder({ ...orderGroup, table: orderGroup.table ?? null })
+              discount = originalTotal - displayTotal
+            }
+
             const orderNumber = generateOrderNumber(orderGroup._id)
             const StatusIcon = statusInfo.icon
             const OrderTypeIcon = orderTypeInfo.icon
@@ -593,6 +900,11 @@ export default function OrdersPage() {
                           <StatusIcon className='h-3 w-3 mr-1' />
                           {statusInfo.label}
                         </Badge>
+                        {orderGroup.status === OrderStatus.Paid && discount > 0 && (
+                          <Badge variant='secondary' className='bg-green-100 text-green-800'>
+                            Discount Applied
+                          </Badge>
+                        )}
                       </div>
                       <CardDescription className='flex items-center gap-2 mt-1'>
                         <OrderTypeIcon className='h-4 w-4' />
@@ -699,17 +1011,31 @@ export default function OrdersPage() {
                     </div>
                   )}
 
-                  {/* Order Total */}
+                  {/* Order Total with Discount Info */}
                   <div className='flex items-center justify-between pt-2 border-t'>
                     <div>
-                      <span className='font-semibold text-lg'>{total.toLocaleString('vi-VN')}đ</span>
-                      <div className='text-sm text-muted-foreground'>
-                        {orderGroup.status === OrderStatus.Paid ? (
-                          <span className='text-green-600'>Paid</span>
-                        ) : (
-                          <span className='text-yellow-600'>Unpaid</span>
-                        )}
-                      </div>
+                      {orderGroup.status === OrderStatus.Paid && discount > 0 ? (
+                        <div className='space-y-1'>
+                          <div className='text-sm text-muted-foreground line-through'>
+                            Original: {originalTotal.toLocaleString('vi-VN')}đ
+                          </div>
+                          <div className='font-semibold text-lg text-green-600'>
+                            Final: {displayTotal.toLocaleString('vi-VN')}đ
+                          </div>
+                          <div className='text-xs text-green-600'>Saved: {discount.toLocaleString('vi-VN')}đ</div>
+                        </div>
+                      ) : (
+                        <div>
+                          <span className='font-semibold text-lg'>{displayTotal.toLocaleString('vi-VN')}đ</span>
+                          <div className='text-sm text-muted-foreground'>
+                            {orderGroup.status === OrderStatus.Paid ? (
+                              <span className='text-green-600'>Paid</span>
+                            ) : (
+                              <span className='text-yellow-600'>Unpaid</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -792,10 +1118,8 @@ export default function OrdersPage() {
         )}
       </div>
 
-      {/* Bulk Payment Section */}
-      {filteredOrderGroups.some(
-        (order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Cancelled
-      ) && (
+      {/* Bulk Payment Section - Only for unpaid orders */}
+      {unpaidOrders.length > 0 && (
         <Card className='mt-8 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20 border-green-200 dark:border-green-800'>
           <CardHeader>
             <CardTitle className='text-lg flex items-center gap-2'>
@@ -810,36 +1134,29 @@ export default function OrdersPage() {
               <div className='bg-white dark:bg-gray-900 p-4 rounded-lg border border-green-200 dark:border-green-800'>
                 <div className='flex justify-between items-center mb-3'>
                   <span className='text-sm font-medium'>Unpaid Orders:</span>
-                  <span className='text-sm'>
-                    {
-                      filteredOrderGroups.filter(
-                        (order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Cancelled
-                      ).length
-                    }{' '}
-                    orders
-                  </span>
+                  <span className='text-sm'>{unpaidOrders.length} orders</span>
                 </div>
                 <div className='flex justify-between items-center mb-3'>
                   <span className='text-sm font-medium'>Subtotal:</span>
                   <span className='text-sm'>
-                    {filteredOrderGroups
-                      .filter((order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Cancelled)
+                    {unpaidOrders
                       .reduce((total, orderGroup) => total + calculateTotal(orderGroup.orders), 0)
                       .toLocaleString('vi-VN')}
                     đ
                   </span>
                 </div>
+                {orderType === 'delivery' && (
+                  <div className='flex justify-between items-center mb-3'>
+                    <span className='text-sm font-medium'>Delivery Fee:</span>
+                    <span className='text-sm'>{(15000).toLocaleString('vi-VN')}đ</span>
+                  </div>
+                )}
+
                 {usePromotions.length > 0 && (
                   <div className='flex justify-between items-center mb-3 text-green-600'>
                     <span className='text-sm font-medium'>Total Discount:</span>
                     <span className='text-sm'>
-                      -
-                      {calculateTotalDiscountForOrders(
-                        filteredOrderGroups.filter(
-                          (order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Cancelled
-                        ) as PaymentOrders
-                      ).toLocaleString('vi-VN')}
-                      đ
+                      -{calculateTotalDiscountForOrders(unpaidOrders as PaymentOrders).toLocaleString('vi-VN')}đ
                     </span>
                   </div>
                 )}
@@ -847,11 +1164,7 @@ export default function OrdersPage() {
                   <div className='flex justify-between items-center'>
                     <span className='font-semibold'>Final Total:</span>
                     <span className='font-semibold text-lg text-green-600'>
-                      {calculateFinalAmountForOrders(
-                        filteredOrderGroups.filter(
-                          (order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Cancelled
-                        ) as PaymentOrders
-                      ).toLocaleString('vi-VN')}
+                      {calculateFinalAmountForOrders(unpaidOrders as PaymentOrders).finalAmount.toLocaleString('vi-VN')}
                       đ
                     </span>
                   </div>
@@ -864,9 +1177,6 @@ export default function OrdersPage() {
                 className='w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700'
                 disabled={isProcessing}
                 onClick={() => {
-                  const unpaidOrders = filteredOrderGroups.filter(
-                    (order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Cancelled
-                  )
                   if (unpaidOrders.length > 0) {
                     openPayDialog(unpaidOrders as PaymentOrders)
                   }
@@ -880,13 +1190,7 @@ export default function OrdersPage() {
                 ) : (
                   <>
                     <CreditCard className='h-5 w-5 mr-2' />
-                    Pay All Orders (
-                    {
-                      filteredOrderGroups.filter(
-                        (order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Cancelled
-                      ).length
-                    }
-                    )
+                    Pay All Orders ({unpaidOrders.length})
                   </>
                 )}
               </Button>
@@ -1038,20 +1342,51 @@ export default function OrdersPage() {
                 </div>
               </div>
 
-              {/* Order Summary */}
+              {/* Order Summary with Discount Info */}
               <div className='border-t pt-4'>
                 <div className='space-y-2'>
                   <div className='flex justify-between'>
-                    <span>Temporary:</span>
+                    <span>Subtotal:</span>
                     <span>{calculateTotal(selectedOrderGroup.orders).toLocaleString('vi-VN')}đ</span>
                   </div>
+
+                  {/* Show discount if it's a paid order with used promotions */}
+                  {selectedOrderGroup.status === OrderStatus.Paid &&
+                    usedPromotionDetails.length > 0 &&
+                    (() => {
+                      const originalTotal = calculateTotal(selectedOrderGroup.orders)
+                      const finalAmount = calculateFinalAmountForPaidOrder(selectedOrderGroup)
+                      const discount = originalTotal - finalAmount
+
+                      return discount > 0 ? (
+                        <>
+                          <div className='flex justify-between text-green-600'>
+                            <span>Applied Discount:</span>
+                            <span>-{discount.toLocaleString('vi-VN')}đ</span>
+                          </div>
+                          <div className='text-xs text-muted-foreground'>
+                            {usedPromotionDetails.map((promo) => promo.name).join(', ')} applied
+                          </div>
+                        </>
+                      ) : null
+                    })()}
+
                   <div className='flex justify-between'>
                     <span>Shipping fee:</span>
-                    <span>0đ</span>
+                    <span>{selectedOrderGroup.order_type === 'delivery' ? '15,000đ' : '0đ'}</span>
                   </div>
+
                   <div className='flex justify-between font-semibold text-lg border-t pt-2'>
                     <span>Total:</span>
-                    <span>{calculateTotal(selectedOrderGroup.orders).toLocaleString('vi-VN')}đ</span>
+                    <span>
+                      {selectedOrderGroup.status === OrderStatus.Paid
+                        ? calculateFinalAmountForPaidOrder(selectedOrderGroup).toLocaleString('vi-VN')
+                        : (
+                            calculateTotal(selectedOrderGroup.orders) +
+                            (selectedOrderGroup.order_type === 'delivery' ? 15000 : 0)
+                          ).toLocaleString('vi-VN')}
+                      đ
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1178,12 +1513,32 @@ export default function OrdersPage() {
                     <div className='flex justify-between items-center font-semibold text-base'>
                       <span>Total:</span>
                       <span className='text-lg text-primary'>
-                        {calculateFinalAmountForOrders(ordersToPay).toLocaleString('vi-VN')}đ
+                        {calculateFinalAmountForOrders(ordersToPay).finalAmount.toLocaleString('vi-VN')}đ
                       </span>
                     </div>
                   </div>
                 </div>
               </div>
+
+              {/* Available Promotions Info */}
+              {usePromotions.length > 0 && (
+                <div className='bg-purple-50 dark:bg-purple-950/20 p-3 rounded-lg'>
+                  <p className='font-medium text-sm text-purple-800 dark:text-purple-200 mb-2'>
+                    Promotions to be Applied:
+                  </p>
+                  <div className='space-y-1'>
+                    {usePromotions.map((promotion) => (
+                      <div key={promotion._id} className='text-xs text-purple-700 dark:text-purple-300'>
+                        • {promotion.name} (
+                        {promotion.discount_type === 'percentage'
+                          ? `${promotion.discount_value}%`
+                          : `${promotion.discount_value?.toLocaleString('vi-VN')}đ`}{' '}
+                        OFF)
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Payment Methods */}
               <div>

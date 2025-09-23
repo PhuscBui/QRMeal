@@ -114,7 +114,7 @@ export default function CustomerLayout({
             <Bell className='h-5 w-5' />
           </Button>
 
-          <Button variant='ghost' size='icon' className='relative'>
+          <Button variant='ghost' size='icon' className='relative' disabled={!orderType}>
             <Link href={`/customer/${orderType ?? ''}/orders`}>
               <ShoppingCart className='h-5 w-5' />
             </Link>

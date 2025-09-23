@@ -42,6 +42,10 @@ const orderTableColumns: ColumnDef<OrderGroup>[] = [
       // FIX: Use both customer_id and guest_id
       const guestId = row.original.customer_id || row.original.guest_id
 
+      const orders = guestId
+        ? orderObjectByGuestId[guestId].filter((t) => t.order_type === row.original.order_type) || []
+        : []
+
       return (
         <div>
           {!displayInfo && (
@@ -68,7 +72,7 @@ const orderTableColumns: ColumnDef<OrderGroup>[] = [
                 </div>
               </PopoverTrigger>
               <PopoverContent className='w-[320px] sm:w-[440px]'>
-                <OrderDetail user={displayInfo} orders={guestId ? orderObjectByGuestId[guestId] || [] : []} />
+                <OrderDetail user={displayInfo} orders={orders} orderType={row.original.order_type || 'dine-in'} />
               </PopoverContent>
             </Popover>
           )}

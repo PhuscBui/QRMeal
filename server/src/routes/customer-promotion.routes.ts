@@ -2,9 +2,9 @@ import { Router } from 'express'
 import {
   createCustomerPromotionController,
   deleteCustomerPromotionController,
-  getCustomerPromotionByCustomerIdController
+  getCustomerPromotionByCustomerIdController,
+  usedPromotionController
 } from '~/controllers/customer-promotion.controller'
-import { usedPromotionController } from '~/controllers/guest-promotion.controller'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import { createCustomerPromotionValidator, customerIdValidator } from '~/middlewares/customer-promotion.middlewares'
 

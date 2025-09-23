@@ -93,18 +93,19 @@ export const calculateDiscount = (
   userVisits?: number,
   orderType: 'dine-in' | 'takeaway' | 'delivery' = 'dine-in',
   shippingFee: number = 15000
-): number => {
-  if (!isPromotionActive(promotion)) return 0
+): { discount: number; promotionApplied: boolean } => {
+  if (!isPromotionActive(promotion)) return { discount: 0, promotionApplied: false }
 
   let discount = 0
 
   switch (promotion.category) {
     case PromotionCategory.Discount:
-      if (!promotion.discount_type || promotion.discount_value === undefined) return 0
+      if (!promotion.discount_type || promotion.discount_value === undefined)
+        return { discount: 0, promotionApplied: false }
 
       // Check all conditions
       if (!checkPromotionConditions(promotion.conditions, originalAmount, loyaltyPoints, userVisits)) {
-        return 0
+        return { discount: 0, promotionApplied: false }
       }
 
       if (promotion.discount_type === DiscountType.Percentage) {
@@ -117,18 +118,18 @@ export const calculateDiscount = (
     case PromotionCategory.FreeShip:
       // Check conditions for free shipping
       if (!checkPromotionConditions(promotion.conditions, originalAmount, loyaltyPoints, userVisits)) {
-        return 0
+        return { discount: 0, promotionApplied: false }
       }
 
       if (orderType !== 'delivery') {
-        return 0 // Free shipping only applies to delivery orders
+        return { discount: 0, promotionApplied: false }
       }
 
-      return Math.min(shippingFee, originalAmount)
+      return { discount: Math.min(shippingFee, originalAmount), promotionApplied: true }
 
     case PromotionCategory.Loyalty:
       if (!checkPromotionConditions(promotion.conditions, originalAmount, loyaltyPoints, userVisits)) {
-        return 0
+        return { discount: 0, promotionApplied: false }
       }
 
       if (promotion.discount_type === DiscountType.Percentage && promotion.discount_value) {
@@ -145,7 +146,7 @@ export const calculateDiscount = (
         !dishItems?.length ||
         !checkPromotionConditions(promotion.conditions, originalAmount, loyaltyPoints, userVisits)
       ) {
-        return 0
+        return { discount: 0, promotionApplied: false }
       }
 
       // If applicable_items is specified, only count those items
@@ -173,7 +174,7 @@ export const calculateDiscount = (
         !promotion.conditions?.applicable_items?.length ||
         !checkPromotionConditions(promotion.conditions, originalAmount, loyaltyPoints, userVisits)
       ) {
-        return 0
+        return { discount: 0, promotionApplied: false }
       }
 
       // Count available items
@@ -213,11 +214,11 @@ export const calculateDiscount = (
       break
 
     default:
-      return 0
+      return { discount: 0, promotionApplied: false }
   }
 
   // Ensure discount doesn't exceed original amount
-  return Math.min(discount, originalAmount)
+  return { discount: Math.min(discount, originalAmount), promotionApplied: true }
 }
 
 // Helper function to check all promotion conditions
@@ -256,10 +257,11 @@ export const calculateTotalDiscount = (
   orderType: 'dine-in' | 'takeaway' | 'delivery' = 'dine-in',
   shippingFee: number = 15000,
   allowStacking: boolean = true // Option to enable/disable promotion stacking
-): number => {
+): { discount: number; promotionsApplied: string[] } => {
   if (!allowStacking) {
     // If stacking not allowed, find the best single promotion
     let maxDiscount = 0
+    const promotionsApplied = []
     for (const promotion of promotions) {
       const discount = calculateDiscount(
         promotion,
@@ -270,16 +272,18 @@ export const calculateTotalDiscount = (
         orderType,
         shippingFee
       )
-      maxDiscount = Math.max(maxDiscount, discount)
+      maxDiscount = Math.max(maxDiscount, discount.discount)
+      if (discount.promotionApplied) promotionsApplied.push(promotion._id)
     }
-    return Math.min(maxDiscount, originalAmount)
+
+    return { discount: Math.min(maxDiscount, originalAmount), promotionsApplied }
   }
 
   // Stacking allowed - apply promotions in order of effectiveness
   const sortedPromotions = [...promotions].sort((a, b) => {
     const discountA = calculateDiscount(a, originalAmount, loyaltyPoints, dishItems, userVisits, orderType, shippingFee)
     const discountB = calculateDiscount(b, originalAmount, loyaltyPoints, dishItems, userVisits, orderType, shippingFee)
-    return discountB - discountA
+    return discountB.discount - discountA.discount
   })
 
   let totalDiscount = 0
@@ -302,14 +306,14 @@ export const calculateTotalDiscount = (
       shippingFee
     )
 
-    if (discount > 0) {
-      const actualDiscount = Math.min(discount, remainingAmount)
+    if (discount.discount > 0) {
+      const actualDiscount = Math.min(discount.discount, remainingAmount)
       totalDiscount += actualDiscount
       remainingAmount -= actualDiscount
     }
   }
 
-  return Math.min(totalDiscount, originalAmount)
+  return { discount: Math.min(totalDiscount, originalAmount), promotionsApplied: sortedPromotions.map((p) => p._id) }
 }
 
 export const calculateFinalAmount = (
@@ -321,7 +325,7 @@ export const calculateFinalAmount = (
   orderType: 'dine-in' | 'takeaway' | 'delivery' = 'dine-in',
   shippingFee: number = 15000,
   allowStacking: boolean = true
-): number => {
+): { finalAmount: number; promotionsApplied: string[] } => {
   const totalDiscount = calculateTotalDiscount(
     promotions,
     originalAmount,
@@ -332,7 +336,16 @@ export const calculateFinalAmount = (
     shippingFee,
     allowStacking
   )
-  return Math.max(0, originalAmount - totalDiscount)
+  if (orderType === 'delivery') {
+    return {
+      finalAmount: Math.max(0, originalAmount - totalDiscount.discount) + shippingFee,
+      promotionsApplied: totalDiscount.promotionsApplied
+    }
+  }
+  return {
+    finalAmount: Math.max(0, originalAmount - totalDiscount.discount),
+    promotionsApplied: totalDiscount.promotionsApplied
+  }
 }
 
 // Validation utilities
