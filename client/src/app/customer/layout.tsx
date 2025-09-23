@@ -6,11 +6,11 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, Menu, ShoppingCart, User, Gift, Package2, Bell, QrCode, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import { cn } from '@/lib/utils'
+import { useEffect, useState } from 'react'
 
 const navigation = [
   { name: 'Home', href: '/customer', icon: Home },
@@ -36,6 +36,12 @@ export default function CustomerLayout({
   children: React.ReactNode
 }>) {
   const pathname = usePathname()
+  const [orderType, setOrderType] = useState<string | null>(null)
+
+  useEffect(() => {
+    const storedOrderType = localStorage.getItem('orderType')
+    setOrderType(storedOrderType)
+  }, [])
 
   return (
     <div className='flex min-h-screen w-full flex-col relative'>
@@ -106,16 +112,12 @@ export default function CustomerLayout({
         <div className='ml-auto flex items-center gap-2'>
           <Button variant='ghost' size='icon' className='relative'>
             <Bell className='h-5 w-5' />
-            <Badge variant='destructive' className='absolute -top-1 -right-1 h-5 w-5 p-0 text-xs'>
-              3
-            </Badge>
           </Button>
 
           <Button variant='ghost' size='icon' className='relative'>
-            <ShoppingCart className='h-5 w-5' />
-            <Badge variant='destructive' className='absolute -top-1 -right-1 h-5 w-5 p-0 text-xs'>
-              2
-            </Badge>
+            <Link href={`/customer/${orderType ?? ''}/orders`}>
+              <ShoppingCart className='h-5 w-5' />
+            </Link>
           </Button>
 
           <DarkModeToggle />
