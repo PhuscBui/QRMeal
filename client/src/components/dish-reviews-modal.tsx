@@ -127,7 +127,7 @@ export function DishReviewsModal({ isOpen, onClose, dish }: DishReviewsModalProp
     [currentPage, selectedRating]
   )
 
-  const { data: reviewsData, isLoading, isFetching } = useDishReviewListQuery(dish._id, queryParams)
+  const { data: reviewsData, isLoading, isFetching } = useDishReviewListQuery(dish._id, isOpen, queryParams)
 
   const reviews = reviewsData?.payload.result.reviews ?? []
   const totalReviews = reviewsData?.payload.result.total ?? 0
@@ -256,7 +256,7 @@ export function DishReviewsModal({ isOpen, onClose, dish }: DishReviewsModalProp
                       <div className='flex items-start justify-between'>
                         <div className='flex items-start gap-4'>
                           <Avatar className='h-12 w-12 border-2 border-white shadow-sm'>
-                            <AvatarImage src={review.author.avatar || '/placeholder.svg'} alt={review.author.name} />
+                            <AvatarImage src={review.author.avatar || ''} alt={review.author.name} />
                             <AvatarFallback className='bg-gradient-to-br from-amber-400 to-orange-500 text-white font-semibold'>
                               {review.author.name.charAt(0).toUpperCase()}
                             </AvatarFallback>

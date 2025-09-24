@@ -2,11 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import dishReviewApiRequest from '@/apiRequests/dish-review'
 import { GetDishReviewsQueryType, UpdateDishReviewReqBodyType } from '@/schemaValidations/dish-review.schema'
 
-export const useDishReviewListQuery = (dishId: string, query?: GetDishReviewsQueryType) => {
+export const useDishReviewListQuery = (dishId: string, enabled: boolean, query?: GetDishReviewsQueryType) => {
   return useQuery({
     queryKey: ['dishReviews', dishId, query],
     queryFn: () => dishReviewApiRequest.getByDish(dishId, query),
-    enabled: !!dishId
+    enabled: enabled
   })
 }
 
@@ -26,9 +26,9 @@ export const useDeleteDishReviewMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: dishReviewApiRequest.delete,
-    onSuccess: (_data, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['dishReviews', variables]
+        queryKey: ['dishReviews']
       })
     }
   })

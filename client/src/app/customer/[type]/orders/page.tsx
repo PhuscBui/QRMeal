@@ -24,7 +24,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Textarea } from '@/components/ui/textarea'
 import { OrderStatus } from '@/constants/type'
 import { GetOrderDetailResType, PayOrdersResType, UpdateOrderResType } from '@/schemaValidations/order.schema'
 import { useGetOrderListQuery, usePayOrderMutation } from '@/queries/useOrder'
@@ -45,6 +44,9 @@ import {
   PaymentOrders,
   statusConfig
 } from '@/app/customer/[type]/orders/type'
+import { useGetDishReviewsByMeQuery } from '@/queries/useDishReview'
+import DishReviewForm from '@/components/dish-review-form'
+import ExistingReview from '@/components/existing-review'
 
 export default function OrdersPage() {
   const params = useParams()
@@ -57,12 +59,12 @@ export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedOrderGroup, setSelectedOrderGroup] = useState<GetOrderDetailResType['result'] | null>(null)
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
-  const [reviewText, setReviewText] = useState('')
-  const [rating, setRating] = useState(0)
   const [isPayDialogOpen, setIsPayDialogOpen] = useState(false)
   const [ordersToPay, setOrdersToPay] = useState<PaymentOrders | null>(null)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('cash')
   const [sortBy, setSortBy] = useState('newest')
+  const { data: dishReviewByUser } = useGetDishReviewsByMeQuery(Boolean(user))
+  const [reviewingDish, setReviewingDish] = useState<{ id: string; name: string } | null>(null)
 
   // Date filter states - default to today
   const [fromDate, setFromDate] = useState(getTodayDate())
@@ -424,16 +426,14 @@ export default function OrdersPage() {
     setIsDetailDialogOpen(true)
   }
 
-  const handleSubmitReview = () => {
-    if (!selectedOrderGroup) return
-    console.log('Submitting review:', {
-      orderGroupId: selectedOrderGroup._id,
-      rating,
-      review: reviewText
-    })
-    setIsDetailDialogOpen(false)
-    setReviewText('')
-    setRating(0)
+  console.log('dishReviewByUser', dishReviewByUser)
+
+  const hasUserReview = (dishId: string) => {
+    const hasReview =
+      dishReviewByUser?.payload.result.reviews.some((review) => {
+        return review.dish_id === dishId
+      }) ?? false
+    return hasReview
   }
 
   const handleCancelOrder = (orderGroupId: string) => {
@@ -1289,35 +1289,69 @@ export default function OrdersPage() {
                 <h4 className='font-medium mb-3'>Ordered Items ({selectedOrderGroup.orders.length} items)</h4>
                 <div className='space-y-3'>
                   {selectedOrderGroup.orders.map((order) => (
-                    <div key={order._id} className='flex items-center gap-3 p-3 border rounded-lg'>
-                      <img
-                        src={order.dish_snapshot.image}
-                        alt={order.dish_snapshot.name}
-                        className='w-16 h-16 rounded-lg object-cover'
-                      />
-                      <div className='flex-1'>
-                        <h5 className='font-medium'>{order.dish_snapshot.name}</h5>
-                        <p className='text-sm text-muted-foreground'>
-                          {order.quantity}x {order.dish_snapshot.price.toLocaleString('vi-VN')}đ
-                        </p>
-                        {order.dish_snapshot.description && (
-                          <p className='text-xs text-muted-foreground'>{order.dish_snapshot.description}</p>
-                        )}
+                    <div key={order._id}>
+                      {' '}
+                      <div className='flex items-center gap-3 p-3 border rounded-lg'>
+                        <img
+                          src={order.dish_snapshot.image}
+                          alt={order.dish_snapshot.name}
+                          className='w-16 h-16 rounded-lg object-cover'
+                        />
+                        <div className='flex-1'>
+                          <h5 className='font-medium'>{order.dish_snapshot.name}</h5>
+                          <p className='text-sm text-muted-foreground'>
+                            {order.quantity}x {order.dish_snapshot.price.toLocaleString('vi-VN')}đ
+                          </p>
+                          {order.dish_snapshot.description && (
+                            <p className='text-xs text-muted-foreground'>{order.dish_snapshot.description}</p>
+                          )}
+                        </div>
+                        <div className='text-right'>
+                          <p className='font-medium'>
+                            {(order.dish_snapshot.price * order.quantity).toLocaleString('vi-VN')}đ
+                          </p>
+                          <div className='mt-2 flex items-center gap-2 justify-end'>
+                            <Badge
+                              variant='outline'
+                              className={`text-xs ${getStatusInfo(order.status).color} text-white border-0`}
+                            >
+                              {getStatusInfo(order.status).label}
+                            </Badge>
+
+                            {order.status === OrderStatus.Paid &&
+                              order.dish_snapshot.dish_id &&
+                              !hasUserReview(order.dish_snapshot.dish_id) && (
+                                <Button
+                                  size='sm'
+                                  variant='outline'
+                                  onClick={() =>
+                                    setReviewingDish({
+                                      id: order.dish_snapshot.dish_id ?? '',
+                                      name: order.dish_snapshot.name
+                                    })
+                                  }
+                                  className='text-xs px-2 py-1 h-auto'
+                                >
+                                  <Star size={12} className='mr-1' />
+                                  Rate
+                                </Button>
+                              )}
+                          </div>
+                        </div>
                       </div>
-                      <div className='text-right'>
-                        <p className='font-medium'>
-                          {(order.dish_snapshot.price * order.quantity).toLocaleString('vi-VN')}đ
-                        </p>
-                        <Badge
-                          variant='outline'
-                          className={`text-xs ${getStatusInfo(order.status).color} text-white border-0`}
-                        >
-                          {getStatusInfo(order.status).label}
-                        </Badge>
-                      </div>
+                      {order.status === OrderStatus.Paid && (
+                        <ExistingReview dishId={order.dish_snapshot.dish_id ?? ''} userId={user?._id} />
+                      )}
                     </div>
                   ))}
                 </div>
+                {reviewingDish && (
+                  <DishReviewForm
+                    dishId={reviewingDish.id}
+                    dishName={reviewingDish.name}
+                    onClose={() => setReviewingDish(null)}
+                  />
+                )}
               </div>
 
               {/* Enhanced order summary */}
@@ -1391,45 +1425,6 @@ export default function OrdersPage() {
                   </div>
                 </div>
               </div>
-
-              {/* Review Form for Delivered Orders */}
-              {selectedOrderGroup.status === OrderStatus.Delivered && (
-                <div className='border-t pt-4'>
-                  <h4 className='font-medium mb-3'>Order Review</h4>
-                  <div className='space-y-3'>
-                    <div>
-                      <label className='text-sm font-medium'>Your Rating:</label>
-                      <div className='flex gap-1 mt-1'>
-                        {[...Array(5)].map((_, i) => (
-                          <button
-                            key={i}
-                            onClick={() => setRating(i + 1)}
-                            className={`h-8 w-8 transition-colors ${
-                              i < rating ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-200'
-                            }`}
-                          >
-                            <Star className={`h-6 w-6 ${i < rating ? 'fill-current' : ''}`} />
-                          </button>
-                        ))}
-                      </div>
-                      {rating > 0 && <p className='text-xs text-muted-foreground mt-1'>You rated {rating} stars</p>}
-                    </div>
-                    <div>
-                      <label className='text-sm font-medium'>Review:</label>
-                      <Textarea
-                        value={reviewText}
-                        onChange={(e) => setReviewText(e.target.value)}
-                        placeholder='Share your experience about the dish, service...'
-                        rows={3}
-                        className='mt-1'
-                      />
-                    </div>
-                    <Button onClick={handleSubmitReview} className='w-full' disabled={rating === 0}>
-                      {rating === 0 ? 'Please select a star rating' : 'Submit Review'}
-                    </Button>
-                  </div>
-                </div>
-              )}
 
               {/* Action Buttons */}
               <div className='flex gap-2 pt-4 border-t'>

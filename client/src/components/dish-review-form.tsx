@@ -27,7 +27,7 @@ export default function DishReviewForm({
     e.preventDefault()
 
     if (rating === 0) {
-      toast.error('Vui lòng chọn số sao đánh giá')
+      toast.error('Please provide a rating before submitting.')
       return
     }
 

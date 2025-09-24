@@ -14,6 +14,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { useCategoryListQuery } from '@/queries/useCategory'
 import { useDishListQuery } from '@/queries/useDish'
 import { TableInfo } from '@/types/common.type'
+import { DishReviewsModal } from '@/components/dish-reviews-modal'
+import { DishResType } from '@/schemaValidations/dish.schema'
 
 const sortOptions = [
   { value: 'popular', label: 'Popular' },
@@ -39,6 +41,7 @@ export default function MenuPage() {
   const [cart, setCart] = useState<Record<string, number>>({})
   const [showFilters, setShowFilters] = useState(false)
   const [tableInfo, setTableInfo] = useState<TableInfo | null>(null)
+  const [selectedDish, setSelectedDish] = useState<DishResType['result'] | null>(null)
 
   // Order type specific configurations
   const orderTypeConfig = {
@@ -290,19 +293,21 @@ export default function MenuPage() {
               <div className='flex items-start justify-between mb-2'>
                 <h3 className='font-semibold text-lg'>{dish.name}</h3>
                 <div className='flex items-center gap-1'>
-                  <Star className='h-4 w-4 fill-yellow-400 text-yellow-400' />
-                  <span className='text-sm font-medium'>{dish.avg_rating?.toFixed(1) || '0.0'}</span>
+                  <button
+                    onClick={() => setSelectedDish(dish)}
+                    className='flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors'
+                  >
+                    <Star className='h-4 w-4 fill-yellow-400 text-yellow-400' />
+                    <span className='text-sm font-medium'>{dish.avg_rating?.toFixed(1) || '0.0'}</span>
+                  </button>
                 </div>
               </div>
 
               <p className='text-muted-foreground text-sm mb-3 line-clamp-2'>{dish.description}</p>
 
               <div className='flex items-center justify-between mb-4'>
-                <div className='flex items-center gap-2'>
+                <div className='flex items-centergap-2'>
                   <span className='text-lg font-bold text-primary'>{dish.price.toLocaleString('vi-VN')}đ</span>
-                  <span className='text-sm text-muted-foreground line-through'>
-                    {dish.price.toLocaleString('vi-VN')}đ
-                  </span>
                 </div>
               </div>
 
@@ -325,6 +330,9 @@ export default function MenuPage() {
                 )}
               </div>
             </CardContent>
+            {selectedDish && (
+              <DishReviewsModal dish={selectedDish} isOpen={true} onClose={() => setSelectedDish(null)} />
+            )}
           </Card>
         ))}
       </div>

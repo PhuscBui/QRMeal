@@ -6,9 +6,8 @@ import { toast } from 'sonner'
 import { OrderStatus } from '@/constants/type'
 import { Star } from 'lucide-react'
 import { useState } from 'react'
-
 import { formatCurrency, getOrderStatus } from '@/lib/utils'
-import { useGuestGetOrderListQuery } from '@/queries/useGuest'
+import { useGuestGetOrderListQuery, useGuestMe } from '@/queries/useGuest'
 import { useGetDishReviewsByMeQuery } from '@/queries/useDishReview'
 import { PayOrdersResType, UpdateOrderResType } from '@/schemaValidations/order.schema'
 import Image from 'next/image'
@@ -20,9 +19,10 @@ import ExistingReview from '@/components/existing-review'
 export default function OrdersCart() {
   const { data, refetch } = useGuestGetOrderListQuery()
   const [reviewingDish, setReviewingDish] = useState<{ id: string; name: string } | null>(null)
-
+  const { data: userData } = useGuestMe()
+  const user = userData?.payload.result ?? null
   // Pass a dishId or relevant identifier as required by the hook
-  const { data: dishReviewByUser } = useGetDishReviewsByMeQuery(true)
+  const { data: dishReviewByUser } = useGetDishReviewsByMeQuery(Boolean(user?._id))
 
   const orderGroups = useMemo(() => data?.payload.result ?? [], [data])
   const orders = useMemo(() => {
@@ -108,8 +108,8 @@ export default function OrdersCart() {
         const guestInfo = orderGroup.guest
         const totalOrders = data.reduce((sum, group) => sum + group.orders.length, 0)
 
-        toast.success('Thanh toán thành công!', {
-          description: `${guestInfo?.name} tại bàn ${guestInfo?.table_number} đã thanh toán ${totalOrders} món ăn. Bạn có thể đánh giá món ăn ngay bây giờ!`
+        toast.success('Payment successful!', {
+          description: `${guestInfo?.name} at table ${guestInfo?.table_number} has paid for ${totalOrders} of food. You can rate the food now!`
         })
       }
       refetch()
@@ -207,7 +207,9 @@ export default function OrdersCart() {
               </div>
 
               {/* Hiển thị đánh giá đã có (nếu có) */}
-              {order.status === OrderStatus.Paid && <ExistingReview dishId={order.dish_snapshot.dish_id ?? ''} />}
+              {order.status === OrderStatus.Paid && (
+                <ExistingReview dishId={order.dish_snapshot.dish_id ?? ''} userId={user?._id} />
+              )}
             </div>
           ))}
         </div>
