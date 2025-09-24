@@ -268,6 +268,8 @@ export const GUEST_PROMOTION_MESSAGE = {
 } as const
 
 export const CUSTOMER_PROMOTION_MESSAGE = {
+  ORDER_GROUP_IDS_MUST_BE_AN_ARRAY: 'Order group IDs must be an array',
+  ORDER_GROUP_ID_IS_INVALID: 'Order group ID is invalid',
   PROMOTION_ID_IS_INVALID: 'Promotion ID is invalid',
   PROMOTION_ID_IS_REQUIRED: 'Promotion ID is required',
   PROMOTION_ID_MUST_BE_A_STRING: 'Promotion ID must be a string',

@@ -228,6 +228,7 @@ const checkPromotionConditions = (
   loyaltyPoints?: number,
   userVisits?: number
 ): boolean => {
+  console.log('Checking promotion conditions:', conditions, { originalAmount, loyaltyPoints, userVisits })
   if (!conditions) return true
 
   // Check minimum spend

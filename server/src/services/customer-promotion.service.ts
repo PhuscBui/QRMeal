@@ -13,7 +13,9 @@ class CustomerPromotionService {
     const result = await databaseService.customer_promotions.insertOne(
       new CustomerPromotion({
         customer_id: new ObjectId(customerPromotion.customer_id),
-        promotion_id: new ObjectId(customerPromotion.promotion_id)
+        promotion_id: new ObjectId(customerPromotion.promotion_id),
+        order_group_ids: [],
+        used: false
       })
     )
     const customerPromotionResult = await databaseService.customer_promotions.findOne({ _id: result.insertedId })
@@ -28,13 +30,14 @@ class CustomerPromotionService {
     return result
   }
 
-  async usedPromotion(customer_id: string, promotion_id: string) {
+  async usedPromotion(customer_id: string, promotion_id: string, order_group_ids: string[]) {
+    const orderGroupObjectIds = order_group_ids.map((id) => new ObjectId(id))
     const result = await databaseService.customer_promotions.findOneAndUpdate(
       {
         customer_id: new ObjectId(customer_id),
         promotion_id: new ObjectId(promotion_id)
       },
-      { $set: { used: true }, $currentDate: { updated_at: true } },
+      { $set: { used: true, order_group_ids: orderGroupObjectIds }, $currentDate: { updated_at: true } },
       { returnDocument: 'after' }
     )
     return result

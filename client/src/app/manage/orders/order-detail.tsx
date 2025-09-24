@@ -162,7 +162,8 @@ export default function OrderDetail({
               usedPromotions.map((promotion) =>
                 updateCustomerUsedPromotionMutation.mutateAsync({
                   customer_id: user._id,
-                  promotion_id: promotion
+                  promotion_id: promotion,
+                  order_group_ids: orderGroups.map((group) => group._id)
                 })
               )
             )

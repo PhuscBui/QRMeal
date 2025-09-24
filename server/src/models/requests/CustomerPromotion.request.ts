@@ -16,6 +16,7 @@ export interface DeleteCustomerPromotionReqParams extends ParamsDictionary {
 export interface UsedPromotionReqBody {
   customer_id: string
   promotion_id: string
+  order_group_ids: string[]
 }
 
 export interface DeleteCustomerPromotionReqBody {

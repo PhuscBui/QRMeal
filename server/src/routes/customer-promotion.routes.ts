@@ -6,7 +6,11 @@ import {
   usedPromotionController
 } from '~/controllers/customer-promotion.controller'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
-import { createCustomerPromotionValidator, customerIdValidator } from '~/middlewares/customer-promotion.middlewares'
+import {
+  createCustomerPromotionValidator,
+  customerIdValidator,
+  usedCustomerPromotionValidator
+} from '~/middlewares/customer-promotion.middlewares'
 
 import { wrapRequestHandler } from '~/utils/handlers'
 
@@ -30,7 +34,12 @@ customer_promotionRouter.post(
   wrapRequestHandler(createCustomerPromotionController)
 )
 
-customer_promotionRouter.post('/used', accessTokenValidator, wrapRequestHandler(usedPromotionController))
+customer_promotionRouter.post(
+  '/used',
+  accessTokenValidator,
+  usedCustomerPromotionValidator,
+  wrapRequestHandler(usedPromotionController)
+)
 
 customer_promotionRouter.post('/cancel', accessTokenValidator, wrapRequestHandler(deleteCustomerPromotionController))
 

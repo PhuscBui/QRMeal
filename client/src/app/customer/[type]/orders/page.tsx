@@ -4,7 +4,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
-  CheckCircle,
   XCircle,
   Package,
   MapPin,
@@ -61,7 +60,6 @@ export default function OrdersPage() {
   const [reviewText, setReviewText] = useState('')
   const [rating, setRating] = useState(0)
   const [isPayDialogOpen, setIsPayDialogOpen] = useState(false)
-  // Updated type to handle both single and multiple orders
   const [ordersToPay, setOrdersToPay] = useState<PaymentOrders | null>(null)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('cash')
   const [sortBy, setSortBy] = useState('newest')
@@ -108,16 +106,58 @@ export default function OrdersPage() {
     return promotions.filter((promotion) => customerPromotionIds.includes(promotion._id))
   }, [promotions, customerPromotions])
 
-  // Get used promotion details for applying to paid orders
-  const usedPromotionDetails = useMemo(() => {
-    type UsedPromotionType = { promotion_id: string; used_at?: string } | string
-    const usedPromotionIds = Array.isArray(usedPromotions)
-      ? (usedPromotions as UsedPromotionType[]).map((promo) => (typeof promo === 'string' ? promo : promo.promotion_id))
-      : []
-    return promotions.filter((promotion) => usedPromotionIds.includes(promotion._id))
-  }, [promotions, usedPromotions])
-
   const useCustomerUsedPromotion = useCustomerUsedPromotionMutation()
+
+  // Enhanced promotion mapping functions
+  type CustomerPromotionType = { promotion_id: string; order_group_ids?: string[]; used?: boolean } | string
+  const getPromotionsForOrderGroup = (
+    orderGroupId: string,
+    usedPromotions: CustomerPromotionType[],
+    allPromotions: PromotionResType['result'][]
+  ): PromotionResType['result'][] => {
+    const relevantUsedPromotions = usedPromotions.filter(
+      (usedPromo) =>
+        typeof usedPromo === 'object' &&
+        'order_group_ids' in usedPromo &&
+        Array.isArray(usedPromo.order_group_ids) &&
+        usedPromo.order_group_ids.includes(orderGroupId)
+    )
+
+    const promotionIds = relevantUsedPromotions.map((usedPromo) =>
+      typeof usedPromo === 'string' ? usedPromo : usedPromo.promotion_id
+    )
+
+    return allPromotions.filter((promotion) => promotionIds.includes(promotion._id))
+  }
+
+  const calculateDiscountForSpecificOrderGroup = (
+    orderGroup: GetOrderDetailResType['result'],
+    orderPromotions: PromotionResType['result'][]
+  ): { discount: number; appliedPromotions: string[] } => {
+    if (orderPromotions.length === 0) {
+      return { discount: 0, appliedPromotions: [] }
+    }
+
+    const orderTotal = calculateTotal(orderGroup.orders)
+    const dishItems = orderGroup.orders.map((order) => ({
+      id: order.dish_snapshot._id,
+      price: order.dish_snapshot.price
+    }))
+
+    const discountResult = calculateTotalDiscount(
+      orderPromotions,
+      orderTotal,
+      loyaltyPoints,
+      dishItems,
+      userVisits,
+      orderType
+    )
+
+    return {
+      discount: discountResult.discount,
+      appliedPromotions: orderPromotions.map((promo) => promo._id)
+    }
+  }
 
   // Update query params to include date filters
   const queryParams = useMemo(
@@ -135,15 +175,6 @@ export default function OrdersPage() {
   // Get orders from API response
   const orderGroups = useMemo(() => ordersResponse?.payload?.result || [], [ordersResponse])
 
-  // Separate paid and unpaid orders
-  const paidOrders = useMemo(
-    () =>
-      orderGroups
-        .filter((order) => order.status === OrderStatus.Paid)
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
-    [orderGroups]
-  )
-
   const unpaidOrders = useMemo(
     () => orderGroups.filter((order) => order.status !== OrderStatus.Paid && order.status !== OrderStatus.Cancelled),
     [orderGroups]
@@ -156,36 +187,16 @@ export default function OrdersPage() {
     }, 0)
   }
 
-  // Function to calculate discount for paid orders using used promotions
+  // Enhanced functions for paid orders using specific order promotions
   const calculateDiscountForPaidOrder = (
     orderGroup: GetOrderDetailResType['result']
   ): { discount: number; appliedPromotions: string[] } => {
-    if (usedPromotionDetails.length === 0) {
-      return { discount: 0, appliedPromotions: [] }
-    }
+    // Get promotions specifically used for this order group
+    const orderPromotions = getPromotionsForOrderGroup(orderGroup._id, usedPromotions, promotions)
 
-    const orderTotal = calculateTotal(orderGroup.orders)
-    const dishItems = orderGroup.orders.map((order) => ({
-      id: order.dish_snapshot._id,
-      price: order.dish_snapshot.price
-    }))
-
-    const discountResult = calculateTotalDiscount(
-      usedPromotionDetails,
-      orderTotal,
-      loyaltyPoints,
-      dishItems,
-      userVisits,
-      orderType
-    )
-
-    return {
-      discount: discountResult.discount,
-      appliedPromotions: usedPromotionDetails.map((promo) => promo._id)
-    }
+    return calculateDiscountForSpecificOrderGroup(orderGroup, orderPromotions)
   }
 
-  // Function to calculate final amount for paid orders with used promotions
   const calculateFinalAmountForPaidOrder = (orderGroup: GetOrderDetailResType['result']) => {
     const originalTotal = calculateTotal(orderGroup.orders)
     const { discount } = calculateDiscountForPaidOrder(orderGroup)
@@ -348,6 +359,7 @@ export default function OrdersPage() {
       const matchesTab = selectedTab === 'all' || orderGroup.status === selectedTab
       return matchesSearch && matchesTab
     })
+
     .sort((a, b) => {
       switch (sortBy) {
         case 'newest':
@@ -469,7 +481,8 @@ export default function OrdersPage() {
         promotionApplies.map((promo) =>
           useCustomerUsedPromotion.mutateAsync({
             customer_id: user?._id as string,
-            promotion_id: promo
+            promotion_id: promo,
+            order_group_ids: getAllOrderGroups(ordersToPay).map((order) => order._id)
           })
         )
       )
@@ -668,113 +681,6 @@ export default function OrdersPage() {
         </CardContent>
       </Card>
 
-      {/* Used Promotions Section - Show discount applied to recent paid orders */}
-      {usedPromotionDetails.length > 0 && paidOrders.length > 0 && (
-        <Card className='mb-8 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800'>
-          <CardHeader>
-            <CardTitle className='text-lg flex items-center gap-2'>
-              <CheckCircle className='h-5 w-5 text-green-600' />
-              Applied Discounts on Recent Paid Orders
-            </CardTitle>
-            <CardDescription>
-              Your recent promotions have been applied to {paidOrders.slice(0, 3).length} recent paid orders
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className='space-y-4'>
-              {/* Show used promotions */}
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
-                {usedPromotionDetails.map((promotion) => (
-                  <div
-                    key={promotion._id}
-                    className='flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-lg border border-green-200 dark:border-green-800'
-                  >
-                    <div className='flex items-center gap-3'>
-                      <div className='w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center'>
-                        <CheckCircle className='h-4 w-4 text-green-600' />
-                      </div>
-                      <div>
-                        <h4 className='font-medium text-sm'>{promotion.name}</h4>
-                        <p className='text-xs text-muted-foreground'>Used on recent orders</p>
-                      </div>
-                    </div>
-                    <Badge
-                      variant='secondary'
-                      className='bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                    >
-                      {promotion.discount_type === 'percentage'
-                        ? `${promotion.discount_value ?? 0}% OFF`
-                        : `${(promotion.discount_value ?? 0).toLocaleString('vi-VN')}đ OFF`}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-
-              {/* Show affected recent orders */}
-              <div className='space-y-3'>
-                <h4 className='font-medium text-sm'>Recent Paid Orders with Applied Discounts:</h4>
-                {paidOrders.slice(0, 3).map((orderGroup) => {
-                  const originalTotal = calculateTotal(orderGroup.orders)
-                  const finalAmount = calculateFinalAmountForPaidOrder({
-                    ...orderGroup,
-                    table: orderGroup.table ?? null
-                  })
-                  const discount = originalTotal - finalAmount
-
-                  return (
-                    <div
-                      key={orderGroup._id}
-                      className='flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-lg border border-green-200 dark:border-green-800'
-                    >
-                      <div>
-                        <h5 className='font-medium text-sm'>{generateOrderNumber(orderGroup._id)}</h5>
-                        <p className='text-xs text-muted-foreground'>
-                          {formatDateTime(orderGroup.created_at)} • {orderGroup.orders.length} items
-                        </p>
-                      </div>
-                      <div className='text-right'>
-                        <div className='text-sm'>
-                          <span className='line-through text-muted-foreground'>
-                            {originalTotal.toLocaleString('vi-VN')}đ
-                          </span>
-                          <span className='ml-2 font-medium text-green-600'>
-                            {finalAmount.toLocaleString('vi-VN')}đ
-                          </span>
-                        </div>
-                        <p className='text-xs text-green-600'>Saved: {discount.toLocaleString('vi-VN')}đ</p>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-
-              {/* Total savings */}
-              <div className='bg-green-100 dark:bg-green-900/30 p-4 rounded-lg border border-green-200 dark:border-green-800'>
-                <div className='flex justify-between items-center'>
-                  <span className='font-medium text-green-800 dark:text-green-200'>
-                    Total Savings from Recent Orders:
-                  </span>
-                  <span className='text-lg font-bold text-green-600'>
-                    {paidOrders
-                      .slice(0, 3)
-                      .reduce((total, orderGroup) => {
-                        const originalTotal = calculateTotal(orderGroup.orders)
-                        const finalAmount = calculateFinalAmountForPaidOrder({
-                          ...orderGroup,
-                          table: orderGroup.table ?? null
-                        })
-                        return total + (originalTotal - finalAmount)
-                      }, 0)
-                      .toLocaleString('vi-VN')}
-                    đ
-                  </span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Available Promotions & Bulk Payment Section */}
       {usePromotions.length > 0 && (
         <Card className='mb-8 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800'>
@@ -855,7 +761,7 @@ export default function OrdersPage() {
       </Tabs>
 
       {/* Orders List */}
-      <div className=' space-y-6'>
+      <div className='space-y-6'>
         {filteredOrderGroups.length === 0 ? (
           <Card>
             <CardContent className='text-center py-12'>
@@ -873,15 +779,21 @@ export default function OrdersPage() {
             const orderTypeInfo = getOrderTypeInfo(orderGroup.order_type)
             const customerInfo = getCustomerInfo({ ...orderGroup, table: orderGroup.table ?? null })
 
+            // Get promotions for this specific order
+            const orderPromotions = getPromotionsForOrderGroup(orderGroup._id, usedPromotions, promotions)
+
             // Calculate different totals based on order status
             const originalTotal = calculateTotal(orderGroup.orders)
             let displayTotal = originalTotal
             let discount = 0
 
-            if (orderGroup.status === OrderStatus.Paid) {
-              // For paid orders, show final amount after applying used promotions
-              displayTotal = calculateFinalAmountForPaidOrder({ ...orderGroup, table: orderGroup.table ?? null })
-              discount = originalTotal - displayTotal
+            if (orderGroup.status === OrderStatus.Paid && orderPromotions.length > 0) {
+              const discountResult = calculateDiscountForSpecificOrderGroup(
+                { ...orderGroup, table: orderGroup.table ?? null },
+                orderPromotions
+              )
+              discount = discountResult.discount
+              displayTotal = Math.max(0, originalTotal - discount)
             }
 
             const orderNumber = generateOrderNumber(orderGroup._id)
@@ -894,16 +806,26 @@ export default function OrdersPage() {
                   <div className='flex items-start justify-between'>
                     <div className='space-y-2'>
                       <CardTitle className='text-lg'>{orderNumber}</CardTitle>
-                      <div className='flex items-center gap-2'>
+                      <div className='flex items-center gap-2 flex-wrap'>
                         <Badge className={orderTypeInfo.color}>{orderTypeInfo.label}</Badge>
                         <Badge className={`${statusInfo.color} text-white`}>
                           <StatusIcon className='h-3 w-3 mr-1' />
                           {statusInfo.label}
                         </Badge>
-                        {orderGroup.status === OrderStatus.Paid && discount > 0 && (
-                          <Badge variant='secondary' className='bg-green-100 text-green-800'>
-                            Discount Applied
-                          </Badge>
+
+                        {/* Show promotions used for this order */}
+                        {orderPromotions.length > 0 && (
+                          <div className='flex gap-1 flex-wrap'>
+                            {orderPromotions.map((promo) => (
+                              <Badge
+                                key={promo._id}
+                                variant='secondary'
+                                className='bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                              >
+                                {promo.name}
+                              </Badge>
+                            ))}
+                          </div>
                         )}
                       </div>
                       <CardDescription className='flex items-center gap-2 mt-1'>
@@ -948,6 +870,28 @@ export default function OrdersPage() {
                       )}
                     </div>
                   </div>
+
+                  {/* Enhanced promotion display section */}
+                  {orderPromotions.length > 0 && (
+                    <div className='bg-green-50 dark:bg-green-950/20 p-3 rounded-lg border border-green-200'>
+                      <div className='flex items-start gap-2 mb-2'>
+                        <Star className='h-4 w-4 text-green-600 mt-0.5' />
+                        <div className='flex-1'>
+                          <p className='font-medium text-sm text-green-800 dark:text-green-200'>Applied Promotions</p>
+                          <div className='space-y-1 mt-1'>
+                            {orderPromotions.map((promo) => (
+                              <div key={promo._id} className='text-xs text-green-700 dark:text-green-300'>
+                                • {promo.name} -{' '}
+                                {promo.discount_type === 'percentage'
+                                  ? `${promo.discount_value}% OFF`
+                                  : `${promo.discount_value?.toLocaleString('vi-VN')}đ OFF`}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Table Info for dine-in */}
                   {orderGroup.order_type === 'dine-in' && orderGroup.table && (
@@ -1011,7 +955,7 @@ export default function OrdersPage() {
                     </div>
                   )}
 
-                  {/* Order Total with Discount Info */}
+                  {/* Enhanced order total display */}
                   <div className='flex items-center justify-between pt-2 border-t'>
                     <div>
                       {orderGroup.status === OrderStatus.Paid && discount > 0 ? (
@@ -1022,7 +966,12 @@ export default function OrdersPage() {
                           <div className='font-semibold text-lg text-green-600'>
                             Final: {displayTotal.toLocaleString('vi-VN')}đ
                           </div>
-                          <div className='text-xs text-green-600'>Saved: {discount.toLocaleString('vi-VN')}đ</div>
+                          <div className='text-xs text-green-600'>
+                            Saved: {discount.toLocaleString('vi-VN')}đ
+                            {orderPromotions.length > 0 && (
+                              <span className='ml-1'>({orderPromotions.map((p) => p.name).join(', ')})</span>
+                            )}
+                          </div>
                         </div>
                       ) : (
                         <div>
@@ -1246,6 +1195,35 @@ export default function OrdersPage() {
                 </div>
               </div>
 
+              {/* Enhanced promotion details section */}
+              {selectedOrderGroup &&
+                (() => {
+                  const orderPromotions = getPromotionsForOrderGroup(selectedOrderGroup._id, usedPromotions, promotions)
+
+                  return orderPromotions.length > 0 ? (
+                    <div className='bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200'>
+                      <h4 className='font-medium text-sm text-green-800 dark:text-green-200 mb-3'>
+                        Applied Promotions
+                      </h4>
+                      <div className='space-y-3'>
+                        {orderPromotions.map((promo) => (
+                          <div key={promo._id} className='flex items-start justify-between'>
+                            <div>
+                              <p className='font-medium text-sm text-green-700 dark:text-green-300'>{promo.name}</p>
+                              <p className='text-xs text-green-600 dark:text-green-400'>{promo.description}</p>
+                            </div>
+                            <Badge className='bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'>
+                              {promo.discount_type === 'percentage'
+                                ? `${promo.discount_value}% OFF`
+                                : `${promo.discount_value?.toLocaleString('vi-VN')}đ OFF`}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null
+                })()}
+
               {/* Table Info for dine-in */}
               {selectedOrderGroup.order_type === 'dine-in' && selectedOrderGroup.table && (
                 <div className='bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg'>
@@ -1342,7 +1320,7 @@ export default function OrdersPage() {
                 </div>
               </div>
 
-              {/* Order Summary with Discount Info */}
+              {/* Enhanced order summary */}
               <div className='border-t pt-4'>
                 <div className='space-y-2'>
                   <div className='flex justify-between'>
@@ -1350,25 +1328,33 @@ export default function OrdersPage() {
                     <span>{calculateTotal(selectedOrderGroup.orders).toLocaleString('vi-VN')}đ</span>
                   </div>
 
-                  {/* Show discount if it's a paid order with used promotions */}
+                  {/* Show specific discount for this order */}
                   {selectedOrderGroup.status === OrderStatus.Paid &&
-                    usedPromotionDetails.length > 0 &&
                     (() => {
-                      const originalTotal = calculateTotal(selectedOrderGroup.orders)
-                      const finalAmount = calculateFinalAmountForPaidOrder(selectedOrderGroup)
-                      const discount = originalTotal - finalAmount
+                      const orderPromotions = getPromotionsForOrderGroup(
+                        selectedOrderGroup._id,
+                        usedPromotions,
+                        promotions
+                      )
 
-                      return discount > 0 ? (
-                        <>
-                          <div className='flex justify-between text-green-600'>
-                            <span>Applied Discount:</span>
-                            <span>-{discount.toLocaleString('vi-VN')}đ</span>
-                          </div>
-                          <div className='text-xs text-muted-foreground'>
-                            {usedPromotionDetails.map((promo) => promo.name).join(', ')} applied
-                          </div>
-                        </>
-                      ) : null
+                      if (orderPromotions.length > 0) {
+                        const discountResult = calculateDiscountForSpecificOrderGroup(
+                          selectedOrderGroup,
+                          orderPromotions
+                        )
+                        return discountResult.discount > 0 ? (
+                          <>
+                            <div className='flex justify-between text-green-600'>
+                              <span>Applied Discount:</span>
+                              <span>-{discountResult.discount.toLocaleString('vi-VN')}đ</span>
+                            </div>
+                            <div className='text-xs text-muted-foreground'>
+                              From: {orderPromotions.map((promo) => promo.name).join(', ')}
+                            </div>
+                          </>
+                        ) : null
+                      }
+                      return null
                     })()}
 
                   <div className='flex justify-between'>
@@ -1379,12 +1365,27 @@ export default function OrdersPage() {
                   <div className='flex justify-between font-semibold text-lg border-t pt-2'>
                     <span>Total:</span>
                     <span>
-                      {selectedOrderGroup.status === OrderStatus.Paid
-                        ? calculateFinalAmountForPaidOrder(selectedOrderGroup).toLocaleString('vi-VN')
-                        : (
-                            calculateTotal(selectedOrderGroup.orders) +
-                            (selectedOrderGroup.order_type === 'delivery' ? 15000 : 0)
-                          ).toLocaleString('vi-VN')}
+                      {(() => {
+                        const originalTotal = calculateTotal(selectedOrderGroup.orders)
+                        const shippingFee = selectedOrderGroup.order_type === 'delivery' ? 15000 : 0
+
+                        if (selectedOrderGroup.status === OrderStatus.Paid) {
+                          const orderPromotions = getPromotionsForOrderGroup(
+                            selectedOrderGroup._id,
+                            usedPromotions,
+                            promotions
+                          )
+
+                          if (orderPromotions.length > 0) {
+                            const discountResult = calculateDiscountForSpecificOrderGroup(
+                              selectedOrderGroup,
+                              orderPromotions
+                            )
+                            return (originalTotal - discountResult.discount + shippingFee).toLocaleString('vi-VN')
+                          }
+                        }
+                        return (originalTotal + shippingFee).toLocaleString('vi-VN')
+                      })()}
                       đ
                     </span>
                   </div>

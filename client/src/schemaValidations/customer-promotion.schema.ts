@@ -4,6 +4,7 @@ export const CustomerPromotionSchema = z.object({
   _id: z.string(),
   customer_id: z.string(),
   promotion_id: z.string(),
+  order_group_ids: z.array(z.string()).optional(),
   used: z.boolean(),
   create_at: z.date(),
   updated_at: z.date()
@@ -46,7 +47,8 @@ export type DeleteCustomerPromotionBodyType = z.infer<typeof DeleteCustomerPromo
 
 export const UsedPromotionBody = z.object({
   customer_id: z.string(),
-  promotion_id: z.string()
+  promotion_id: z.string(),
+  order_group_ids: z.array(z.string())
 })
 
 export type UsedPromotionBodyType = z.infer<typeof UsedPromotionBody>

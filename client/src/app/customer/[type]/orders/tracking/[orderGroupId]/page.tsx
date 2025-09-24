@@ -12,15 +12,8 @@ import { useParams } from 'next/navigation'
 import { useAppContext } from '@/components/app-provider'
 import { toast } from 'sonner'
 import { UpdateDeliveryResType } from '@/schemaValidations/order.schema'
-
-type Step = {
-  id: number
-  title: string
-  description: string
-  icon: React.ComponentType<{ className?: string }>
-  status: 'Completed' | 'Current' | 'Pending'
-  timestamp: string | null
-}
+import { formatDate, formatTime } from '@/lib/utils'
+import { Step } from '@/types/common.type'
 
 export default function DeliveryOrderTrackingPage() {
   const params = useParams()
@@ -47,9 +40,7 @@ export default function DeliveryOrderTrackingPage() {
 
     function onUpdateDeliveryStatus(data: UpdateDeliveryResType['result']) {
       const { delivery } = data
-      toast('Success', {
-        description: `Delivery status has been updated: ${delivery?.delivery_status}`
-      })
+      toast.success(`Delivery status has been updated: ${delivery?.delivery_status}`)
       refetch()
     }
 
@@ -76,22 +67,6 @@ export default function DeliveryOrderTrackingPage() {
         </div>
       </div>
     )
-  }
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('vi-VN', {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
   }
 
   const getDeliverySteps = () => {

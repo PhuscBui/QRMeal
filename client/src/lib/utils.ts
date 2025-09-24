@@ -246,3 +246,19 @@ export const formatDateForDisplay = (dateString: string) => {
     year: 'numeric'
   })
 }
+
+export const formatTime = (dateString: string) => {
+  return new Date(dateString).toLocaleString('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+export const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}

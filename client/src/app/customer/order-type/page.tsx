@@ -43,7 +43,18 @@ export default function OrderTypePage() {
 
   const handleSelectType = (typeId: string) => {
     setSelectedType(typeId)
+
+    localStorage.setItem('orderType', typeId)
+
+    localStorage.removeItem('tableInfo')
+
     // Navigate to the specific order type page
+
+    if (typeId === 'dine-in') {
+      router.push('/customer/scan-qr')
+      return
+    }
+
     router.push(`/customer/${typeId}/menu`)
   }
 
