@@ -24,6 +24,7 @@ import categoriesRouter from '~/routes/categories.routes'
 import dishReviewsRouter from '~/routes/dish-reviews.routes'
 import loyaltiesRouter from '~/routes/loyalty.routes'
 import customer_promotionRouter from '~/routes/customer-promotion.routes'
+import shiftsRouter from '~/routes/shifts.routes'
 
 initFolder()
 
@@ -70,6 +71,7 @@ app.use('/guest-promotion', guest_promotionRouter)
 app.use('/revenues', revenuesRouter)
 app.use('/categories', categoriesRouter)
 app.use('/dish-reviews', dishReviewsRouter)
+app.use('/shift', shiftsRouter)
 
 app.use(defaultErrorHandler)
 
