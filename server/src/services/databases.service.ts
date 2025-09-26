@@ -15,6 +15,7 @@ import OrderGroup from '~/models/schemas/OrderGroup.schema'
 import Promotion from '~/models/schemas/Promotion.schema'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import Revenue from '~/models/schemas/Revenue.schema'
+import Shift from '~/models/schemas/Shift.schema'
 import Socket from '~/models/schemas/Socket.schema'
 import { Table } from '~/models/schemas/Table.schema'
 
@@ -107,6 +108,10 @@ class DatabaseService {
 
   get orderGroups(): Collection<OrderGroup> {
     return this.db.collection(envConfig.dbOrderGroupsCollection)
+  }
+
+  get shifts(): Collection<Shift> {
+    return this.db.collection(envConfig.dbShiftsCollection)
   }
 
   get clientInstance(): MongoClient {

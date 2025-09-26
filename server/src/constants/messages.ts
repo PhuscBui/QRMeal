@@ -368,4 +368,34 @@ export const DISH_REVIEWS_MESSAGE = {
   RATING_MUST_BE_BETWEEN_1_AND_5: 'Rating must be between 1 and 5',
   COMMENT_MUST_BE_A_STRING: 'Comment must be a string',
   COMMENT_LENGTH_MUST_BE_GREATER_THAN_0: 'Comment length must be greater than 0'
-}
+} as const
+
+export const SHIFTS_MESSAGES = {
+  SHIFT_NOT_FOUND: 'Shift not found',
+  SHIFT_CREATED: 'Shift created',
+  SHIFT_UPDATED: 'Shift updated',
+  SHIFT_DELETED: 'Shift deleted',
+  SHIFT_FETCHED: 'Shift fetched',
+  SHIFTS_FETCHED: 'Shifts fetched',
+  STAFF_ID_IS_REQUIRED: 'Staff ID is required',
+  STAFF_ID_MUST_BE_A_STRING: 'Staff ID must be a string',
+  INVALID_STAFF_ID: 'Invalid staff ID',
+  STAFF_NOT_FOUND: 'Staff not found',
+  SHIFT_DATE_IS_REQUIRED: 'Shift date is required',
+  SHIFT_DATE_MUST_BE_ISO8601: 'Shift date must be ISO8601',
+  TIME_IS_REQUIRED: 'Time is required',
+  TIME_MUST_BE_A_STRING: 'Time must be a string',
+  INVALID_TIME_FORMAT: 'Invalid time format, expected HH:mm',
+  START_TIME_IS_REQUIRED: 'Start time is required',
+  END_TIME_IS_REQUIRED: 'End time is required',
+  END_TIME_MUST_BE_AFTER_START_TIME: 'End time must be after start time',
+  TOTAL_HOURS_MUST_BE_A_NUMBER: 'Total hours must be a number',
+  TOTAL_HOURS_MUST_BE_GREATER_THAN_0: 'Total hours must be greater than 0',
+  SHIFT_ID_IS_REQUIRED: 'Shift ID is required',
+  SHIFT_ID_MUST_BE_A_STRING: 'Shift ID must be a string',
+  SHIFT_ID_IS_INVALID: 'Shift ID is invalid',
+  STAFF_ID_MUST_BE_A_VALID_OBJECT_ID: 'Staff ID must be a valid ObjectId',
+  SHIFT_ALREADY_EXISTS_FOR_STAFF_ON_THIS_DATE: 'Shift already exists for staff on this date',
+  INVALID_SHIFT_ID: 'Invalid shift ID',
+  SHIFT_TIME_CONFLICT: 'Shift time conflict with existing shifts for this staff'
+} as const
