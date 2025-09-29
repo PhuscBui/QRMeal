@@ -51,5 +51,7 @@ export const envConfig = {
 
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME as string,
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY as string,
-  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET as string
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET as string,
+
+  sepayWebhookSecret: process.env.SEPAY_WEBHOOK_SECRET as string
 }
