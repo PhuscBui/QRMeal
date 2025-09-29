@@ -1,3 +1,4 @@
+// controllers/orders.controller.ts - Enhanced version
 import { Request, Response } from 'express'
 import { ParamsDictionary } from 'express-serve-static-core'
 import HTTP_STATUS from '~/constants/httpStatus'
@@ -141,31 +142,51 @@ export const createPaymentLinkController = async (
   req: Request<ParamsDictionary, unknown, CreatePaymentLinkReqBody>,
   res: Response
 ) => {
-  const paymentLink = await paymentsService.createPaymentLink(req.body.order_group_ids, req.body.total_amount)
+  const { order_group_ids, total_amount } = req.body
+  const paymentLink = await paymentsService.createPaymentLink(order_group_ids, total_amount)
 
   res.json({
-    message: 'Payment link created',
+    message: 'Payment link created successfully',
     result: paymentLink
   })
 }
 
+// Lấy thông tin payment link
 export const getPaymentLinkController = async (
-  req: Request<ParamsDictionary, unknown, unknown, { order_group_ids: string[] }>,
+  req: Request<ParamsDictionary, unknown, unknown, { order_group_ids: string }>,
   res: Response
 ) => {
   const { order_group_ids } = req.query
 
-  if (!order_group_ids || order_group_ids.length === 0) {
+  if (!order_group_ids) {
     res.status(HTTP_STATUS.BAD_REQUEST).json({
       message: 'Order group IDs are required'
     })
     return
   }
 
-  const paymentLink = await paymentsService.getPaymentsByOrderGroupIds(order_group_ids)
+  const orderGroupIdArray = order_group_ids.split(',').map((id) => id.trim())
+  const payments = await paymentsService.getPaymentsByOrderGroupIds(orderGroupIdArray)
 
   res.json({
-    message: 'Payment link retrieved',
-    result: paymentLink
+    message: 'Payment information retrieved',
+    result: payments
+  })
+}
+
+export const checkPaymentStatusController = async (req: Request<{ payment_id: string }>, res: Response) => {
+  const { payment_id } = req.params
+  const payment = await paymentsService.checkPaymentStatus(payment_id)
+
+  if (!payment) {
+    res.status(HTTP_STATUS.NOT_FOUND).json({
+      message: 'Payment not found'
+    })
+    return
+  }
+
+  res.json({
+    message: 'Payment status retrieved',
+    result: payment
   })
 }

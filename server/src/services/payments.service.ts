@@ -1,4 +1,5 @@
-import { ObjectId } from 'mongodb'
+// services/payments.service.ts - Enhanced version
+import { ObjectId, WithId } from 'mongodb'
 import Payment from '~/models/schemas/Payment.schema'
 import databaseService from '~/services/databases.service'
 import { ErrorWithStatus } from '~/models/Error'
@@ -42,10 +43,10 @@ class PaymentsService {
     try {
       session.startTransaction()
 
-      const updatedOrderGroups = []
+      const updatedOrderGroups: WithId<OrderGroup>[] = []
+      const customerSocketIds = new Set<string>()
 
       for (const orderGroupId of orderGroupIds) {
-        // Tìm order group
         const orderGroup = await databaseService.orderGroups.findOne({ _id: new ObjectId(orderGroupId) }, { session })
 
         if (!orderGroup) {
@@ -56,7 +57,7 @@ class PaymentsService {
         // Kiểm tra đã thanh toán chưa
         const existingPayment = await databaseService.payments.findOne(
           {
-            order_group_id: new ObjectId(orderGroupId),
+            order_group_ids: new ObjectId(orderGroupId),
             status: 'success'
           },
           { session }
@@ -103,6 +104,12 @@ class PaymentsService {
           )
         }
 
+        // Lưu socketId để gửi thông báo
+        const socketId = await this.getCustomerSocketId(orderGroup)
+        if (socketId) {
+          customerSocketIds.add(socketId)
+        }
+
         updatedOrderGroups.push(orderGroup)
       }
 
@@ -131,26 +138,41 @@ class PaymentsService {
 
       // Gửi thông báo qua socket
       if (updatedOrderGroups.length > 0) {
+        // Gửi đến manager room
         socketService.emitToRoom(ManagerRoom, 'payment-received', {
           orderGroups: updatedOrderGroups,
           transaction: {
             id: id,
             amount: transferAmount,
-            content: content
+            content: content,
+            method: 'bank'
           }
         })
 
-        // Gửi đến từng customer/guest nếu có socketId
-        for (const orderGroup of updatedOrderGroups) {
-          const socketId = await this.getCustomerSocketId(orderGroup)
-          if (socketId) {
-            socketService.getIO().to(socketId).emit('payment-success', orderGroup)
-          }
-        }
+        // Gửi đến từng customer/guest
+        customerSocketIds.forEach((socketId) => {
+          socketService
+            .getIO()
+            .to(socketId)
+            .emit('payment-success', {
+              orderGroups: updatedOrderGroups,
+              transaction: {
+                id: id,
+                amount: transferAmount,
+                method: 'bank',
+                status: 'success'
+              }
+            })
+        })
       }
 
       return {
-        updatedOrderGroups
+        updatedOrderGroups,
+        transaction: {
+          id,
+          amount: transferAmount,
+          method: 'bank'
+        }
       }
     } catch (error) {
       await session.abortTransaction()
@@ -186,10 +208,10 @@ class PaymentsService {
   }
 
   async createPaymentLink(orderGroupIds: string[], totalAmount: number) {
-    const content = orderGroupIds.map((id) => `ORDER_${id}`).join(',')
-    const paymentLink = `https://sepay.vn/qr?acc=${envConfig.sepayAccountNumber}&bank=${envConfig.sepayBankName}&amount=${totalAmount}&des=${encodeURIComponent(content)}`
+    const content = orderGroupIds.map((id) => `ORDER_${id}`).join(' ')
+    const paymentLink = `https://qr.sepay.vn/img?acc=${envConfig.sepayAccountNumber}&bank=${envConfig.sepayBankName}&amount=${totalAmount}&des=${encodeURIComponent(content)}`
 
-    await databaseService.payments.insertOne(
+    const payment = await databaseService.payments.insertOne(
       new Payment({
         order_group_ids: orderGroupIds.map((id) => new ObjectId(id)),
         amount: totalAmount,
@@ -200,6 +222,7 @@ class PaymentsService {
     )
 
     return {
+      payment_id: payment.insertedId.toString(),
       payment_info: {
         bank_name: envConfig.sepayBankName,
         account_number: envConfig.sepayAccountNumber,
@@ -214,10 +237,19 @@ class PaymentsService {
   async getPaymentsByOrderGroupIds(orderGroupIds: string[]) {
     const objectIds = orderGroupIds.map((id) => new ObjectId(id))
     const payments = await databaseService.payments
-      .find({ order_group_id: { $in: objectIds } })
+      .find({
+        order_group_ids: { $in: objectIds }
+      })
       .sort({ created_at: -1 })
       .toArray()
     return payments
+  }
+
+  async checkPaymentStatus(paymentId: string) {
+    const payment = await databaseService.payments.findOne({
+      _id: new ObjectId(paymentId)
+    })
+    return payment
   }
 }
 
