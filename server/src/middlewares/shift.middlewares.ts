@@ -40,6 +40,21 @@ const shiftDateSchema: ParamSchema = {
   isISO8601: {
     options: { strict: true, strictSeparator: true },
     errorMessage: SHIFTS_MESSAGES.SHIFT_DATE_MUST_BE_ISO8601
+  },
+  custom: {
+    options: (value) => {
+      const shiftDate = new Date(value)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      if (shiftDate < today) {
+        throw new ErrorWithStatus({
+          message: SHIFTS_MESSAGES.SHIFT_DATE_CANNOT_BE_IN_PAST,
+          status: HTTP_STATUS.BAD_REQUEST
+        })
+      }
+      return true
+    }
   }
 }
 
@@ -53,6 +68,14 @@ const timeSchema: ParamSchema = {
   matches: {
     options: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
     errorMessage: SHIFTS_MESSAGES.INVALID_TIME_FORMAT
+  }
+}
+
+const reasonSchema: ParamSchema = {
+  optional: true,
+
+  isString: {
+    errorMessage: SHIFTS_MESSAGES.REASON_MUST_BE_A_STRING
   }
 }
 
@@ -80,6 +103,39 @@ export const createShiftValidator = validate(
             return true
           }
         }
+      }
+    },
+    ['body']
+  )
+)
+
+export const createShiftRequestValidator = validate(
+  checkSchema(
+    {
+      shift_date: shiftDateSchema,
+      start_time: {
+        ...timeSchema,
+        errorMessage: SHIFTS_MESSAGES.START_TIME_IS_REQUIRED
+      },
+      end_time: {
+        ...timeSchema,
+        errorMessage: SHIFTS_MESSAGES.END_TIME_IS_REQUIRED,
+        custom: {
+          options: (value, { req }) => {
+            const startTime = req.body.start_time
+            if (startTime && value <= startTime) {
+              throw new ErrorWithStatus({
+                message: SHIFTS_MESSAGES.END_TIME_MUST_BE_AFTER_START_TIME,
+                status: HTTP_STATUS.BAD_REQUEST
+              })
+            }
+            return true
+          }
+        }
+      },
+      reason: {
+        optional: true,
+        ...reasonSchema
       }
     },
     ['body']
@@ -118,7 +174,44 @@ export const updateShiftValidator = validate(
             return true
           }
         }
+      },
+      reason: {
+        ...reasonSchema,
+        optional: true
       }
+    },
+    ['body']
+  )
+)
+
+export const updateShiftRequestValidator = validate(
+  checkSchema(
+    {
+      shift_date: {
+        ...shiftDateSchema,
+        optional: true
+      },
+      start_time: {
+        ...timeSchema,
+        optional: true
+      },
+      end_time: {
+        ...timeSchema,
+        optional: true,
+        custom: {
+          options: (value, { req }) => {
+            const startTime = req.body.start_time
+            if (startTime && value && value <= startTime) {
+              throw new ErrorWithStatus({
+                message: SHIFTS_MESSAGES.END_TIME_MUST_BE_AFTER_START_TIME,
+                status: HTTP_STATUS.BAD_REQUEST
+              })
+            }
+            return true
+          }
+        }
+      },
+      reason: reasonSchema
     },
     ['body']
   )
@@ -148,5 +241,81 @@ export const shiftParamValidator = validate(
       }
     },
     ['params']
+  )
+)
+
+export const reviewShiftRequestValidator = validate(
+  checkSchema(
+    {
+      status: {
+        isIn: {
+          options: [['Approved', 'Rejected']],
+          errorMessage: SHIFTS_MESSAGES.INVALID_STATUS
+        }
+      },
+      review_note: {
+        ...reasonSchema,
+        optional: true
+      }
+    },
+    ['body']
+  )
+)
+
+export const getShiftsQueryValidator = validate(
+  checkSchema(
+    {
+      staff_id: {
+        optional: true,
+        isString: true,
+        custom: {
+          options: (value) => {
+            if (value && !ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                message: SHIFTS_MESSAGES.INVALID_STAFF_ID,
+                status: HTTP_STATUS.BAD_REQUEST
+              })
+            }
+            return true
+          }
+        }
+      },
+      from_date: {
+        optional: true,
+        isISO8601: {
+          options: { strict: true, strictSeparator: true },
+          errorMessage: SHIFTS_MESSAGES.INVALID_DATE_FORMAT
+        }
+      },
+      to_date: {
+        optional: true,
+        isISO8601: {
+          options: { strict: true, strictSeparator: true },
+          errorMessage: SHIFTS_MESSAGES.INVALID_DATE_FORMAT
+        }
+      },
+      status: {
+        optional: true,
+        isIn: {
+          options: [['Pending', 'Approved', 'Rejected', 'Cancelled']],
+          errorMessage: SHIFTS_MESSAGES.INVALID_STATUS
+        }
+      },
+      page: {
+        optional: true,
+        isInt: {
+          options: { min: 1 },
+          errorMessage: SHIFTS_MESSAGES.INVALID_PAGE
+        }
+      },
+      limit: {
+        optional: true,
+        isInt: {
+          options: { min: 1, max: 100 },
+          errorMessage: SHIFTS_MESSAGES.INVALID_LIMIT
+        }
+      }
+    },
+    ['query']
   )
 )

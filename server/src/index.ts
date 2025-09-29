@@ -71,7 +71,7 @@ app.use('/guest-promotion', guest_promotionRouter)
 app.use('/revenues', revenuesRouter)
 app.use('/categories', categoriesRouter)
 app.use('/dish-reviews', dishReviewsRouter)
-app.use('/shift', shiftsRouter)
+app.use('/shifts', shiftsRouter)
 
 app.use(defaultErrorHandler)
 

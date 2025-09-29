@@ -2,7 +2,7 @@
 import menuItems from '@/app/manage/menuItems'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { cn, decodeToken, getAccessTokenFromLocalStorage } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { Role } from '@/constants/type'
 import { Package2, PanelLeft } from 'lucide-react'
 import Link from 'next/link'

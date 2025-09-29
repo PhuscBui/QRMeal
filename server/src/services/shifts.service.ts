@@ -2,7 +2,14 @@ import { ObjectId } from 'mongodb'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { SHIFTS_MESSAGES } from '~/constants/messages'
 import { ErrorWithStatus } from '~/models/Error'
-import { CreateShiftReqBody, UpdateShiftReqBody, GetShiftsQuery } from '~/models/requests/Shift.request'
+import {
+  CreateShiftReqBody,
+  UpdateShiftReqBody,
+  GetShiftsQuery,
+  CreateShiftRequestReqBody,
+  UpdateShiftRequestReqBody,
+  ReviewShiftRequestReqBody
+} from '~/models/requests/Shift.request'
 import Shift from '~/models/schemas/Shift.schema'
 import databaseService from '~/services/databases.service'
 
@@ -12,7 +19,12 @@ class ShiftsService {
     const [endHour, endMinute] = endTime.split(':').map(Number)
 
     const startMinutes = startHour * 60 + startMinute
-    const endMinutes = endHour * 60 + endMinute
+    let endMinutes = endHour * 60 + endMinute
+
+    // Handle overnight shifts
+    if (endMinutes <= startMinutes) {
+      endMinutes += 24 * 60 // Add 24 hours
+    }
 
     return (endMinutes - startMinutes) / 60
   }
@@ -27,7 +39,12 @@ class ShiftsService {
     const query: Record<string, unknown> = {
       staff_id: new ObjectId(staffId),
       shift_date: shiftDate,
-      $or: [{ start_time: { $lt: endTime }, end_time: { $gt: startTime } }]
+      status: { $in: ['Pending', 'Approved'] }, // Only check active shifts
+      $or: [
+        {
+          $and: [{ start_time: { $lt: endTime } }, { end_time: { $gt: startTime } }]
+        }
+      ]
     }
 
     if (excludeShiftId) {
@@ -38,7 +55,7 @@ class ShiftsService {
     return Boolean(existingShift)
   }
 
-  async createShift(payload: CreateShiftReqBody) {
+  async createShift(account_id: string, payload: CreateShiftReqBody) {
     const shiftDate = new Date(payload.shift_date)
 
     // Check for shift conflicts
@@ -59,11 +76,43 @@ class ShiftsService {
         shift_date: shiftDate,
         start_time: payload.start_time,
         end_time: payload.end_time,
-        total_hours: totalHours
+        status: 'Approved',
+        total_hours: totalHours,
+        reviewed_by: new ObjectId(account_id),
+        reviewed_at: new Date()
       })
     )
 
-    return await databaseService.shifts.findOne({ _id: result.insertedId })
+    return await this.getShiftById(result.insertedId.toString())
+  }
+
+  async createShiftRequest(staff_id: string, payload: CreateShiftRequestReqBody) {
+    const shiftDate = new Date(payload.shift_date)
+
+    // Check for shift conflicts
+    const hasConflict = await this.checkShiftConflict(staff_id, shiftDate, payload.start_time, payload.end_time)
+    if (hasConflict) {
+      throw new ErrorWithStatus({
+        message: SHIFTS_MESSAGES.SHIFT_TIME_CONFLICT,
+        status: HTTP_STATUS.BAD_REQUEST
+      })
+    }
+
+    const totalHours = this.calculateTotalHours(payload.start_time, payload.end_time)
+
+    const result = await databaseService.shifts.insertOne(
+      new Shift({
+        staff_id: new ObjectId(staff_id),
+        shift_date: shiftDate,
+        start_time: payload.start_time,
+        end_time: payload.end_time,
+        status: 'Pending',
+        total_hours: totalHours,
+        reason: payload.reason
+      })
+    )
+
+    return await this.getShiftById(result.insertedId.toString())
   }
 
   async getShifts(query: GetShiftsQuery) {
@@ -74,6 +123,7 @@ class ShiftsService {
     const matchCondition: {
       staff_id?: ObjectId
       shift_date?: { $gte?: Date; $lte?: Date }
+      status?: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled'
     } = {}
 
     if (query.staff_id) {
@@ -88,6 +138,10 @@ class ShiftsService {
       if (query.to_date) {
         matchCondition.shift_date.$lte = new Date(query.to_date)
       }
+    }
+
+    if (query.status && ['Pending', 'Approved', 'Rejected', 'Cancelled'].includes(query.status)) {
+      matchCondition.status = query.status as 'Pending' | 'Approved' | 'Rejected' | 'Cancelled'
     }
 
     const shifts = await databaseService.shifts
@@ -105,6 +159,20 @@ class ShiftsService {
           $unwind: '$staff_info'
         },
         {
+          $lookup: {
+            from: 'accounts',
+            localField: 'reviewed_by',
+            foreignField: '_id',
+            as: 'reviewer_info'
+          }
+        },
+        {
+          $unwind: {
+            path: '$reviewer_info',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
           $project: {
             _id: 1,
             staff_id: 1,
@@ -112,9 +180,16 @@ class ShiftsService {
             start_time: 1,
             end_time: 1,
             total_hours: 1,
+            status: 1,
+            reason: 1,
+            review_note: 1,
+            reviewed_at: 1,
+            created_at: 1,
+            updated_at: 1,
             'staff_info.name': 1,
             'staff_info.email': 1,
-            'staff_info.phone': 1
+            'staff_info.phone': 1,
+            'reviewer_info.name': 1
           }
         },
         { $sort: { shift_date: -1, start_time: 1 } },
@@ -152,6 +227,20 @@ class ShiftsService {
           $unwind: '$staff_info'
         },
         {
+          $lookup: {
+            from: 'accounts',
+            localField: 'reviewed_by',
+            foreignField: '_id',
+            as: 'reviewer_info'
+          }
+        },
+        {
+          $unwind: {
+            path: '$reviewer_info',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
           $project: {
             _id: 1,
             staff_id: 1,
@@ -159,9 +248,16 @@ class ShiftsService {
             start_time: 1,
             end_time: 1,
             total_hours: 1,
+            status: 1,
+            reason: 1,
+            review_note: 1,
+            reviewed_at: 1,
+            created_at: 1,
+            updated_at: 1,
             'staff_info.name': 1,
             'staff_info.email': 1,
-            'staff_info.phone': 1
+            'staff_info.phone': 1,
+            'reviewer_info.name': 1
           }
         }
       ])
@@ -226,6 +322,121 @@ class ShiftsService {
     return result
   }
 
+  async updateShiftRequest(id: string, accountId: string, payload: UpdateShiftRequestReqBody) {
+    const existingShift = await databaseService.shifts.findOne({
+      _id: new ObjectId(id),
+      staff_id: new ObjectId(accountId) // Ensure user can only update their own requests
+    })
+
+    if (!existingShift) {
+      throw new ErrorWithStatus({
+        message: SHIFTS_MESSAGES.SHIFT_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
+    }
+
+    if (existingShift.status !== 'Pending') {
+      throw new ErrorWithStatus({
+        message: SHIFTS_MESSAGES.CANNOT_UPDATE_NON_PENDING_SHIFT,
+        status: HTTP_STATUS.BAD_REQUEST
+      })
+    }
+
+    const updateData: Partial<Shift> = {}
+
+    if (payload.shift_date) {
+      updateData.shift_date = new Date(payload.shift_date)
+    }
+    if (payload.start_time) {
+      updateData.start_time = payload.start_time
+    }
+    if (payload.end_time) {
+      updateData.end_time = payload.end_time
+    }
+    if (payload.reason !== undefined) {
+      updateData.reason = payload.reason
+    }
+
+    // Recalculate total hours if time is updated
+    const startTime = updateData.start_time || existingShift.start_time
+    const endTime = updateData.end_time || existingShift.end_time
+    const shiftDate = updateData.shift_date || existingShift.shift_date
+
+    updateData.total_hours = this.calculateTotalHours(startTime, endTime)
+
+    // Check for conflicts
+    const hasConflict = await this.checkShiftConflict(accountId, shiftDate, startTime, endTime, id)
+
+    if (hasConflict) {
+      throw new ErrorWithStatus({
+        message: SHIFTS_MESSAGES.SHIFT_TIME_CONFLICT,
+        status: HTTP_STATUS.BAD_REQUEST
+      })
+    }
+
+    const result = await databaseService.shifts.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      {
+        $set: updateData,
+        $currentDate: { updated_at: true }
+      },
+      { returnDocument: 'after' }
+    )
+
+    return result
+  }
+
+  async reviewShiftRequest(id: string, accountId: string, payload: ReviewShiftRequestReqBody) {
+    const existingShift = await databaseService.shifts.findOne({ _id: new ObjectId(id) })
+    if (!existingShift) {
+      throw new ErrorWithStatus({
+        message: SHIFTS_MESSAGES.SHIFT_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
+    }
+
+    if (existingShift.status !== 'Pending') {
+      throw new ErrorWithStatus({
+        message: SHIFTS_MESSAGES.SHIFT_NOT_PENDING,
+        status: HTTP_STATUS.BAD_REQUEST
+      })
+    }
+
+    // If approving, check for conflicts again
+    if (payload.status === 'Approved') {
+      const hasConflict = await this.checkShiftConflict(
+        existingShift.staff_id.toString(),
+        existingShift.shift_date,
+        existingShift.start_time,
+        existingShift.end_time,
+        id
+      )
+
+      if (hasConflict) {
+        throw new ErrorWithStatus({
+          message: SHIFTS_MESSAGES.SHIFT_TIME_CONFLICT,
+          status: HTTP_STATUS.BAD_REQUEST
+        })
+      }
+    }
+
+    const result = await databaseService.shifts.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          status: payload.status,
+          review_note: payload.review_note,
+          reviewed_by: new ObjectId(accountId),
+          reviewed_at: new Date()
+        },
+        $currentDate: { updated_at: true }
+      },
+      { returnDocument: 'after' }
+    )
+
+    return result
+  }
+
   async deleteShift(id: string) {
     const shift = await databaseService.shifts.findOne({ _id: new ObjectId(id) })
     if (!shift) {
@@ -239,10 +450,47 @@ class ShiftsService {
     return shift
   }
 
-  async getShiftsByStaff(staffId: string, fromDate?: string, toDate?: string) {
+  async cancelShiftRequest(id: string, accountId: string) {
+    const existingShift = await databaseService.shifts.findOne({
+      _id: new ObjectId(id),
+      staff_id: new ObjectId(accountId) // Ensure user can only cancel their own requests
+    })
+
+    if (!existingShift) {
+      throw new ErrorWithStatus({
+        message: SHIFTS_MESSAGES.SHIFT_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
+    }
+
+    if (existingShift.status !== 'Pending') {
+      throw new ErrorWithStatus({
+        message: SHIFTS_MESSAGES.CANNOT_CANCEL_NON_PENDING_SHIFT,
+        status: HTTP_STATUS.BAD_REQUEST
+      })
+    }
+
+    const result = await databaseService.shifts.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          status: 'Cancelled',
+          cancelled_by: new ObjectId(accountId),
+          cancelled_at: new Date()
+        },
+        $currentDate: { updated_at: true }
+      },
+      { returnDocument: 'after' }
+    )
+
+    return result
+  }
+
+  async getShiftsByStaff(staffId: string, fromDate?: string, toDate?: string, status?: string) {
     const matchCondition: {
       staff_id: ObjectId
       shift_date?: { $gte?: Date; $lte?: Date }
+      status?: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled'
     } = { staff_id: new ObjectId(staffId) }
 
     if (fromDate || toDate) {
@@ -255,14 +503,58 @@ class ShiftsService {
       }
     }
 
-    const shifts = await databaseService.shifts.find(matchCondition).sort({ shift_date: -1, start_time: 1 }).toArray()
+    if (status && ['Pending', 'Approved', 'Rejected', 'Cancelled'].includes(status)) {
+      matchCondition.status = status as 'Pending' | 'Approved' | 'Rejected' | 'Cancelled'
+    }
 
-    const totalHours = shifts.reduce((sum, shift) => sum + (shift.total_hours || 0), 0)
+    const shifts = await databaseService.shifts
+      .aggregate([
+        { $match: matchCondition },
+        {
+          $lookup: {
+            from: 'accounts',
+            localField: 'reviewed_by',
+            foreignField: '_id',
+            as: 'reviewer_info'
+          }
+        },
+        {
+          $unwind: {
+            path: '$reviewer_info',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            shift_date: 1,
+            start_time: 1,
+            end_time: 1,
+            total_hours: 1,
+            status: 1,
+            reason: 1,
+            review_note: 1,
+            reviewed_at: 1,
+            created_at: 1,
+            updated_at: 1,
+            'reviewer_info.name': 1
+          }
+        },
+        { $sort: { shift_date: -1, start_time: 1 } }
+      ])
+      .toArray()
+
+    const approvedShifts = shifts.filter((shift) => shift.status === 'Approved')
+    const totalHours = approvedShifts.reduce((sum, shift) => sum + (shift.total_hours || 0), 0)
 
     return {
       shifts,
       summary: {
         total_shifts: shifts.length,
+        approved_shifts: approvedShifts.length,
+        pending_shifts: shifts.filter((shift) => shift.status === 'Pending').length,
+        rejected_shifts: shifts.filter((shift) => shift.status === 'Rejected').length,
+        cancelled_shifts: shifts.filter((shift) => shift.status === 'Cancelled').length,
         total_hours: totalHours
       }
     }

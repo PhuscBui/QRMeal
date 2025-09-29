@@ -1,5 +1,5 @@
 import { Role } from '@/constants/type'
-import { Home, ShoppingCart, Users2, Salad, Table, Tickets, BookType } from 'lucide-react'
+import { Home, ShoppingCart, Users2, Salad, Table, Tickets, BookType, TableProperties, SquareUser } from 'lucide-react'
 
 const menuItems = [
   {
@@ -43,6 +43,18 @@ const menuItems = [
     Icon: Users2,
     href: '/manage/accounts',
     role: [Role.Owner]
+  },
+  {
+    title: 'Shifts',
+    Icon: TableProperties,
+    href: '/manage/shifts',
+    role: [Role.Owner]
+  },
+  {
+    title: 'My Shifts',
+    Icon: SquareUser,
+    href: '/manage/my-shifts',
+    role: [Role.Employee, Role.Owner]
   }
 ]
 

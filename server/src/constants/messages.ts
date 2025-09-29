@@ -371,6 +371,22 @@ export const DISH_REVIEWS_MESSAGE = {
 } as const
 
 export const SHIFTS_MESSAGES = {
+  REASON_IS_REQUIRED: 'Reason is required',
+  CANNOT_CANCEL_NON_PENDING_SHIFT: 'Cannot cancel non-pending shift',
+  CANNOT_UPDATE_NON_PENDING_SHIFT: 'Cannot update non-pending shift',
+  INVALID_LIMIT: 'Invalid limit',
+  INVALID_PAGE: 'Invalid page',
+  INVALID_DATE_FORMAT: 'Invalid date format, expected YYYY-MM-DD',
+  SHIFT_DATE_CANNOT_BE_IN_PAST: 'Shift date cannot be in the past',
+  INVALID_STATUS: 'Invalid status',
+  REASON_LENGTH_INVALID: 'Reason length is invalid',
+  REASON_MUST_BE_A_STRING: 'Reason must be a string',
+  PENDING_REQUESTS_FETCHED: 'Pending shift requests fetched',
+  SHIFT_REQUEST_CANCELLED: 'Shift request cancelled',
+  SHIFT_NOT_PENDING: 'Shift is not pending',
+  SHIFT_REQUEST_REVIEWED: 'Shift request reviewed',
+  SHIFT_REQUEST_UPDATED: 'Shift request updated',
+  SHIFT_REQUEST_CREATED: 'Shift request created',
   SHIFT_NOT_FOUND: 'Shift not found',
   SHIFT_CREATED: 'Shift created',
   SHIFT_UPDATED: 'Shift updated',

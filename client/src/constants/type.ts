@@ -113,3 +113,17 @@ export const DeliveryStatusValues = [
   DeliveryStatus.Delivered,
   DeliveryStatus.Cancelled
 ] as const
+
+export const ShiftRequestStatus = {
+  Pending: 'Pending',
+  Approved: 'Approved',
+  Rejected: 'Rejected',
+  Cancelled: 'Cancelled'
+} as const
+
+export const ShiftRequestStatusValues = [
+  ShiftRequestStatus.Pending,
+  ShiftRequestStatus.Approved,
+  ShiftRequestStatus.Rejected,
+  ShiftRequestStatus.Cancelled
+] as const
