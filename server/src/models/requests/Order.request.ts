@@ -86,6 +86,11 @@ export interface OrderGroupParam extends ParamsDictionary {
   order_group_id: string
 }
 
+export interface CreatePaymentLinkReqBody {
+  order_group_ids: string[]
+  total_amount: number
+}
+
 // Legacy support - keeping old interface for backward compatibility
 export interface CreateOrdersReqBody {
   guest_id: string

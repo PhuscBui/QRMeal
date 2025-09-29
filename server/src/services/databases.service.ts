@@ -12,6 +12,7 @@ import GuestPromotion from '~/models/schemas/GuestPromotion.schema'
 import Loyalty from '~/models/schemas/Loyalty.schema'
 import Order from '~/models/schemas/Order.schema'
 import OrderGroup from '~/models/schemas/OrderGroup.schema'
+import Payment from '~/models/schemas/Payment.schema'
 import Promotion from '~/models/schemas/Promotion.schema'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import Revenue from '~/models/schemas/Revenue.schema'
@@ -112,6 +113,10 @@ class DatabaseService {
 
   get shifts(): Collection<Shift> {
     return this.db.collection(envConfig.dbShiftsCollection)
+  }
+
+  get payments(): Collection<Payment> {
+    return this.db.collection(envConfig.dbPaymentsCollection)
   }
 
   get clientInstance(): MongoClient {

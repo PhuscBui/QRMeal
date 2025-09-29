@@ -11,9 +11,11 @@ import {
   OrderParam,
   PayOrdersReqBody,
   UpdateOrderReqBody,
-  UpdateDeliveryStatusReqBody
+  UpdateDeliveryStatusReqBody,
+  CreatePaymentLinkReqBody
 } from '~/models/requests/Order.request'
 import ordersService from '~/services/orders.service'
+import paymentsService from '~/services/payments.service'
 import socketService from '~/utils/socket'
 
 export const createOrderGroupController = async (
@@ -131,5 +133,39 @@ export const updateDeliveryStatusController = async (
   res.status(HTTP_STATUS.OK).json({
     message: ORDERS_MESSAGE.DELIVERY_STATUS_UPDATE_SUCCESS,
     result: orderGroup
+  })
+}
+
+// Tạo link thanh toán cho order group[]
+export const createPaymentLinkController = async (
+  req: Request<ParamsDictionary, unknown, CreatePaymentLinkReqBody>,
+  res: Response
+) => {
+  const paymentLink = await paymentsService.createPaymentLink(req.body.order_group_ids, req.body.total_amount)
+
+  res.json({
+    message: 'Payment link created',
+    result: paymentLink
+  })
+}
+
+export const getPaymentLinkController = async (
+  req: Request<ParamsDictionary, unknown, unknown, { order_group_ids: string[] }>,
+  res: Response
+) => {
+  const { order_group_ids } = req.query
+
+  if (!order_group_ids || order_group_ids.length === 0) {
+    res.status(HTTP_STATUS.BAD_REQUEST).json({
+      message: 'Order group IDs are required'
+    })
+    return
+  }
+
+  const paymentLink = await paymentsService.getPaymentsByOrderGroupIds(order_group_ids)
+
+  res.json({
+    message: 'Payment link retrieved',
+    result: paymentLink
   })
 }

@@ -5,7 +5,8 @@ import {
   getOrdersController,
   payOrdersController,
   updateOrderController,
-  updateDeliveryStatusController
+  updateDeliveryStatusController,
+  createPaymentLinkController
 } from '~/controllers/orders.controller'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import { wrapRequestHandler } from '~/utils/handlers'
@@ -29,5 +30,12 @@ ordersRouter.post('/pay', accessTokenValidator, wrapRequestHandler(payOrdersCont
 
 // Update delivery status (for delivery orders)
 ordersRouter.put('/delivery/:order_group_id', accessTokenValidator, wrapRequestHandler(updateDeliveryStatusController))
+
+// Tạo link thanh toán cho order group
+ordersRouter.post(
+  '/payment-link/:order_group_id',
+  accessTokenValidator,
+  wrapRequestHandler(createPaymentLinkController)
+)
 
 export default ordersRouter

@@ -53,5 +53,9 @@ export const envConfig = {
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY as string,
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET as string,
 
-  sepayWebhookSecret: process.env.SEPAY_WEBHOOK_SECRET as string
+  sepayApiKey: process.env.SEPAY_API_KEY as string,
+  sepayWebhookSecret: process.env.SEPAY_WEBHOOK_SECRET as string,
+  sepayAccountNumber: process.env.SEPAY_ACCOUNT_NUMBER as string,
+  sepayBankName: process.env.SEPAY_BANK_NAME as string,
+  sepayAccountName: process.env.SEPAY_ACCOUNT_NAME as string
 }
