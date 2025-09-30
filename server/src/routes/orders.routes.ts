@@ -6,9 +6,17 @@ import {
   payOrdersController,
   updateOrderController,
   updateDeliveryStatusController,
-  createPaymentLinkController
+  createPaymentLinkController,
+  getPaymentLinkController,
+  checkPaymentStatusController
 } from '~/controllers/orders.controller'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
+import {
+  checkOrderOwnership,
+  createPaymentLinkValidator,
+  orderGroupIdsQueryValidator,
+  paymentIdValidator
+} from '~/middlewares/payment.middleware'
 import { wrapRequestHandler } from '~/utils/handlers'
 
 const ordersRouter = Router()
@@ -31,11 +39,26 @@ ordersRouter.post('/pay', accessTokenValidator, wrapRequestHandler(payOrdersCont
 // Update delivery status (for delivery orders)
 ordersRouter.put('/delivery/:order_group_id', accessTokenValidator, wrapRequestHandler(updateDeliveryStatusController))
 
-// Tạo link thanh toán cho order group
+// Payment routes with validation middleware
 ordersRouter.post(
-  '/payment-link/:order_group_id',
+  '/payment-link',
   accessTokenValidator,
+  createPaymentLinkValidator,
+  checkOrderOwnership,
   wrapRequestHandler(createPaymentLinkController)
+)
+ordersRouter.get(
+  '/payment-link',
+  accessTokenValidator,
+  orderGroupIdsQueryValidator,
+  checkOrderOwnership,
+  wrapRequestHandler(getPaymentLinkController)
+)
+ordersRouter.get(
+  '/payment-status/:payment_id',
+  accessTokenValidator,
+  paymentIdValidator,
+  wrapRequestHandler(checkPaymentStatusController)
 )
 
 export default ordersRouter

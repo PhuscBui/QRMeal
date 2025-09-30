@@ -1,5 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { OrderStatus } from '@/constants/type'
 import { calculateFinalAmount, calculateTotalDiscount } from '@/lib/promotion-utils'
 import {
@@ -16,14 +18,32 @@ import { useGetLoyaltyQuery } from '@/queries/useLoyalty'
 import { usePayOrderMutation } from '@/queries/useOrder'
 import { usePromotionListQuery } from '@/queries/usePromotion'
 import { useCreateRevenueMutation } from '@/queries/useRevenue'
+import { useCreatePaymentLinkMutation } from '@/queries/usePayment'
 import { CustomerPromotionResType } from '@/schemaValidations/customer-promotion.schema'
 import { GuestPromotionResType } from '@/schemaValidations/guest-promotion.schema'
 import { GetOrdersResType, PayOrdersResType } from '@/schemaValidations/order.schema'
 import { PromotionResType } from '@/schemaValidations/promotion.schema'
-import { Check, X } from 'lucide-react'
+import { Check, X, CreditCard, Wallet, Building2, Smartphone } from 'lucide-react'
 import Image from 'next/image'
-import { Fragment, useMemo } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import SepayPaymentDialog from '@/components/payment-qr-dialog'
+
+// Payment method config
+const paymentMethodConfig = {
+  cash: {
+    label: 'Tiền mặt',
+    icon: Wallet
+  },
+  banking: {
+    label: 'Chuyển khoản ngân hàng',
+    icon: Building2
+  },
+  momo: {
+    label: 'Ví MoMo',
+    icon: Smartphone
+  }
+}
 
 // Updated types to work with OrderGroup structure
 type GuestOrCustomer = GetOrdersResType['result'][0]['guest'] | GetOrdersResType['result'][0]['customer']
@@ -41,6 +61,21 @@ export default function OrderDetail({
   onPaySuccess?: (data: PayOrdersResType) => void
   orderType?: 'dine-in' | 'takeaway' | 'delivery'
 }) {
+  // Payment states
+  const [isPayDialogOpen, setIsPayDialogOpen] = useState(false)
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('cash')
+  const [paymentInfo, setPaymentInfo] = useState<{
+    payment_id: string
+    bank_name: string
+    account_number: string
+    account_name: string
+    amount: number
+    content: string
+    qr_code_url: string
+  } | null>(null)
+
+  const createPaymentLinkMutation = useCreatePaymentLinkMutation()
+
   // Flatten all orders from all order groups
   const allOrders = useMemo(() => {
     return orderGroups.flatMap((orderGroup) => orderGroup.orders)
@@ -66,6 +101,7 @@ export default function OrderDetail({
   const { data } = useGetLoyaltyQuery({ customerId: user?._id as string, enabled: Boolean(isCustomer && user) })
   const loyaltyPoints = data?.payload.result.loyalty_points || 0
   const userVisits = data?.payload.result.visit_count || 0
+  const [isBankingPaymentInProgress, setIsBankingPaymentInProgress] = useState(false)
 
   const purchasedOrderFilter = user ? allOrders.filter((order) => order.status === OrderStatus.Paid) : []
 
@@ -116,7 +152,67 @@ export default function OrderDetail({
     return calculateTotalDiscount(promotion, price, loyaltyPoints, dishItems, userVisits, orderType)
   }
 
+  // Get unpaid order groups
+  const unpaidOrderGroups = useMemo(() => {
+    return orderGroups.filter((group) => group.status !== OrderStatus.Paid && group.status !== OrderStatus.Cancelled)
+  }, [orderGroups])
+
+  // Open payment dialog
+  const handleOpenPayment = () => {
+    if (ordersFilterToPurchase.length === 0) {
+      toast.error('No orders to pay')
+      return
+    }
+    setIsPayDialogOpen(true)
+    setSelectedPaymentMethod('cash')
+  }
+
+  const confirmPayment = async () => {
+    if (!user) return
+
+    switch (selectedPaymentMethod) {
+      case 'banking':
+        await handleBankingPayment()
+        break
+      case 'cash':
+      case 'momo':
+        await pay()
+        break
+      default:
+        toast.error('Please select a payment method')
+    }
+  }
+
+  const handleBankingPayment = async () => {
+    try {
+      setIsBankingPaymentInProgress(true)
+      const orderGroupIds = unpaidOrderGroups.map((group) => group._id)
+      const { finalAmount } = calculateTotalAmount(
+        ordersFilterToPurchase.reduce((acc, order) => acc + order.quantity * order.dish_snapshot.price, 0),
+        usePromotions
+      )
+
+      const result = await createPaymentLinkMutation.mutateAsync({
+        order_group_ids: orderGroupIds,
+        total_amount: finalAmount
+      })
+
+      setPaymentInfo({
+        ...result.payload.result.payment_info,
+        payment_id: result.payload.result.payment_id
+      })
+
+      setIsPayDialogOpen(false)
+    } catch (error) {
+      console.error('Error creating payment link:', error)
+      toast.error('Unable to create payment link. Please try again!')
+    } finally {
+      setIsBankingPaymentInProgress(false)
+    }
+  }
+
   const pay = async () => {
+    if (selectedPaymentMethod === 'banking' || isBankingPaymentInProgress) return
     if (payOrderMutation.isPending || !user) return
     try {
       const is_customer = 'role' in user && user.role === 'Customer'
@@ -176,11 +272,93 @@ export default function OrderDetail({
               )
             )
       ])
+
+      setIsPayDialogOpen(false)
     } catch (error) {
       handleErrorApi({
         error
       })
     }
+  }
+
+  // Handle payment success for banking
+  const handlePaymentSuccess = async () => {
+    if (!user) return
+
+    try {
+      const is_customer = 'role' in user && user.role === 'Customer'
+      let result = null
+
+      // Gọi API để xác nhận thanh toán
+      if (is_customer) {
+        result = await payOrderMutation.mutateAsync({
+          customer_id: user._id,
+          is_customer
+        })
+      } else {
+        result = await payOrderMutation.mutateAsync({
+          guest_id: user._id,
+          is_customer
+        })
+      }
+
+      if (onPaySuccess) {
+        onPaySuccess(result.payload)
+      }
+
+      const { finalAmount: total_amount, promotionsApplied: usedPromotions } = calculateTotalAmount(
+        ordersFilterToPurchase.reduce((acc, order) => {
+          return acc + order.quantity * order.dish_snapshot.price
+        }, 0),
+        usePromotions
+      )
+
+      // Create revenue và update promotions
+      await Promise.all([
+        isCustomer
+          ? createRevenueMutation.mutateAsync({
+              customer_id: user._id,
+              total_amount
+            })
+          : createRevenueMutation.mutateAsync({
+              guest_id: user._id,
+              guest_phone: user.phone,
+              total_amount
+            }),
+        isCustomer
+          ? await Promise.all(
+              usedPromotions.map((promotion) =>
+                updateCustomerUsedPromotionMutation.mutateAsync({
+                  customer_id: user._id,
+                  promotion_id: promotion,
+                  order_group_ids: orderGroups.map((group) => group._id)
+                })
+              )
+            )
+          : await Promise.all(
+              usedPromotions.map((promotion) =>
+                updateGuestUsedPromotionMutation.mutateAsync({
+                  guest_id: user._id,
+                  promotion_id: promotion
+                })
+              )
+            )
+      ])
+
+      // Reset states
+      setPaymentInfo(null)
+
+      toast.success('Payment successful!')
+    } catch (error) {
+      console.error('Error after payment success:', error)
+      toast.error('An error occurred after payment. Please try again!')
+    }
+  }
+
+  // Close dialogs
+  const handleClosePayment = () => {
+    setIsPayDialogOpen(false)
+    setPaymentInfo(null)
   }
 
   // Group orders by order group for better display
@@ -258,6 +436,10 @@ export default function OrderDetail({
     ))
   }
 
+  const totalAmount = ordersFilterToPurchase.reduce((acc, order) => {
+    return acc + order.quantity * order.dish_snapshot.price
+  }, 0)
+
   return (
     <div className='space-y-2 text-sm'>
       {user && (
@@ -316,13 +498,7 @@ export default function OrderDetail({
       <div className='space-x-1'>
         <span className='font-semibold'>Not yet paid:</span>
         <Badge>
-          <span>
-            {formatCurrency(
-              ordersFilterToPurchase.reduce((acc, order) => {
-                return acc + order.quantity * order.dish_snapshot.price
-              }, 0)
-            )}
-          </span>
+          <span>{formatCurrency(totalAmount)}</span>
         </Badge>
 
         {orderType === 'delivery' && (
@@ -333,17 +509,7 @@ export default function OrderDetail({
 
         {usePromotions.length > 0 && (
           <Badge variant={'outline'}>
-            <span>
-              -{' '}
-              {formatCurrency(
-                calculateTotalDiscountValue(
-                  ordersFilterToPurchase.reduce((acc, order) => {
-                    return acc + order.quantity * order.dish_snapshot.price
-                  }, 0),
-                  usePromotions
-                ).discount
-              )}
-            </span>
+            <span>- {formatCurrency(calculateTotalDiscountValue(totalAmount, usePromotions).discount)}</span>
           </Badge>
         )}
       </div>
@@ -351,16 +517,7 @@ export default function OrderDetail({
       <div className='space-x-1'>
         <span className='font-semibold'>Total After Discount:</span>
         <Badge variant={'default'}>
-          <span>
-            {formatCurrency(
-              calculateTotalAmount(
-                ordersFilterToPurchase.reduce((acc, order) => {
-                  return acc + order.quantity * order.dish_snapshot.price
-                }, 0),
-                usePromotions
-              ).finalAmount
-            )}
-          </span>
+          <span>{formatCurrency(calculateTotalAmount(totalAmount, usePromotions).finalAmount)}</span>
         </Badge>
       </div>
 
@@ -386,11 +543,119 @@ export default function OrderDetail({
           size={'sm'}
           variant={'secondary'}
           disabled={ordersFilterToPurchase.length === 0}
-          onClick={pay}
+          onClick={handleOpenPayment}
         >
+          <CreditCard className='mr-2 h-4 w-4' />
           Pay all ({ordersFilterToPurchase.length} unpaid orders)
         </Button>
       </div>
+
+      {/* Dialog chọn phương thức thanh toán */}
+      <Dialog open={isPayDialogOpen} onOpenChange={setIsPayDialogOpen}>
+        <DialogContent className='max-w-md'>
+          <DialogHeader>
+            <DialogTitle className='flex items-center gap-2'>
+              <CreditCard className='h-5 w-5' />
+              Payment Method
+            </DialogTitle>
+            <DialogDescription>Payment for {ordersFilterToPurchase.length} dishes</DialogDescription>
+          </DialogHeader>
+
+          <div className='space-y-6'>
+            {/* Tóm tắt thanh toán */}
+            <div className='bg-muted p-4 rounded-lg space-y-3'>
+              <h4 className='font-medium text-sm'>Payment detail</h4>
+              <div className='space-y-2 text-sm'>
+                <div className='flex justify-between'>
+                  <span>Total:</span>
+                  <span>{formatCurrency(totalAmount)}</span>
+                </div>
+                {usePromotions.length > 0 && (
+                  <div className='flex justify-between text-green-600'>
+                    <span>Discount:</span>
+                    <span>-{formatCurrency(calculateTotalDiscountValue(totalAmount, usePromotions).discount)}</span>
+                  </div>
+                )}
+                <div className='border-t pt-2 mt-2'>
+                  <div className='flex justify-between items-center font-semibold text-base'>
+                    <span>Total Payment:</span>
+                    <span className='text-lg text-primary'>
+                      {formatCurrency(calculateTotalAmount(totalAmount, usePromotions).finalAmount)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Chọn phương thức thanh toán */}
+            <div>
+              <h4 className='font-medium text-sm mb-3'>Select Payment Method</h4>
+              <RadioGroup
+                value={selectedPaymentMethod}
+                onValueChange={setSelectedPaymentMethod}
+                disabled={payOrderMutation.isPending}
+              >
+                {Object.entries(paymentMethodConfig).map(([key, info]) => {
+                  const IconComp = info.icon
+                  return (
+                    <label
+                      key={key}
+                      className={`flex items-start space-x-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                        selectedPaymentMethod === key ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                      } ${payOrderMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <RadioGroupItem value={key} className='mt-1' />
+                      <div className='flex items-start gap-3 flex-1'>
+                        <IconComp className='h-5 w-5 mt-0.5 text-muted-foreground' />
+                        <div className='space-y-1'>
+                          <p className='font-medium text-sm'>{info.label}</p>
+                        </div>
+                      </div>
+                    </label>
+                  )
+                })}
+              </RadioGroup>
+            </div>
+
+            {/* Buttons */}
+            <div className='flex gap-3'>
+              <Button
+                variant='outline'
+                onClick={handleClosePayment}
+                className='flex-1'
+                disabled={payOrderMutation.isPending}
+              >
+                Hủy
+              </Button>
+              <Button onClick={confirmPayment} className='flex-1' disabled={payOrderMutation.isPending}>
+                {payOrderMutation.isPending ? (
+                  <>
+                    <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2' />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className='h-4 w-4 mr-2' />
+                    Confirm Payment
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog QR thanh toán */}
+      <SepayPaymentDialog
+        open={!!paymentInfo}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleClosePayment()
+          }
+        }}
+        paymentInfo={paymentInfo}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
     </div>
   )
 }

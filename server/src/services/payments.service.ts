@@ -154,7 +154,7 @@ class PaymentsService {
           socketService
             .getIO()
             .to(socketId)
-            .emit('payment-success', {
+            .emit('sepay-payment-success', {
               orderGroups: updatedOrderGroups,
               transaction: {
                 id: id,
@@ -196,19 +196,21 @@ class PaymentsService {
 
   private async getCustomerSocketId(orderGroup: OrderGroup): Promise<string | null> {
     if (orderGroup.customer_id) {
-      const customer = await databaseService.sockets.findOne({ _id: orderGroup.customer_id })
+      const customer = await databaseService.sockets.findOne({ customer_id: orderGroup.customer_id })
       return customer?.socketId || null
     }
 
     if (orderGroup.guest_id) {
-      const guest = await databaseService.sockets.findOne({ _id: orderGroup.guest_id })
+      const guest = await databaseService.sockets.findOne({ guest_id: orderGroup.guest_id })
+      console.log('Guest socket:', guest)
       return guest?.socketId || null
     }
+
     return null
   }
 
   async createPaymentLink(orderGroupIds: string[], totalAmount: number) {
-    const content = orderGroupIds.map((id) => `ORDER_${id}`).join(' ')
+    const content = 'SEVQR ' + orderGroupIds.map((id) => `ORDER_${id}`).join(' ')
     const paymentLink = `https://qr.sepay.vn/img?acc=${envConfig.sepayAccountNumber}&bank=${envConfig.sepayBankName}&amount=${totalAmount}&des=${encodeURIComponent(content)}`
 
     const payment = await databaseService.payments.insertOne(

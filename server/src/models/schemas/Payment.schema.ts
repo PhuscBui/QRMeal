@@ -4,7 +4,7 @@ interface PaymentType {
   _id?: ObjectId
   order_group_ids: ObjectId[]
   amount: number
-  method: 'stripe' | 'payos' | 'bank' | 'cod' | 'cash'
+  method: 'bank' | 'cash'
   status: 'pending' | 'success' | 'failed' | 'refunded'
   transaction_id?: string
   reference_code?: string
@@ -18,7 +18,7 @@ export default class Payment {
   _id?: ObjectId
   order_group_ids: ObjectId[]
   amount: number
-  method: 'stripe' | 'payos' | 'bank' | 'cod' | 'cash'
+  method: 'bank' | 'cash'
   status: 'pending' | 'success' | 'failed' | 'refunded'
   transaction_id?: string
   reference_code?: string

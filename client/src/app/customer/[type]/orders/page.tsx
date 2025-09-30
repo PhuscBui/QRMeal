@@ -23,10 +23,9 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { OrderStatus } from '@/constants/type'
 import { GetOrderDetailResType, PayOrdersResType, UpdateOrderResType } from '@/schemaValidations/order.schema'
-import { useGetOrderListQuery, usePayOrderMutation } from '@/queries/useOrder'
+import { useGetOrderListQuery } from '@/queries/useOrder'
 import { useAccountMe } from '@/queries/useAccount'
 import { toast } from 'sonner'
 import { useAppContext } from '@/components/app-provider'
@@ -37,16 +36,12 @@ import { useCustomerUsedPromotionMutation, useGetCustomerPromotionQuery } from '
 import { calculateFinalAmount, calculateTotalDiscount } from '@/lib/promotion-utils'
 import { PromotionResType } from '@/schemaValidations/promotion.schema'
 import { useCreateRevenueMutation } from '@/queries/useRevenue'
-import {
-  OrderGroupForPayment,
-  orderTypeConfig,
-  paymentMethodConfig,
-  PaymentOrders,
-  statusConfig
-} from '@/app/customer/[type]/orders/type'
+import { OrderGroupForPayment, orderTypeConfig, PaymentOrders, statusConfig } from '@/app/customer/[type]/orders/type'
 import { useGetDishReviewsByMeQuery } from '@/queries/useDishReview'
 import DishReviewForm from '@/components/dish-review-form'
 import ExistingReview from '@/components/existing-review'
+import { useCreatePaymentLinkMutation } from '@/queries/usePayment'
+import SepayPaymentDialog from '@/components/payment-qr-dialog'
 
 export default function OrdersPage() {
   const params = useParams()
@@ -54,17 +49,26 @@ export default function OrdersPage() {
   const orderType = params.type as 'dine-in' | 'delivery' | 'takeaway'
   const { data: userData, isLoading: isUserLoading } = useAccountMe()
   const user = userData?.payload.result
-  const { mutateAsync: payOrder, isPending: isProcessing } = usePayOrderMutation()
   const [selectedTab, setSelectedTab] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedOrderGroup, setSelectedOrderGroup] = useState<GetOrderDetailResType['result'] | null>(null)
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
   const [isPayDialogOpen, setIsPayDialogOpen] = useState(false)
   const [ordersToPay, setOrdersToPay] = useState<PaymentOrders | null>(null)
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('cash')
   const [sortBy, setSortBy] = useState('newest')
   const { data: dishReviewByUser } = useGetDishReviewsByMeQuery(Boolean(user))
   const [reviewingDish, setReviewingDish] = useState<{ id: string; name: string } | null>(null)
+  const [paymentInfo, setPaymentInfo] = useState<{
+    payment_id: string
+    bank_name: string
+    account_number: string
+    account_name: string
+    amount: number
+    content: string
+    qr_code_url: string
+  } | null>(null)
+
+  const createPaymentLinkMutation = useCreatePaymentLinkMutation()
 
   // Date filter states - default to today
   const [fromDate, setFromDate] = useState(getTodayDate())
@@ -303,12 +307,6 @@ export default function OrdersPage() {
     return [paymentOrders]
   }
 
-  // Helper function to calculate total for multiple orders
-  const calculateTotalForOrders = (paymentOrders: PaymentOrders): number => {
-    const orderGroups = getAllOrderGroups(paymentOrders)
-    return orderGroups.reduce((total, orderGroup) => total + calculateTotal(orderGroup.orders), 0)
-  }
-
   // Helper function to calculate discount for multiple orders
   const calculateTotalDiscountForOrders = (paymentOrders: PaymentOrders): number => {
     const orderGroups = getAllOrderGroups(paymentOrders)
@@ -454,22 +452,36 @@ export default function OrdersPage() {
   }
 
   // Updated to handle both single and multiple orders
-  const openPayDialog = (orders: PaymentOrders) => {
+  const openPayDialog = async (orders: PaymentOrders) => {
     setOrdersToPay(orders)
-    setSelectedPaymentMethod('cash')
-    setIsPayDialogOpen(true)
+
+    try {
+      const orderGroups = getAllOrderGroups(orders)
+      const { finalAmount } = calculateFinalAmountForOrders(orders)
+
+      // Call API to create payment link
+      const result = await createPaymentLinkMutation.mutateAsync({
+        order_group_ids: orderGroups.map((og) => og._id),
+        total_amount: finalAmount
+      })
+
+      // Set payment info with bank_code
+      setPaymentInfo({
+        ...result.payload.result.payment_info,
+        payment_id: result.payload.result.payment_id
+      })
+
+      setIsPayDialogOpen(true)
+    } catch (error) {
+      console.error('Error creating payment link:', error)
+      toast.error('Unable to create payment link. Please try again!')
+    }
   }
 
-  // Updated to handle payment for multiple orders
-  const confirmPay = async () => {
+  const handlePaymentSuccess = async () => {
     if (!ordersToPay) return
 
     try {
-      const result = await payOrder({
-        is_customer: true,
-        customer_id: user?._id
-      })
-
       // Create revenue record
       const { finalAmount, promotionApplies } = calculateFinalAmountForOrders(ordersToPay)
       await createRevenueMutation.mutateAsync({
@@ -477,25 +489,27 @@ export default function OrdersPage() {
         customer_id: user?._id as string
       })
 
-      await Promise.all(
-        promotionApplies.map((promo) =>
-          useCustomerUsedPromotion.mutateAsync({
-            customer_id: user?._id as string,
-            promotion_id: promo,
-            order_group_ids: getAllOrderGroups(ordersToPay).map((order) => order._id)
-          })
+      // Mark promotions as used
+      if (promotionApplies.length > 0) {
+        await Promise.all(
+          promotionApplies.map((promo) =>
+            useCustomerUsedPromotion.mutateAsync({
+              customer_id: user?._id as string,
+              promotion_id: promo,
+              order_group_ids: getAllOrderGroups(ordersToPay).map((order) => order._id)
+            })
+          )
         )
-      )
+      }
 
-      const orderCount = Array.isArray(ordersToPay) ? ordersToPay.length : 1
-      toast.success(result.payload.message || `Successfully paid for ${orderCount} order${orderCount > 1 ? 's' : ''}!`)
-
-      setIsPayDialogOpen(false)
+      // Reset states
+      setPaymentInfo(null)
       setOrdersToPay(null)
+
+      // Refetch orders
       refetch()
     } catch (error) {
-      toast.error('Payment failed. Please try again.')
-      console.error('Payment error:', error)
+      console.error('Error after payment success:', error)
     }
   }
 
@@ -531,10 +545,17 @@ export default function OrdersPage() {
         const guestInfo = orderGroup.guest
         const totalOrders = data.reduce((sum, group) => sum + group.orders.length, 0)
 
-        toast.success('Thanh toán thành công!', {
-          description: `${guestInfo?.name} tại bàn ${guestInfo?.table_number} đã thanh toán ${totalOrders} món ăn. Bạn có thể đánh giá món ăn ngay bây giờ!`
+        toast.success('Payment successful!', {
+          description: `${guestInfo?.name} at table ${guestInfo?.table_number} has paid for ${totalOrders} dishes. You can rate the dishes now!`
         })
       }
+      refetch()
+    }
+
+    function onSepayPayment() {
+      toast.success('Payment successful!', {
+        description: `Payment has been paid successfully!`
+      })
       refetch()
     }
 
@@ -542,12 +563,14 @@ export default function OrdersPage() {
     socket?.on('payment', onPayment)
     socket?.on('connect', onConnect)
     socket?.on('disconnect', onDisconnect)
+    socket?.on('sepay-payment-success', onSepayPayment)
 
     return () => {
       socket?.off('connect', onConnect)
       socket?.off('disconnect', onDisconnect)
       socket?.off('update-order', onUpdateOrder)
       socket?.off('payment', onPayment)
+      socket?.off('sepay-payment-success', onSepayPayment)
     }
   }, [refetch, socket])
 
@@ -1124,24 +1147,16 @@ export default function OrdersPage() {
               <Button
                 size='lg'
                 className='w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700'
-                disabled={isProcessing}
                 onClick={() => {
                   if (unpaidOrders.length > 0) {
                     openPayDialog(unpaidOrders as PaymentOrders)
                   }
                 }}
               >
-                {isProcessing ? (
-                  <>
-                    <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2' />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className='h-5 w-5 mr-2' />
-                    Pay All Orders ({unpaidOrders.length})
-                  </>
-                )}
+                <CreditCard className='h-5 w-5 mr-2' />
+                {unpaidOrders.length > 1
+                  ? `Pay for all (${unpaidOrders.length} orders)`
+                  : `Pay for this order (${unpaidOrders.length} order)`}
               </Button>
             </div>
           </CardContent>
@@ -1443,190 +1458,12 @@ export default function OrdersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Pay Dialog - Updated for multiple orders */}
-      <Dialog open={isPayDialogOpen} onOpenChange={setIsPayDialogOpen}>
-        <DialogContent className='max-w-md'>
-          <DialogHeader>
-            <DialogTitle className='flex items-center gap-2'>
-              <CreditCard className='h-5 w-5' />
-              {ordersToPay && Array.isArray(ordersToPay) ? 'Bulk Payment' : 'Order Payment'}
-            </DialogTitle>
-            <DialogDescription>
-              {ordersToPay && Array.isArray(ordersToPay)
-                ? `Paying for ${ordersToPay.length} orders`
-                : ordersToPay && generateOrderNumber((ordersToPay as OrderGroupForPayment)._id)}
-            </DialogDescription>
-          </DialogHeader>
-
-          {ordersToPay && (
-            <div className='space-y-6'>
-              {/* Order Summary - Updated for multiple orders */}
-              <div className='bg-muted p-4 rounded-lg space-y-3'>
-                <h4 className='font-medium text-sm'>
-                  {Array.isArray(ordersToPay) ? `Payment Details (${ordersToPay.length} orders)` : 'Payment Details'}
-                </h4>
-
-                <div className='space-y-2 text-sm'>
-                  <div className='flex justify-between'>
-                    <span>
-                      Subtotal (
-                      {Array.isArray(ordersToPay)
-                        ? ordersToPay.reduce((total, order) => total + order.orders.length, 0)
-                        : (ordersToPay as OrderGroupForPayment).orders.length}{' '}
-                      items):
-                    </span>
-                    <span>{calculateTotalForOrders(ordersToPay).toLocaleString('vi-VN')}đ</span>
-                  </div>
-
-                  {/* Shipping fee for delivery orders */}
-                  {Array.isArray(ordersToPay)
-                    ? ordersToPay.some((order) => order.order_type === 'delivery') && (
-                        <div className='flex justify-between'>
-                          <span>Shipping Fee:</span>
-                          <span>
-                            {(
-                              ordersToPay.filter((order) => order.order_type === 'delivery').length * 15000
-                            ).toLocaleString('vi-VN')}
-                            đ
-                          </span>
-                        </div>
-                      )
-                    : (ordersToPay as OrderGroupForPayment).order_type === 'delivery' && (
-                        <div className='flex justify-between'>
-                          <span>Shipping Fee:</span>
-                          <span>15,000đ</span>
-                        </div>
-                      )}
-
-                  {usePromotions.length > 0 && (
-                    <div className='flex justify-between text-green-600'>
-                      <span>Discount:</span>
-                      <span>-{calculateTotalDiscountForOrders(ordersToPay).toLocaleString('vi-VN')}đ</span>
-                    </div>
-                  )}
-
-                  <div className='border-t pt-2 mt-2'>
-                    <div className='flex justify-between items-center font-semibold text-base'>
-                      <span>Total:</span>
-                      <span className='text-lg text-primary'>
-                        {calculateFinalAmountForOrders(ordersToPay).finalAmount.toLocaleString('vi-VN')}đ
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Available Promotions Info */}
-              {usePromotions.length > 0 && (
-                <div className='bg-purple-50 dark:bg-purple-950/20 p-3 rounded-lg'>
-                  <p className='font-medium text-sm text-purple-800 dark:text-purple-200 mb-2'>
-                    Promotions to be Applied:
-                  </p>
-                  <div className='space-y-1'>
-                    {usePromotions.map((promotion) => (
-                      <div key={promotion._id} className='text-xs text-purple-700 dark:text-purple-300'>
-                        • {promotion.name} (
-                        {promotion.discount_type === 'percentage'
-                          ? `${promotion.discount_value}%`
-                          : `${promotion.discount_value?.toLocaleString('vi-VN')}đ`}{' '}
-                        OFF)
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Payment Methods */}
-              <div>
-                <h4 className='font-medium text-sm mb-3'>Select Payment Method</h4>
-                <RadioGroup
-                  value={selectedPaymentMethod}
-                  onValueChange={setSelectedPaymentMethod}
-                  disabled={isProcessing}
-                >
-                  {Object.entries(paymentMethodConfig).map(([key, info]) => {
-                    const IconComp = info.icon
-                    return (
-                      <label
-                        key={key}
-                        className={`flex items-start space-x-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                          selectedPaymentMethod === key ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
-                        } 
-                ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                        <RadioGroupItem value={key} className='mt-1' />
-                        <div className='flex items-start gap-3 flex-1'>
-                          <IconComp className='h-5 w-5 mt-0.5 text-muted-foreground' />
-                          <div className='space-y-1'>
-                            <p className='font-medium text-sm'>{info.label}</p>
-                          </div>
-                        </div>
-                      </label>
-                    )
-                  })}
-                </RadioGroup>
-              </div>
-
-              {/* Special Instructions for certain payment methods */}
-              {selectedPaymentMethod === 'banking' && ordersToPay && (
-                <div className='bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg text-sm'>
-                  <p className='font-medium text-blue-800 dark:text-blue-200 mb-2'>Transfer Information:</p>
-                  <div className='text-blue-700 dark:text-blue-300 space-y-1'>
-                    <p>• Bank: Vietcombank</p>
-                    <p>• Account Number: 1234567890</p>
-                    <p>• Account Name: RESTAURANT ABC</p>
-                    <p>
-                      • Content:{' '}
-                      {Array.isArray(ordersToPay)
-                        ? `BULK-${ordersToPay.length}-ORDERS`
-                        : generateOrderNumber((ordersToPay as OrderGroupForPayment)._id)}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {selectedPaymentMethod === 'momo' && ordersToPay && (
-                <div className='bg-pink-50 dark:bg-pink-950/20 p-3 rounded-lg text-sm'>
-                  <p className='font-medium text-pink-800 dark:text-pink-200 mb-1'>MoMo Payment:</p>
-                  <p className='text-pink-700 dark:text-pink-300'>
-                    Scan the QR code or transfer to the number: 0123456789
-                  </p>
-                  {Array.isArray(ordersToPay) && (
-                    <p className='text-xs text-pink-600 dark:text-pink-400 mt-1'>
-                      Bulk payment for {ordersToPay.length} orders
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className='flex gap-3'>
-                <Button variant='outline' onClick={handleClose} className='flex-1' disabled={isProcessing}>
-                  Cancel
-                </Button>
-                <Button onClick={confirmPay} className='flex-1' disabled={isProcessing}>
-                  {isProcessing ? (
-                    <>
-                      <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2' />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className='h-4 w-4 mr-2' />
-                      {Array.isArray(ordersToPay) ? `Pay ${ordersToPay.length} Orders` : 'Confirm Payment'}
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              {/* Security Notice */}
-              <div className='text-xs text-muted-foreground text-center border-t pt-3'>
-                🔒 Payment information is secured and encrypted
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <SepayPaymentDialog
+        open={isPayDialogOpen}
+        onOpenChange={setIsPayDialogOpen}
+        paymentInfo={paymentInfo}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
     </div>
   )
 }

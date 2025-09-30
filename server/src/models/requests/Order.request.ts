@@ -7,14 +7,6 @@ interface TakeawayInfo {
   notes?: string
 }
 
-export interface CreateOrdersReqBody {
-  guest_id: string
-  orders: {
-    dish_id: string
-    quantity: number
-  }[]
-}
-
 export interface GetOrdersQueryParams extends Query {
   fromDate?: string
   toDate?: string
@@ -77,11 +69,6 @@ export interface UpdateDeliveryStatusReqBody {
   estimated_time?: string // Optional estimated delivery time
 }
 
-// Param types for routes
-export interface OrderParam {
-  order_id: string
-}
-
 export interface OrderGroupParam extends ParamsDictionary {
   order_group_id: string
 }
@@ -89,14 +76,4 @@ export interface OrderGroupParam extends ParamsDictionary {
 export interface CreatePaymentLinkReqBody {
   order_group_ids: string[]
   total_amount: number
-}
-
-// Legacy support - keeping old interface for backward compatibility
-export interface CreateOrdersReqBody {
-  guest_id: string
-  orders: OrderItem[]
-}
-
-export interface PayGuestOrdersReqBody {
-  guestId: string
 }

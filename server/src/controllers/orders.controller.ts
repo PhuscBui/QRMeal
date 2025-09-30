@@ -143,6 +143,21 @@ export const createPaymentLinkController = async (
   res: Response
 ) => {
   const { order_group_ids, total_amount } = req.body
+
+  // Validate input
+  if (!order_group_ids || !Array.isArray(order_group_ids) || order_group_ids.length === 0) {
+    res.status(HTTP_STATUS.BAD_REQUEST).json({
+      message: 'Order group IDs are required and must be an array'
+    })
+    return
+  }
+
+  if (!total_amount || total_amount <= 0) {
+    res.status(HTTP_STATUS.BAD_REQUEST).json({
+      message: 'Total amount must be greater than 0'
+    })
+    return
+  }
   const paymentLink = await paymentsService.createPaymentLink(order_group_ids, total_amount)
 
   res.json({
@@ -166,6 +181,14 @@ export const getPaymentLinkController = async (
   }
 
   const orderGroupIdArray = order_group_ids.split(',').map((id) => id.trim())
+
+  if (orderGroupIdArray.length === 0) {
+    res.status(HTTP_STATUS.BAD_REQUEST).json({
+      message: 'Valid order group IDs are required'
+    })
+    return
+  }
+
   const payments = await paymentsService.getPaymentsByOrderGroupIds(orderGroupIdArray)
 
   res.json({
@@ -176,6 +199,14 @@ export const getPaymentLinkController = async (
 
 export const checkPaymentStatusController = async (req: Request<{ payment_id: string }>, res: Response) => {
   const { payment_id } = req.params
+
+  if (!payment_id) {
+    res.status(HTTP_STATUS.BAD_REQUEST).json({
+      message: 'Payment ID is required'
+    })
+    return
+  }
+
   const payment = await paymentsService.checkPaymentStatus(payment_id)
 
   if (!payment) {

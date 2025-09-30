@@ -437,7 +437,7 @@ class OrdersService {
       .find({
         ...matchCondition,
         status: {
-          $in: [OrderStatus.Pending, OrderStatus.Processing, OrderStatus.Delivered]
+          $in: [OrderStatus.Pending, OrderStatus.Processing, OrderStatus.Delivered, OrderStatus.Paid]
         }
       })
       .toArray()

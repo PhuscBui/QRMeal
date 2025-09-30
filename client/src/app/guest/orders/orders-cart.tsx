@@ -2,27 +2,52 @@
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { toast } from 'sonner'
 import { OrderStatus } from '@/constants/type'
-import { Star } from 'lucide-react'
-import { useState } from 'react'
+import { CreditCard, Star, Building2 } from 'lucide-react'
 import { formatCurrency, getOrderStatus } from '@/lib/utils'
 import { useGuestGetOrderListQuery, useGuestMe } from '@/queries/useGuest'
 import { useGetDishReviewsByMeQuery } from '@/queries/useDishReview'
 import { PayOrdersResType, UpdateOrderResType } from '@/schemaValidations/order.schema'
 import Image from 'next/image'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAppContext } from '@/components/app-provider'
 import DishReviewForm from '@/components/dish-review-form'
 import ExistingReview from '@/components/existing-review'
+import { useCreatePaymentLinkMutation } from '@/queries/usePayment'
+import SepayPaymentDialog from '@/components/payment-qr-dialog'
+
+// Payment method config
+const paymentMethodConfig = {
+  banking: {
+    label: 'Bank Transfer',
+    icon: Building2
+  }
+}
 
 export default function OrdersCart() {
   const { data, refetch } = useGuestGetOrderListQuery()
   const [reviewingDish, setReviewingDish] = useState<{ id: string; name: string } | null>(null)
   const { data: userData } = useGuestMe()
   const user = userData?.payload.result ?? null
-  // Pass a dishId or relevant identifier as required by the hook
   const { data: dishReviewByUser } = useGetDishReviewsByMeQuery(Boolean(user?._id))
+
+  // Payment states
+  const [isPayDialogOpen, setIsPayDialogOpen] = useState(false)
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('cash')
+  const [paymentInfo, setPaymentInfo] = useState<{
+    payment_id: string
+    bank_name: string
+    account_number: string
+    account_name: string
+    amount: number
+    content: string
+    qr_code_url: string
+  } | null>(null)
+
+  const createPaymentLinkMutation = useCreatePaymentLinkMutation()
 
   const orderGroups = useMemo(() => data?.payload.result ?? [], [data])
   const orders = useMemo(() => {
@@ -76,6 +101,11 @@ export default function OrdersCart() {
     )
   }, [orders])
 
+  // Get unpaid order groups
+  const unpaidOrderGroups = useMemo(() => {
+    return orderGroups.filter((group) => group.status !== OrderStatus.Paid && group.status !== OrderStatus.Cancelled)
+  }, [orderGroups])
+
   useEffect(() => {
     if (socket?.connected) {
       onConnect()
@@ -115,16 +145,25 @@ export default function OrdersCart() {
       refetch()
     }
 
+    function onSepayPayment() {
+      toast.success('Payment successful!', {
+        description: `Payment has been paid successfully!`
+      })
+      refetch()
+    }
+
     socket?.on('update-order', onUpdateOrder)
     socket?.on('payment', onPayment)
     socket?.on('connect', onConnect)
     socket?.on('disconnect', onDisconnect)
+    socket?.on('sepay-payment-success', onSepayPayment)
 
     return () => {
       socket?.off('connect', onConnect)
       socket?.off('disconnect', onDisconnect)
       socket?.off('update-order', onUpdateOrder)
       socket?.off('payment', onPayment)
+      socket?.off('sepay-payment-success', onSepayPayment)
     }
   }, [refetch, socket])
 
@@ -132,6 +171,69 @@ export default function OrdersCart() {
 
   const hasUserReview = (dishId: string) => {
     return dishReviewByUser?.payload.result.reviews.some((review) => review.dish_id === dishId) ?? false
+  }
+
+  // Open payment dialog
+  const handleOpenPayment = () => {
+    if (waitingForPaying.quantity === 0) {
+      toast.error('No orders to pay')
+      return
+    }
+    setIsPayDialogOpen(true)
+    setSelectedPaymentMethod('cash')
+  }
+
+  // Confirm payment
+  const confirmPay = async () => {
+    if (unpaidOrderGroups.length === 0) return
+
+    // Nếu chọn chuyển khoản ngân hàng
+    if (selectedPaymentMethod === 'banking') {
+      try {
+        const orderGroupIds = unpaidOrderGroups.map((group) => group._id)
+
+        // Gọi API tạo payment link
+        const result = await createPaymentLinkMutation.mutateAsync({
+          order_group_ids: orderGroupIds,
+          total_amount: waitingForPaying.price
+        })
+
+        // Set thông tin thanh toán và đóng dialog chọn phương thức
+        setPaymentInfo({
+          ...result.payload.result.payment_info,
+          payment_id: result.payload.result.payment_id
+        })
+
+        setIsPayDialogOpen(false)
+        // SepayPaymentDialog sẽ tự động mở
+      } catch (error) {
+        console.error('Error creating payment link:', error)
+        toast.error('Unable to create payment link. Please try again!')
+      }
+      return
+    }
+  }
+
+  // Handle payment success for banking
+  const handlePaymentSuccess = async () => {
+    try {
+      // Reset states
+      setPaymentInfo(null)
+
+      // Refetch orders to update status
+      await refetch()
+
+      toast.success('Payment successful!')
+    } catch (error) {
+      console.error('Error after payment success:', error)
+      toast.error('An error occurred after payment. Please try again!')
+    }
+  }
+
+  // Close dialogs
+  const handleClosePayment = () => {
+    setIsPayDialogOpen(false)
+    setPaymentInfo(null)
   }
 
   return (
@@ -184,7 +286,6 @@ export default function OrdersCart() {
                     {getOrderStatus(order.status)}
                   </Badge>
 
-                  {/* Nút đánh giá cho món ăn đã thanh toán - CHỈ hiện khi CHƯA có review */}
                   {order.status === OrderStatus.Paid &&
                     order.dish_snapshot.dish_id &&
                     !hasUserReview(order.dish_snapshot.dish_id) && (
@@ -206,7 +307,6 @@ export default function OrdersCart() {
                 </div>
               </div>
 
-              {/* Hiển thị đánh giá đã có (nếu có) */}
               {order.status === OrderStatus.Paid && (
                 <ExistingReview dishId={order.dish_snapshot.dish_id ?? ''} userId={user?._id} />
               )}
@@ -225,10 +325,18 @@ export default function OrdersCart() {
         )}
 
         {waitingForPaying.quantity > 0 && (
-          <div className='w-full flex justify-between text-xl font-bold text-orange-600'>
-            <span>Waiting for payment • {waitingForPaying.quantity} item</span>
-            <span>{formatCurrency(waitingForPaying.price)}</span>
-          </div>
+          <>
+            <div className='w-full flex justify-between text-xl font-bold text-orange-600'>
+              <span>Waiting for payment • {waitingForPaying.quantity} item</span>
+              <span>{formatCurrency(waitingForPaying.price)}</span>
+            </div>
+
+            {/* Payment Button */}
+            <Button className='w-full mt-2' size='lg' onClick={handleOpenPayment}>
+              <CreditCard className='h-5 w-5 mr-2' />
+              Thanh toán ngay
+            </Button>
+          </>
         )}
 
         {orders.length === 0 && <div className='text-center text-gray-500 py-8'>No orders yet</div>}
@@ -242,6 +350,87 @@ export default function OrdersCart() {
           onClose={() => setReviewingDish(null)}
         />
       )}
+
+      {/* Dialog chọn phương thức thanh toán */}
+      <Dialog open={isPayDialogOpen} onOpenChange={setIsPayDialogOpen}>
+        <DialogContent className='max-w-md'>
+          <DialogHeader>
+            <DialogTitle className='flex items-center gap-2'>
+              <CreditCard className='h-5 w-5' />
+              Choose payment method
+            </DialogTitle>
+            <DialogDescription>Pay for {waitingForPaying.quantity} dishes</DialogDescription>
+          </DialogHeader>
+
+          <div className='space-y-6'>
+            {/* Tóm tắt thanh toán */}
+            <div className='bg-muted p-4 rounded-lg space-y-3'>
+              <h4 className='font-medium text-sm'>Payment Details</h4>
+              <div className='space-y-2 text-sm'>
+                <div className='flex justify-between'>
+                  <span>Number of dishes:</span>
+                  <span>{waitingForPaying.quantity} dishes</span>
+                </div>
+                <div className='border-t pt-2 mt-2'>
+                  <div className='flex justify-between items-center font-semibold text-base'>
+                    <span>Total:</span>
+                    <span className='text-lg text-primary'>{formatCurrency(waitingForPaying.price)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Choose payment method */}
+            <div>
+              <h4 className='font-medium text-sm mb-3'>Choose payment method</h4>
+              <RadioGroup value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
+                {Object.entries(paymentMethodConfig).map(([key, info]) => {
+                  const IconComp = info.icon
+                  return (
+                    <label
+                      key={key}
+                      className={`flex items-start space-x-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                        selectedPaymentMethod === key ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                      } `}
+                    >
+                      <RadioGroupItem value={key} className='mt-1' />
+                      <div className='flex items-start gap-3 flex-1'>
+                        <IconComp className='h-5 w-5 mt-0.5 text-muted-foreground' />
+                        <div className='space-y-1'>
+                          <p className='font-medium text-sm'>{info.label}</p>
+                        </div>
+                      </div>
+                    </label>
+                  )
+                })}
+              </RadioGroup>
+            </div>
+
+            {/* Buttons */}
+            <div className='flex gap-3'>
+              <Button variant='outline' onClick={handleClosePayment} className='flex-1'>
+                Cancel
+              </Button>
+              <Button onClick={confirmPay} className='flex-1'>
+                <CreditCard className='h-4 w-4 mr-2' />
+                Confirm Payment
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog QR thanh toán */}
+      <SepayPaymentDialog
+        open={!!paymentInfo}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleClosePayment()
+          }
+        }}
+        paymentInfo={paymentInfo}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
     </>
   )
 }
