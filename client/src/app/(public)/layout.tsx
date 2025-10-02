@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import NavItems from '@/app/(public)/nav-items'
+import ChatWidget from '@/components/chat-widget'
 
 export default function Layout({
   children
@@ -42,7 +43,10 @@ export default function Layout({
           <DarkModeToggle />
         </div>
       </header>
-      <main className='flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6 lg:gap-8 lg:p-8'>{children}</main>
+      <main className='flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6 lg:gap-8 lg:p-8'>
+        {children}
+        <ChatWidget />
+      </main>
     </div>
   )
 }

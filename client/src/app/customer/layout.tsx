@@ -4,13 +4,14 @@ import type React from 'react'
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Menu, ShoppingCart, User, Gift, Package2, Bell, QrCode, ChevronDown } from 'lucide-react'
+import { Home, Menu, ShoppingCart, User, Gift, Package2, Bell, QrCode, ChevronDown, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import { cn } from '@/lib/utils'
 import { useEffect, useState } from 'react'
+import ChatWidget from '@/components/chat-widget'
 
 const navigation = [
   { name: 'Home', href: '/customer', icon: Home },
@@ -18,6 +19,7 @@ const navigation = [
   { name: 'Promotions', href: '/customer/promotions', icon: Gift },
   { name: 'Scan QR Code', href: '/customer/scan-qr', icon: QrCode },
   { name: 'Reservations', href: '/customer/reservations', icon: Package2 },
+  { name: 'Support', href: '/customer/support', icon: MessageCircle },
   {
     name: 'Account',
     href: '/customer/account/profile',
@@ -194,7 +196,9 @@ export default function CustomerLayout({
       </header>
 
       {/* Main Content */}
-      <main className='flex flex-1 flex-col'>{children}</main>
+      <main className='flex flex-1 flex-col'>
+        {children} <ChatWidget />
+      </main>
 
       {/* Bottom Navigation for Mobile */}
       <div className='md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border'>

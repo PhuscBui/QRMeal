@@ -10,6 +10,8 @@ import DishSnapshot from '~/models/schemas/DishSnapshot.schema'
 import Guest from '~/models/schemas/Guest.schema'
 import GuestPromotion from '~/models/schemas/GuestPromotion.schema'
 import Loyalty from '~/models/schemas/Loyalty.schema'
+import ChatMessage from '~/models/schemas/ChatMessage.schema'
+import ChatSession from '~/models/schemas/ChatSession.schema'
 import Order from '~/models/schemas/Order.schema'
 import OrderGroup from '~/models/schemas/OrderGroup.schema'
 import Payment from '~/models/schemas/Payment.schema'
@@ -117,6 +119,14 @@ class DatabaseService {
 
   get payments(): Collection<Payment> {
     return this.db.collection(envConfig.dbPaymentsCollection)
+  }
+
+  get chatMessages(): Collection<ChatMessage> {
+    return this.db.collection(envConfig.dbChatMessagesCollection)
+  }
+
+  get chatSessions(): Collection<ChatSession> {
+    return this.db.collection(envConfig.dbChatSessionsCollection)
   }
 
   get clientInstance(): MongoClient {

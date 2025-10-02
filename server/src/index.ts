@@ -17,6 +17,7 @@ import socketService from '~/utils/socket'
 import cors from 'cors'
 import helmet from 'helmet'
 import promotionsRoutes from '~/routes/promotion.routes'
+import chatRouter from '~/routes/chat.routes'
 import guest_promotionRouter from '~/routes/guest-promotion.routes'
 import revenuesRouter from '~/routes/revenues.routes'
 import indicatorsRouter from '~/routes/indicators.routes'
@@ -64,6 +65,7 @@ app.use('/static', staticRouter)
 app.use('/tables', tablesRouter)
 app.use('/guest', guestsRouter)
 app.use('/orders', ordersRouter)
+app.use('/chat', chatRouter)
 app.use('/indicators', indicatorsRouter)
 app.use('/promotions', promotionsRoutes)
 app.use('/loyalties', loyaltiesRouter)

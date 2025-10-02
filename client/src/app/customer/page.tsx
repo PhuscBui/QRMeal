@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Search, Star, ChefHat, Award, Users, QrCode, Package, Truck, BookImageIcon } from 'lucide-react'
+import { Search, Star, ChefHat, Award, Users, QrCode, Package, Truck, BookImageIcon, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -187,7 +187,7 @@ export default function CustomerHomePage() {
           <CardDescription>Easy Access to Key Features</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+          <div className='grid grid-cols-2 md:grid-cols-5 gap-4'>
             <Link href='/customer/order-type'>
               <Button variant='outline' className='w-full h-20 flex-col gap-2'>
                 <ChefHat className='h-6 w-6' />
@@ -204,6 +204,12 @@ export default function CustomerHomePage() {
               <Button variant='outline' className='w-full h-20 flex-col gap-2'>
                 <Award className='h-6 w-6' />
                 <span>Promotions</span>
+              </Button>
+            </Link>
+            <Link href='/customer/support'>
+              <Button variant='outline' className='w-full h-20 flex-col gap-2'>
+                <MessageCircle className='h-6 w-6' />
+                <span>Support</span>
               </Button>
             </Link>
             <Link href='/customer/account/profile'>

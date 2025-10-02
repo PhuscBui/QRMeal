@@ -415,3 +415,14 @@ export const SHIFTS_MESSAGES = {
   INVALID_SHIFT_ID: 'Invalid shift ID',
   SHIFT_TIME_CONFLICT: 'Shift time conflict with existing shifts for this staff'
 } as const
+
+export const CHAT_MESSAGES = {
+  CREATE_SESSION_SUCCESS: 'Successfully created chat session',
+  GET_SESSION_SUCCESS: 'Get successful chat session',
+  LIST_SESSIONS_SUCCESS: 'Get list of successful chat sessions',
+  END_SESSION_SUCCESS: 'Successfully ended chat session',
+  LIST_MESSAGES_SUCCESS: 'Get list of successful messages',
+  SEND_MESSAGE_SUCCESS: 'Successfully sent message',
+  SESSION_NOT_FOUND: 'Session not found',
+  ANONYMOUS_ID_REQUIRED: 'Anonymous ID is required'
+} as const

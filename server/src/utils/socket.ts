@@ -6,6 +6,7 @@ import { ManagerRoom, Role } from '~/constants/type'
 import databaseService from '~/services/databases.service'
 import { verifyToken } from '~/utils/jwt'
 import chalk from 'chalk'
+import chatService from '~/services/chat.service'
 
 class SocketService {
   private static instance: SocketService
@@ -28,11 +29,16 @@ class SocketService {
       }
     })
 
-    // Authentication middleware
+    // Authentication middleware - now optional for anonymous users
     this.io.use(async (socket: Socket, next) => {
       const { Authorization } = socket.handshake.auth
+
+      // Allow connection without authorization for anonymous users
       if (!Authorization) {
-        return next(new Error('Invalid authorization'))
+        console.log(chalk.yellowBright('🔌 Anonymous socket connecting:', socket.id))
+        // Mark as anonymous
+        socket.handshake.auth.isAnonymous = true
+        return next()
       }
 
       const accessToken = Authorization.split(' ')[1]
@@ -45,7 +51,6 @@ class SocketService {
         const { account_id, role } = decodedAccessToken
 
         if (role === Role.Guest) {
-          // Handle guest socket connection
           await databaseService.sockets.updateOne(
             { guest_id: new ObjectId(account_id) },
             {
@@ -57,7 +62,6 @@ class SocketService {
             { upsert: true }
           )
         } else if (role === Role.Customer) {
-          // Handle customer socket connection
           await databaseService.sockets.updateOne(
             { customer_id: new ObjectId(account_id) },
             {
@@ -69,7 +73,7 @@ class SocketService {
             { upsert: true }
           )
         } else {
-          // Handle manager/owner socket connection
+          // Handle manager/owner/employee socket connection
           await databaseService.sockets.updateOne(
             { account_id: new ObjectId(account_id) },
             {
@@ -85,18 +89,110 @@ class SocketService {
           socket.join(ManagerRoom)
         }
 
-        // Attach decoded token to socket for future use
         socket.handshake.auth.decodedAccessToken = decodedAccessToken
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (error: any) {
-        return next(error)
+        socket.handshake.auth.isAnonymous = false
+      } catch (error) {
+        console.log(chalk.redBright('❌ Socket auth error:', error))
+        // Allow connection even if token is invalid (treat as anonymous)
+        socket.handshake.auth.isAnonymous = true
       }
 
       next()
     })
 
     this.io.on('connection', async (socket: Socket) => {
-      console.log(chalk.greenBright('🔌 Socket connected:', socket.id))
+      const isAnonymous = socket.handshake.auth.isAnonymous
+      console.log(chalk.greenBright(`🔌 Socket connected: ${socket.id} ${isAnonymous ? '(Anonymous)' : ''}`))
+
+      // Handle chat send events
+      socket.on(
+        'chat:send',
+        async (payload: { sessionId: string; message: string; sender?: 'user' | 'staff'; anonymousId?: string }) => {
+          try {
+            const doc = await chatService.addMessage(payload.sessionId, payload.sender || 'user', payload.message)
+
+            // Find the session
+            const session = await databaseService.chatSessions.findOne({
+              _id: new ObjectId(payload.sessionId)
+            })
+
+            if (!session) {
+              socket.emit('chat:error', { message: 'Session not found' })
+              return
+            }
+
+            // ALWAYS broadcast to manager room for ALL message types
+            this.getIO().to(ManagerRoom).emit('chat:new-message', doc)
+
+            // Route message to specific participants
+            if (session.guest_id) {
+              const guestSocket = await databaseService.sockets.findOne({
+                guest_id: session.guest_id
+              })
+              if (guestSocket && guestSocket.socketId !== socket.id) {
+                this.getIO().to(guestSocket.socketId).emit('chat:new-message', doc)
+              }
+            } else if (session.customer_id) {
+              const customerSocket = await databaseService.sockets.findOne({
+                customer_id: session.customer_id
+              })
+              if (customerSocket && customerSocket.socketId !== socket.id) {
+                this.getIO().to(customerSocket.socketId).emit('chat:new-message', doc)
+              }
+            }
+            // For anonymous sessions, managers will get notification via broadcast above
+
+            // Echo back to sender
+            socket.emit('chat:new-message', doc)
+          } catch (error) {
+            socket.emit('chat:error', { message: (error as Error).message })
+          }
+        }
+      )
+
+      // Handle typing indicators
+      socket.on('chat:typing', async (payload: { sessionId: string; isTyping: boolean }) => {
+        try {
+          const session = await databaseService.chatSessions.findOne({
+            _id: new ObjectId(payload.sessionId)
+          })
+          if (!session) return
+
+          // Broadcast typing status to managers
+          this.getIO()
+            .to(ManagerRoom)
+            .emit('chat:typing', {
+              sessionId: payload.sessionId,
+              isTyping: payload.isTyping,
+              sender: socket.handshake.auth.decodedAccessToken?.role || 'user'
+            })
+
+          // Route to specific participants
+          if (session.guest_id) {
+            const guestSocket = await databaseService.sockets.findOne({
+              guest_id: session.guest_id
+            })
+            if (guestSocket && guestSocket.socketId !== socket.id) {
+              this.getIO().to(guestSocket.socketId).emit('chat:typing', {
+                sessionId: payload.sessionId,
+                isTyping: payload.isTyping
+              })
+            }
+          } else if (session.customer_id) {
+            const customerSocket = await databaseService.sockets.findOne({
+              customer_id: session.customer_id
+            })
+            if (customerSocket && customerSocket.socketId !== socket.id) {
+              this.getIO().to(customerSocket.socketId).emit('chat:typing', {
+                sessionId: payload.sessionId,
+                isTyping: payload.isTyping
+              })
+            }
+          }
+        } catch (error) {
+          console.error('Error handling typing indicator:', error)
+        }
+      })
 
       socket.on('disconnect', async () => {
         console.log(chalk.redBright('🔌 Socket disconnected:', socket.id))

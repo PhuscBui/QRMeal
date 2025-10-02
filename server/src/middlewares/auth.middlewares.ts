@@ -1,4 +1,4 @@
-import { Request } from 'express'
+import { NextFunction, Response, Request } from 'express'
 import { checkSchema, ParamSchema } from 'express-validator'
 import { JsonWebTokenError } from 'jsonwebtoken'
 import { capitalize } from 'lodash'
@@ -127,3 +127,33 @@ export const refreshTokenValidator = validate(
     ['body']
   )
 )
+
+export const optionalAccessTokenValidator = async (req: Request, res: Response, next: NextFunction) => {
+  const { Authorization } = req.headers
+
+  // If no Authorization header, just continue
+  if (!Authorization) {
+    return next()
+  }
+
+  const accessToken = typeof Authorization === 'string' ? Authorization.split(' ')[1] : undefined
+
+  try {
+    if (typeof accessToken === 'string') {
+      const decodedAccessToken = await verifyToken({
+        token: accessToken,
+        secretOrPublicKey: envConfig.accessTokenSecret
+      })
+
+      // Attach decoded token if valid
+      req.decoded_authorization = decodedAccessToken
+    }
+  } catch (error) {
+    // Just log the error but don't throw - this is optional auth
+    console.log('Invalid or expired token, continuing without auth')
+    console.log(error)
+  }
+
+  // Always call next() only once at the end
+  next()
+}

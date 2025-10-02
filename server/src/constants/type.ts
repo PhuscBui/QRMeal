@@ -127,3 +127,23 @@ export const ShiftRequestStatusValues = [
   ShiftRequestStatus.Rejected,
   ShiftRequestStatus.Cancelled
 ] as const
+
+export const PaymentStatus = {
+  Pending: 'pending',
+  Success: 'success',
+  Failed: 'failed',
+  Refunded: 'refunded'
+}
+export const PaymentStatusValues = [
+  PaymentStatus.Pending,
+  PaymentStatus.Success,
+  PaymentStatus.Failed,
+  PaymentStatus.Refunded
+] as const
+
+export const PaymentMethod = {
+  Bank: 'bank',
+  Cash: 'cash'
+} as const
+
+export const PaymentMethodValues = [PaymentMethod.Bank, PaymentMethod.Cash] as const
