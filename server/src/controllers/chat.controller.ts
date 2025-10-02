@@ -109,7 +109,7 @@ export const addChatMessageController = async (req: Request, res: Response) => {
     console.error('Failed to broadcast message to managers:', error)
   }
 
-  return res.json({
+  res.json({
     message: CHAT_MESSAGES.SEND_MESSAGE_SUCCESS,
     result
   })
