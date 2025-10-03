@@ -11,6 +11,8 @@ import chatApiRequest from '@/apiRequests/chat'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MessageCircle, X, Send, Loader2 } from 'lucide-react'
+import { useAccountMe } from '@/queries/useAccount'
+import { useGuestMe } from '@/queries/useGuest'
 
 interface ChatMessage {
   _id: string
@@ -20,12 +22,217 @@ interface ChatMessage {
   created_at: string | Date
 }
 
-let anonymousIdMemory: string | null = null
+// localStorage keys
+const STORAGE_KEYS = {
+  ANONYMOUS_ID: 'chat_anonymous_id',
+  ANONYMOUS_SESSION_ID: 'chat_anonymous_session_id',
+  ANONYMOUS_MESSAGES: 'chat_anonymous_messages',
+  GUEST_SESSION_PREFIX: 'chat_guest_session_',
+  GUEST_MESSAGES_PREFIX: 'chat_guest_messages_',
+  CUSTOMER_SESSION_PREFIX: 'chat_customer_session_',
+  CUSTOMER_MESSAGES_PREFIX: 'chat_customer_messages_',
+  LAST_CLEANUP: 'chat_last_cleanup'
+}
 
+const MAX_STORED_MESSAGES = 50 // Giới hạn 50 tin nhắn gần nhất
+const CLEANUP_INTERVAL_DAYS = 7 // Cleanup mỗi 7 ngày
+const MESSAGE_EXPIRY_DAYS = 30 // Tin nhắn cũ hơn 30 ngày sẽ bị xóa
+
+// Helper functions for localStorage
+const getFromStorage = (key: string) => {
+  if (typeof window === 'undefined') return null
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+const setToStorage = (key: string, value: string) => {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(key, value)
+  } catch (error) {
+    // If quota exceeded, cleanup and retry
+    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      console.warn('Storage quota exceeded, cleaning up and retrying...')
+      cleanupOldMessages()
+      try {
+        localStorage.setItem(key, value)
+      } catch (retryError) {
+        console.error('Failed to save even after cleanup:', retryError)
+      }
+    } else {
+      console.error('Failed to save to localStorage:', error)
+    }
+  }
+}
+
+const removeFromStorage = (key: string) => {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.removeItem(key)
+  } catch (error) {
+    console.error('Failed to remove from localStorage:', error)
+  }
+}
+
+// Anonymous user functions
 const getAnonymousId = () => {
-  if (anonymousIdMemory) return anonymousIdMemory
-  anonymousIdMemory = `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-  return anonymousIdMemory
+  let anonymousId = getFromStorage(STORAGE_KEYS.ANONYMOUS_ID)
+  if (!anonymousId) {
+    anonymousId = `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    setToStorage(STORAGE_KEYS.ANONYMOUS_ID, anonymousId)
+  }
+  return anonymousId
+}
+
+const getAnonymousSessionId = () => getFromStorage(STORAGE_KEYS.ANONYMOUS_SESSION_ID)
+const saveAnonymousSessionId = (sessionId: string) => setToStorage(STORAGE_KEYS.ANONYMOUS_SESSION_ID, sessionId)
+
+const getAnonymousMessages = (): ChatMessage[] => {
+  const stored = getFromStorage(STORAGE_KEYS.ANONYMOUS_MESSAGES)
+  if (!stored) return []
+  try {
+    return JSON.parse(stored)
+  } catch {
+    return []
+  }
+}
+
+const setAnonymousMessages = (messages: ChatMessage[]) => {
+  // Chỉ lưu 50 tin nhắn gần nhất
+  const limitedMessages = messages.slice(-MAX_STORED_MESSAGES)
+  setToStorage(STORAGE_KEYS.ANONYMOUS_MESSAGES, JSON.stringify(limitedMessages))
+}
+
+const clearAnonymousStorage = () => {
+  removeFromStorage(STORAGE_KEYS.ANONYMOUS_ID)
+  removeFromStorage(STORAGE_KEYS.ANONYMOUS_SESSION_ID)
+  removeFromStorage(STORAGE_KEYS.ANONYMOUS_MESSAGES)
+}
+
+// Guest user functions
+const getGuestSessionId = (guestId: string) => {
+  return getFromStorage(`${STORAGE_KEYS.GUEST_SESSION_PREFIX}${guestId}`)
+}
+
+const setGuestSessionId = (guestId: string, sessionId: string) => {
+  setToStorage(`${STORAGE_KEYS.GUEST_SESSION_PREFIX}${guestId}`, sessionId)
+}
+
+const getGuestMessages = (guestId: string): ChatMessage[] => {
+  const stored = getFromStorage(`${STORAGE_KEYS.GUEST_MESSAGES_PREFIX}${guestId}`)
+  if (!stored) return []
+  try {
+    return JSON.parse(stored)
+  } catch {
+    return []
+  }
+}
+
+const setGuestMessages = (guestId: string, messages: ChatMessage[]) => {
+  const limitedMessages = messages.slice(-MAX_STORED_MESSAGES)
+  setToStorage(`${STORAGE_KEYS.GUEST_MESSAGES_PREFIX}${guestId}`, JSON.stringify(limitedMessages))
+}
+
+// Customer user functions
+const getCustomerSessionId = (customerId: string) => {
+  return getFromStorage(`${STORAGE_KEYS.CUSTOMER_SESSION_PREFIX}${customerId}`)
+}
+
+const setCustomerSessionId = (customerId: string, sessionId: string) => {
+  setToStorage(`${STORAGE_KEYS.CUSTOMER_SESSION_PREFIX}${customerId}`, sessionId)
+}
+
+const getCustomerMessages = (customerId: string): ChatMessage[] => {
+  const stored = getFromStorage(`${STORAGE_KEYS.CUSTOMER_MESSAGES_PREFIX}${customerId}`)
+  if (!stored) return []
+  try {
+    return JSON.parse(stored)
+  } catch {
+    return []
+  }
+}
+
+const setCustomerMessages = (customerId: string, messages: ChatMessage[]) => {
+  const limitedMessages = messages.slice(-MAX_STORED_MESSAGES)
+  setToStorage(`${STORAGE_KEYS.CUSTOMER_MESSAGES_PREFIX}${customerId}`, JSON.stringify(limitedMessages))
+}
+
+// Cleanup old messages and check localStorage size
+const cleanupOldMessages = () => {
+  if (typeof window === 'undefined') return
+
+  try {
+    const lastCleanup = getFromStorage(STORAGE_KEYS.LAST_CLEANUP)
+    const now = Date.now()
+
+    // Check if we need to cleanup (every 7 days)
+    if (lastCleanup && now - parseInt(lastCleanup) < CLEANUP_INTERVAL_DAYS * 24 * 60 * 60 * 1000) {
+      return
+    }
+
+    const expiryTime = now - MESSAGE_EXPIRY_DAYS * 24 * 60 * 60 * 1000
+
+    // Get all localStorage keys
+    const allKeys = Object.keys(localStorage)
+
+    // Filter and clean old message keys
+    allKeys.forEach((key) => {
+      if (
+        key.startsWith(STORAGE_KEYS.GUEST_MESSAGES_PREFIX) ||
+        key.startsWith(STORAGE_KEYS.CUSTOMER_MESSAGES_PREFIX) ||
+        key === STORAGE_KEYS.ANONYMOUS_MESSAGES
+      ) {
+        try {
+          const stored = localStorage.getItem(key)
+          if (!stored) return
+
+          const messages: ChatMessage[] = JSON.parse(stored)
+
+          // Filter out messages older than 30 days
+          const recentMessages = messages.filter((msg) => {
+            const msgTime = new Date(msg.created_at).getTime()
+            return msgTime > expiryTime
+          })
+
+          // If no recent messages, remove the key entirely
+          if (recentMessages.length === 0) {
+            localStorage.removeItem(key)
+          } else if (recentMessages.length < messages.length) {
+            // Update with only recent messages
+            localStorage.setItem(key, JSON.stringify(recentMessages))
+          }
+        } catch (error) {
+          console.error('Failed to cleanup messages for key:', key, error)
+        }
+      }
+    })
+
+    // Update last cleanup time
+    setToStorage(STORAGE_KEYS.LAST_CLEANUP, now.toString())
+  } catch (error) {
+    console.error('Failed to cleanup old messages:', error)
+  }
+}
+
+// Check localStorage quota and handle quota exceeded
+const checkStorageQuota = () => {
+  if (typeof window === 'undefined') return true
+
+  try {
+    const testKey = '__storage_test__'
+    localStorage.setItem(testKey, 'test')
+    localStorage.removeItem(testKey)
+    return true
+  } catch (e) {
+    // localStorage is full
+    console.error('localStorage quota exceeded:', e)
+    console.warn('localStorage quota exceeded, cleaning up...')
+    cleanupOldMessages()
+    return false
+  }
 }
 
 export default function ChatWidget() {
@@ -59,8 +266,122 @@ export default function ChatWidget() {
   const { mutate: sendMessage } = useSendChatMessageMutation(sessionId)
 
   const [text, setText] = useState('')
+  const [allMessages, setAllMessages] = useState<ChatMessage[]>([]) // Lưu tất cả messages
+  const [isManuallyMerging, setIsManuallyMerging] = useState(false) // Flag để prevent ghi đè
   const bottomRef = useRef<HTMLDivElement | null>(null)
   const messagesContainerRef = useRef<HTMLDivElement | null>(null)
+  const { data: me } = useAccountMe(isAuth && role === 'Customer')
+  const { data: guestMe } = useGuestMe(isAuth && role === 'Guest')
+
+  // Get accountId from decoded token or socket
+  const getAccountId = useCallback(() => {
+    // You need to get this from your auth context or decode the token
+    // This is a placeholder - adjust based on your actual implementation
+    if (!isAuth) return null
+
+    if (role === 'Customer') {
+      return me?.payload.result._id || null
+    } else if (role === 'Guest') {
+      return guestMe?.payload.result._id || null
+    }
+  }, [guestMe?.payload.result._id, isAuth, me?.payload.result._id, role])
+
+  const accountId = getAccountId()
+
+  // Run cleanup on mount
+  useEffect(() => {
+    cleanupOldMessages()
+    checkStorageQuota()
+  }, [])
+
+  // Sync messages from server to allMessages
+  useEffect(() => {
+    if (isManuallyMerging) return // Skip khi đang merge manual
+
+    if (isAuth && messages && messages.length > 0) {
+      setAllMessages(messages)
+    }
+  }, [isAuth, messages, isManuallyMerging])
+
+  // Sync localMessages to allMessages for anonymous users
+  useEffect(() => {
+    if (isManuallyMerging) return // Skip khi đang merge manual
+
+    if (!isAuth && localMessages.length > 0) {
+      setAllMessages(localMessages)
+    }
+  }, [isAuth, localMessages, isManuallyMerging])
+
+  // Load stored data on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    if (isAuth && accountId) {
+      // Load data for authenticated users
+      if (role === 'Guest') {
+        const storedMessages = getGuestMessages(accountId)
+
+        if (storedMessages.length > 0) {
+          setLocalMessages(storedMessages)
+        }
+      } else if (role === 'Customer') {
+        const storedMessages = getCustomerMessages(accountId)
+
+        if (storedMessages.length > 0) {
+          setLocalMessages(storedMessages)
+        }
+      }
+    } else if (!isAuth) {
+      // Load data for anonymous users
+      const storedSessionId = getAnonymousSessionId()
+      const storedMessages = getAnonymousMessages()
+
+      if (storedSessionId) {
+        setAnonymousSessionId(storedSessionId)
+      }
+
+      if (storedMessages.length > 0) {
+        setLocalMessages(storedMessages)
+      }
+    }
+  }, [isAuth, role, accountId])
+
+  // Clear anonymous storage when user logs in
+  useEffect(() => {
+    if (isAuth && anonymousSessionId) {
+      clearAnonymousStorage()
+      setAnonymousSessionId(null)
+      setLocalMessages([])
+    }
+  }, [isAuth, anonymousSessionId])
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (!isAuth) {
+      // Anonymous users
+      if (localMessages.length > 0) {
+        setAnonymousMessages(localMessages)
+      }
+    } else if (accountId && messages && messages.length > 0) {
+      // Authenticated users - save server messages
+      if (role === 'Guest') {
+        setGuestMessages(accountId, messages)
+      } else if (role === 'Customer') {
+        setCustomerMessages(accountId, messages)
+      }
+    }
+  }, [localMessages, messages, isAuth, role, accountId])
+
+  // Save session ID for authenticated users
+  useEffect(() => {
+    if (isAuth && accountId && activeSession?._id) {
+      if (role === 'Guest') {
+        setGuestSessionId(accountId, activeSession._id)
+      } else if (role === 'Customer') {
+        setCustomerSessionId(accountId, activeSession._id)
+      }
+    }
+  }, [isAuth, accountId, activeSession, role])
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -82,18 +403,49 @@ export default function ChatWidget() {
     const initializeSession = async () => {
       if (hasInitialized || !shouldRender) return
 
-      if (isAuth && role && (role === 'Customer' || role === 'Guest')) {
-        setShouldFetchSession(true)
-        const refetchFn = role === 'Customer' ? refetchCustomerSession : refetchGuestSession
-        await refetchFn()
+      if (isAuth && role && (role === 'Customer' || role === 'Guest') && accountId) {
+        // Try to load stored session first
+        const storedSessionId = role === 'Guest' ? getGuestSessionId(accountId) : getCustomerSessionId(accountId)
+
+        if (storedSessionId) {
+          // Verify session still exists on server
+          try {
+            await chatApiRequest.listMessages(storedSessionId, { limit: 1 })
+            // Session is valid, messages will be loaded by query
+          } catch {
+            // Session no longer valid, fetch new one
+            setShouldFetchSession(true)
+            const refetchFn = role === 'Customer' ? refetchCustomerSession : refetchGuestSession
+            await refetchFn()
+          }
+        } else {
+          // No stored session, fetch from server
+          setShouldFetchSession(true)
+          const refetchFn = role === 'Customer' ? refetchCustomerSession : refetchGuestSession
+          await refetchFn()
+        }
+
         setHasInitialized(true)
       } else if (!isAuth) {
+        // For anonymous users, check if we have stored session
+        const storedSessionId = getAnonymousSessionId()
+        if (storedSessionId) {
+          // Verify session still exists on server
+          try {
+            await chatApiRequest.listMessages(storedSessionId, { limit: 1 })
+            setAnonymousSessionId(storedSessionId)
+          } catch {
+            // Session no longer valid, clear storage
+            clearAnonymousStorage()
+            setLocalMessages([])
+          }
+        }
         setHasInitialized(true)
       }
     }
 
     initializeSession()
-  }, [isAuth, role, shouldRender, hasInitialized, refetchCustomerSession, refetchGuestSession])
+  }, [isAuth, role, shouldRender, hasInitialized, accountId, refetchCustomerSession, refetchGuestSession])
 
   useEffect(() => {
     const loadExistingMessages = async () => {
@@ -125,7 +477,7 @@ export default function ChatWidget() {
     if (!isLoadingMore) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [messages, localMessages, isLoadingMore])
+  }, [allMessages, isLoadingMore])
 
   useEffect(() => {
     if (!isAuth || !socket || !activeSession) return
@@ -191,10 +543,14 @@ export default function ChatWidget() {
   }, [isAuth, anonymousSessionId, open])
 
   const loadMoreMessages = useCallback(async () => {
-    if (!sessionId || !messages || messages.length === 0 || isLoadingMore || !hasMore) return
+    if (!sessionId || allMessages.length === 0 || isLoadingMore || !hasMore) return
 
     setIsLoadingMore(true)
-    const oldestMessageId = messages[0]._id
+    const oldestMessageId = allMessages[0]._id
+
+    // Save current scroll position
+    const container = messagesContainerRef.current
+    const scrollHeightBefore = container?.scrollHeight || 0
 
     try {
       const response = await chatApiRequest.listMessages(sessionId, { limit: 50, before: oldestMessageId })
@@ -204,13 +560,46 @@ export default function ChatWidget() {
         setHasMore(false)
       }
 
-      await refetch()
+      if (newMessages.length > 0) {
+        setIsManuallyMerging(true) // Bắt đầu merge manual
+        // Merge old messages with current messages
+        if (isAuth) {
+          // For authenticated users, update via refetch which will trigger the sync effect
+          await refetch()
+
+          // Manually merge if needed
+          setAllMessages((prev) => {
+            const merged = [...newMessages, ...prev]
+            // Remove duplicates based on _id
+            const unique = merged.filter((msg, index, self) => index === self.findIndex((m) => m._id === msg._id))
+            return unique
+          })
+        } else {
+          // For anonymous users, update localMessages
+          setLocalMessages((prev) => {
+            const merged = [...newMessages, ...prev]
+            const unique = merged.filter((msg, index, self) => index === self.findIndex((m) => m._id === msg._id))
+            return unique
+          })
+        }
+
+        setIsManuallyMerging(false) // Kết thúc merge manual
+
+        // Restore scroll position after new messages are added
+        setTimeout(() => {
+          if (container) {
+            const scrollHeightAfter = container.scrollHeight
+            const scrollDiff = scrollHeightAfter - scrollHeightBefore
+            container.scrollTop = scrollDiff
+          }
+        }, 0)
+      }
     } catch (error) {
       console.error('Error loading more messages:', error)
     } finally {
       setIsLoadingMore(false)
     }
-  }, [sessionId, messages, isLoadingMore, hasMore, refetch])
+  }, [sessionId, allMessages, isLoadingMore, hasMore, refetch, isAuth])
 
   const handleScroll = useCallback(() => {
     const container = messagesContainerRef.current
@@ -254,6 +643,7 @@ export default function ChatWidget() {
         const response = await chatApiRequest.createAnonymousSession({ anonymousId })
         if (response.payload.result._id) {
           setAnonymousSessionId(response.payload.result._id)
+          saveAnonymousSessionId(response.payload.result._id)
           return response.payload.result._id
         }
       } catch (error) {
@@ -343,7 +733,7 @@ export default function ChatWidget() {
     return null
   }
 
-  const displayMessages = isAuth && activeSession ? messages : localMessages
+  const displayMessages = allMessages
 
   return (
     <div className='fixed bottom-4 right-4 z-50'>
