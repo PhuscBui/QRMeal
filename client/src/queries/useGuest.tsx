@@ -26,9 +26,10 @@ export const useGuestGetOrderListQuery = () => {
   })
 }
 
-export const useGuestMe = () => {
+export const useGuestMe = (enabled: boolean = true) => {
   return useQuery({
     queryKey: ['guest-me'],
-    queryFn: guestApiRequest.getMe
+    queryFn: guestApiRequest.getMe,
+    enabled
   })
 }
