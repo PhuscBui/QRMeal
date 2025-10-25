@@ -14,24 +14,28 @@ export const useCreateSessionMutation = () => {
 }
 
 // Get or create guest session - manual trigger only
-export const useMyChatSessionQuery = (enabled: boolean, manualTrigger: boolean = false) => {
+export const useMyChatSessionQuery = (enabled: boolean, manualTrigger: boolean = false, accountId?: string | null) => {
   return useQuery({
-    queryKey: ['chat', 'session', 'guest'],
+    queryKey: ['chat', 'session', 'guest', accountId],
     queryFn: chatApiRequest.getOrCreateGuestSession,
     select: (data) => data.payload.result,
-    enabled: enabled && manualTrigger, // Only fetch when explicitly triggered
-    staleTime: Infinity, // Don't refetch automatically
-    gcTime: Infinity // Keep in cache
+    enabled: enabled && manualTrigger && !!accountId,
+    staleTime: Infinity,
+    gcTime: Infinity
   })
 }
 
 // Get or create customer session - manual trigger only
-export const useMyCustomerChatSessionQuery = (enabled: boolean, manualTrigger: boolean = false) => {
+export const useMyCustomerChatSessionQuery = (
+  enabled: boolean,
+  manualTrigger: boolean = false,
+  accountId?: string | null
+) => {
   return useQuery({
-    queryKey: ['chat', 'session', 'customer'],
+    queryKey: ['chat', 'session', 'customer', accountId],
     queryFn: chatApiRequest.getOrCreateCustomerSession,
     select: (data) => data.payload.result,
-    enabled: enabled && manualTrigger, // Only fetch when explicitly triggered
+    enabled: enabled && manualTrigger && !!accountId,
     staleTime: Infinity,
     gcTime: Infinity
   })
@@ -60,11 +64,14 @@ export const useEndSessionMutation = () => {
 
 // Get messages for a session
 export const useChatMessagesQuery = (sessionId: string | undefined, params: ListMessagesQueryParamsType) => {
+  const paramsKey = params ? JSON.stringify(params) : ''
   return useQuery({
-    queryKey: ['chat', 'messages', sessionId, params],
+    queryKey: ['chat', 'messages', sessionId, paramsKey, params],
     queryFn: () => chatApiRequest.listMessages(sessionId!, params),
     select: (data) => data.payload.result,
-    enabled: !!sessionId
+    enabled: !!sessionId,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false
   })
 }
 
