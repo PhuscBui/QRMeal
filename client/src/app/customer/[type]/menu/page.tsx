@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Search, Filter, Star, Plus, Minus, ChefHat, MapPin, Package, Truck } from 'lucide-react'
+import { Search, Filter, Star, Plus, Minus, ChefHat, MapPin, Package, Truck, Camera } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -16,6 +16,7 @@ import { useDishListQuery } from '@/queries/useDish'
 import { TableInfo } from '@/types/common.type'
 import { DishReviewsModal } from '@/components/dish-reviews-modal'
 import { DishResType } from '@/schemaValidations/dish.schema'
+import { ImageSearchModal } from '@/components/image-search-modal'
 
 const sortOptions = [
   { value: 'popular', label: 'Popular' },
@@ -42,6 +43,7 @@ export default function MenuPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [tableInfo, setTableInfo] = useState<TableInfo | null>(null)
   const [selectedDish, setSelectedDish] = useState<DishResType['result'] | null>(null)
+  const [showImageSearch, setShowImageSearch] = useState(false)
 
   // Order type specific configurations
   const orderTypeConfig = {
@@ -190,6 +192,11 @@ export default function MenuPage() {
           />
         </div>
 
+        <Button variant='outline' onClick={() => setShowImageSearch(true)} className='gap-2'>
+          <Camera className='h-4 w-4' />
+          Search by image
+        </Button>
+
         <div className='flex gap-2'>
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className='w-48'>
@@ -272,7 +279,7 @@ export default function MenuPage() {
       {/* Dishes Grid */}
       <div className='grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8'>
         {sortedDishes.map((dish) => (
-          <Card key={dish._id} className='overflow-hidden hover:shadow-lg transition-shadow'>
+          <Card key={dish._id} className='overflow-hidden hover:shadow-lg transition-shadow' id={`dish-${dish._id}`}>
             <div className='relative'>
               <Image
                 src={dish.image || '/placeholder.svg?height=200&width=300&query=delicious food dish'}
@@ -383,6 +390,18 @@ export default function MenuPage() {
           </Button>
         </div>
       )}
+
+      <ImageSearchModal
+        isOpen={showImageSearch}
+        onClose={() => setShowImageSearch(false)}
+        onDishSelect={(dish) => {
+          // Tự động thêm vào cart hoặc scroll đến món đó
+          addToCart(dish._id)
+          // Hoặc scroll đến món đó trong danh sách
+          const element = document.getElementById(`dish-${dish._id}`)
+          element?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }}
+      />
     </div>
   )
 }

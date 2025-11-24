@@ -59,6 +59,7 @@ export const USERS_MESSAGES = {
 } as const
 
 export const DISHES_MESSAGE = {
+  DISH_IMAGE_SEARCH_SUCCESS: 'Dish image search success',
   DISH_NOT_FOUND: 'Dish not found',
   DISH_CREATED: 'Dish created',
   DISH_UPDATED: 'Dish updated',

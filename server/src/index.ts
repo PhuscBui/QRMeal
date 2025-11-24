@@ -56,6 +56,9 @@ app.use((req, res, next) => {
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
   next()
 })
+app.use(express.json({ limit: '10mb' }))
+app.use(express.urlencoded({ limit: '10mb', extended: true }))
+
 app.use(express.json())
 app.use('/auth', authRouter)
 app.use('/accounts', accountsRouter)

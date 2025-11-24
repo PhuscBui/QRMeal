@@ -2,6 +2,7 @@ import { ObjectId, WithId } from 'mongodb'
 import databaseService from './databases.service'
 import ChatSession from '~/models/schemas/ChatSession.schema'
 import ChatMessage from '~/models/schemas/ChatMessage.schema'
+import gptService from './gpt.service'
 
 class ChatService {
   async createSession(accountId?: string, accountType: 'guest' | 'customer' | 'anonymous' = 'guest') {
@@ -164,6 +165,41 @@ class ChatService {
     })
     const result = await databaseService.chatMessages.insertOne(doc)
     return { _id: result.insertedId, ...doc }
+  }
+
+  async addMessageWithGPT(sessionId: string, sender: 'user' | 'bot' | 'staff', message: string) {
+    console.log('Chat Service - Adding message:', { sessionId, sender, message })
+    
+    // Lưu tin nhắn của user
+    const userMessage = await this.addMessage(sessionId, sender, message)
+    console.log('Chat Service - User message saved:', userMessage._id)
+    
+    // Kiểm tra xem có cần GPT xử lý không
+    if (sender === 'user' && gptService.shouldUseGPT(message)) {
+      console.log('Chat Service - GPT processing triggered for message:', message)
+      try {
+        // Tạo phản hồi từ GPT
+        const gptResponse = await gptService.generateResponse(message, sessionId)
+        console.log('Chat Service - GPT response received:', gptResponse.substring(0, 100) + '...')
+        
+        // Lưu phản hồi từ GPT
+        const botMessage = await this.addMessage(sessionId, 'bot', gptResponse)
+        console.log('Chat Service - Bot message saved:', botMessage._id)
+        
+        return {
+          userMessage,
+          botMessage
+        }
+      } catch (error) {
+        console.error('GPT processing error:', error)
+        // Nếu GPT lỗi, vẫn trả về tin nhắn của user
+        return { userMessage }
+      }
+    } else {
+      console.log('Chat Service - GPT processing not triggered')
+    }
+    
+    return { userMessage }
   }
 
   async getSessionById(sessionId: string) {

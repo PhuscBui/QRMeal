@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { MessageCircle, X, Send, Loader2 } from 'lucide-react'
 import { useAccountMe } from '@/queries/useAccount'
 import { useGuestMe } from '@/queries/useGuest'
+import ChatSuggestions from './chat-suggestions'
 
 interface ChatMessage {
   _id: string
@@ -22,21 +23,17 @@ interface ChatMessage {
   created_at: string | Date
 }
 
-// localStorage keys
+// localStorage keys - CHỈ cho anonymous user
 const STORAGE_KEYS = {
   ANONYMOUS_ID: 'chat_anonymous_id',
   ANONYMOUS_SESSION_ID: 'chat_anonymous_session_id',
   ANONYMOUS_MESSAGES: 'chat_anonymous_messages',
-  GUEST_SESSION_PREFIX: 'chat_guest_session_',
-  GUEST_MESSAGES_PREFIX: 'chat_guest_messages_',
-  CUSTOMER_SESSION_PREFIX: 'chat_customer_session_',
-  CUSTOMER_MESSAGES_PREFIX: 'chat_customer_messages_',
   LAST_CLEANUP: 'chat_last_cleanup'
 }
 
-const MAX_STORED_MESSAGES = 50 // Limit to 50 most recent messages
-const CLEANUP_INTERVAL_DAYS = 7 // Cleanup every 7 days
-const MESSAGE_EXPIRY_DAYS = 30 // Messages older than 30 days are deleted
+const MAX_STORED_MESSAGES = 50
+const CLEANUP_INTERVAL_DAYS = 7
+const MESSAGE_EXPIRY_DAYS = 30
 
 // Helper functions for localStorage
 const getFromStorage = (key: string) => {
@@ -53,7 +50,6 @@ const setToStorage = (key: string, value: string) => {
   try {
     localStorage.setItem(key, value)
   } catch (error) {
-    // If quota exceeded, cleanup and retry
     if (error instanceof DOMException && error.name === 'QuotaExceededError') {
       console.warn('Storage quota exceeded, cleaning up and retrying...')
       cleanupOldMessages()
@@ -111,55 +107,7 @@ const clearAnonymousStorage = () => {
   removeFromStorage(STORAGE_KEYS.ANONYMOUS_MESSAGES)
 }
 
-// Guest user functions
-const getGuestSessionId = (guestId: string) => {
-  return getFromStorage(`${STORAGE_KEYS.GUEST_SESSION_PREFIX}${guestId}`)
-}
-
-const setGuestSessionId = (guestId: string, sessionId: string) => {
-  setToStorage(`${STORAGE_KEYS.GUEST_SESSION_PREFIX}${guestId}`, sessionId)
-}
-
-const getGuestMessages = (guestId: string): ChatMessage[] => {
-  const stored = getFromStorage(`${STORAGE_KEYS.GUEST_MESSAGES_PREFIX}${guestId}`)
-  if (!stored) return []
-  try {
-    return JSON.parse(stored)
-  } catch {
-    return []
-  }
-}
-
-const setGuestMessages = (guestId: string, messages: ChatMessage[]) => {
-  const limitedMessages = messages.slice(-MAX_STORED_MESSAGES)
-  setToStorage(`${STORAGE_KEYS.GUEST_MESSAGES_PREFIX}${guestId}`, JSON.stringify(limitedMessages))
-}
-
-// Customer user functions
-const getCustomerSessionId = (customerId: string) => {
-  return getFromStorage(`${STORAGE_KEYS.CUSTOMER_SESSION_PREFIX}${customerId}`)
-}
-
-const setCustomerSessionId = (customerId: string, sessionId: string) => {
-  setToStorage(`${STORAGE_KEYS.CUSTOMER_SESSION_PREFIX}${customerId}`, sessionId)
-}
-
-const getCustomerMessages = (customerId: string): ChatMessage[] => {
-  const stored = getFromStorage(`${STORAGE_KEYS.CUSTOMER_MESSAGES_PREFIX}${customerId}`)
-  if (!stored) return []
-  try {
-    return JSON.parse(stored)
-  } catch {
-    return []
-  }
-}
-
-const setCustomerMessages = (customerId: string, messages: ChatMessage[]) => {
-  const limitedMessages = messages.slice(-MAX_STORED_MESSAGES)
-  setToStorage(`${STORAGE_KEYS.CUSTOMER_MESSAGES_PREFIX}${customerId}`, JSON.stringify(limitedMessages))
-}
-
-// Cleanup old messages and check localStorage size
+// Cleanup old messages
 const cleanupOldMessages = () => {
   if (typeof window === 'undefined') return
 
@@ -172,55 +120,29 @@ const cleanupOldMessages = () => {
     }
 
     const expiryTime = now - MESSAGE_EXPIRY_DAYS * 24 * 60 * 60 * 1000
+    const stored = getFromStorage(STORAGE_KEYS.ANONYMOUS_MESSAGES)
 
-    const allKeys = Object.keys(localStorage)
+    if (stored) {
+      try {
+        const messages: ChatMessage[] = JSON.parse(stored)
+        const recentMessages = messages.filter((msg) => {
+          const msgTime = new Date(msg.created_at).getTime()
+          return msgTime > expiryTime
+        })
 
-    allKeys.forEach((key) => {
-      if (
-        key.startsWith(STORAGE_KEYS.GUEST_MESSAGES_PREFIX) ||
-        key.startsWith(STORAGE_KEYS.CUSTOMER_MESSAGES_PREFIX) ||
-        key === STORAGE_KEYS.ANONYMOUS_MESSAGES
-      ) {
-        try {
-          const stored = localStorage.getItem(key)
-          if (!stored) return
-
-          const messages: ChatMessage[] = JSON.parse(stored)
-          const recentMessages = messages.filter((msg) => {
-            const msgTime = new Date(msg.created_at).getTime()
-            return msgTime > expiryTime
-          })
-
-          if (recentMessages.length === 0) {
-            localStorage.removeItem(key)
-          } else if (recentMessages.length < messages.length) {
-            localStorage.setItem(key, JSON.stringify(recentMessages))
-          }
-        } catch (error) {
-          console.error('Failed to cleanup messages for key:', key, error)
+        if (recentMessages.length === 0) {
+          removeFromStorage(STORAGE_KEYS.ANONYMOUS_MESSAGES)
+        } else if (recentMessages.length < messages.length) {
+          setToStorage(STORAGE_KEYS.ANONYMOUS_MESSAGES, JSON.stringify(recentMessages))
         }
+      } catch (error) {
+        console.error('Failed to cleanup messages:', error)
       }
-    })
+    }
 
     setToStorage(STORAGE_KEYS.LAST_CLEANUP, now.toString())
   } catch (error) {
     console.error('Failed to cleanup old messages:', error)
-  }
-}
-
-const checkStorageQuota = () => {
-  if (typeof window === 'undefined') return true
-
-  try {
-    const testKey = '__storage_test__'
-    localStorage.setItem(testKey, 'test')
-    localStorage.removeItem(testKey)
-    return true
-  } catch (e) {
-    console.error('localStorage quota exceeded:', e)
-    console.warn('localStorage quota exceeded, cleaning up...')
-    cleanupOldMessages()
-    return false
   }
 }
 
@@ -231,24 +153,25 @@ export default function ChatWidget() {
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isTyping, setIsTyping] = useState(false)
+  const [isGPTTyping, setIsGPTTyping] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const [shouldRender, setShouldRender] = useState(false)
   const [isCreatingSession, setIsCreatingSession] = useState(false)
-  const [shouldFetchSession, setShouldFetchSession] = useState(false)
-  const [hasInitialized, setHasInitialized] = useState(false)
+
   const { data: me } = useAccountMe(isAuth && role === 'Customer')
   const { data: guestMe } = useGuestMe(isAuth && role === 'Guest')
 
+  // CHỈ fetch session khi user đã đăng nhập
   const { data: guestSession, refetch: refetchGuestSession } = useMyChatSessionQuery(
     isAuth && role === 'Guest',
-    shouldFetchSession,
+    true,
     guestMe?.payload.result._id || undefined
   )
   const { data: customerSession, refetch: refetchCustomerSession } = useMyCustomerChatSessionQuery(
     isAuth && role === 'Customer',
-    shouldFetchSession,
+    true,
     me?.payload.result._id || undefined
   )
 
@@ -256,64 +179,23 @@ export default function ChatWidget() {
   const sessionId = activeSession?._id || anonymousSessionId || undefined
 
   const messagesParams = React.useMemo(() => ({ limit: 50 }), [])
-  const { data: messages, refetch } = useChatMessagesQuery(sessionId, messagesParams)
 
+  // CHỈ fetch messages từ server khi có sessionId
+  const { data: serverMessages, refetch } = useChatMessagesQuery(sessionId, messagesParams)
   const { mutate: sendMessage } = useSendChatMessageMutation(sessionId)
 
   const [text, setText] = useState('')
-  const [allMessages, setAllMessages] = useState<ChatMessage[]>([])
-  const [isManuallyMerging, setIsManuallyMerging] = useState(false)
   const bottomRef = useRef<HTMLDivElement | null>(null)
   const messagesContainerRef = useRef<HTMLDivElement | null>(null)
 
-  const getAccountId = useCallback(() => {
-    if (!isAuth) return null
-    if (role === 'Customer') {
-      return me?.payload.result._id || null
-    } else if (role === 'Guest') {
-      return guestMe?.payload.result._id || null
-    }
-  }, [guestMe?.payload.result._id, isAuth, me?.payload.result._id, role])
-
-  const accountId = getAccountId()
-
+  // Cleanup khi mount
   useEffect(() => {
     cleanupOldMessages()
-    checkStorageQuota()
   }, [])
 
+  // Load anonymous messages từ localStorage khi chưa đăng nhập
   useEffect(() => {
-    if (isManuallyMerging) return
-    if (isAuth && messages && messages.length > 0) {
-      setAllMessages(messages)
-    }
-  }, [isAuth, messages, isManuallyMerging])
-
-  useEffect(() => {
-    if (isManuallyMerging) return
-    if (!isAuth && localMessages.length > 0) {
-      setAllMessages(localMessages)
-    }
-  }, [isAuth, localMessages, isManuallyMerging])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-
-    if (isAuth && accountId) {
-      if (role === 'Guest') {
-        const storedMessages = getGuestMessages(accountId)
-        if (storedMessages.length > 0) {
-          setAllMessages(storedMessages)
-          setLocalMessages(storedMessages)
-        }
-      } else if (role === 'Customer') {
-        const storedMessages = getCustomerMessages(accountId)
-        if (storedMessages.length > 0) {
-          setAllMessages(storedMessages)
-          setLocalMessages(storedMessages)
-        }
-      }
-    } else if (!isAuth) {
+    if (!isAuth) {
       const storedSessionId = getAnonymousSessionId()
       const storedMessages = getAnonymousMessages()
 
@@ -321,12 +203,12 @@ export default function ChatWidget() {
         setAnonymousSessionId(storedSessionId)
       }
       if (storedMessages.length > 0) {
-        setAllMessages(storedMessages)
         setLocalMessages(storedMessages)
       }
     }
-  }, [isAuth, role, accountId])
+  }, [isAuth])
 
+  // Clear anonymous storage khi user đăng nhập
   useEffect(() => {
     if (isAuth && anonymousSessionId) {
       clearAnonymousStorage()
@@ -335,30 +217,14 @@ export default function ChatWidget() {
     }
   }, [isAuth, anonymousSessionId])
 
+  // Lưu anonymous messages vào localStorage
   useEffect(() => {
-    if (!isAuth) {
-      if (localMessages.length > 0) {
-        setAnonymousMessages(localMessages)
-      }
-    } else if (accountId && messages && messages.length > 0) {
-      if (role === 'Guest') {
-        setGuestMessages(accountId, messages)
-      } else if (role === 'Customer') {
-        setCustomerMessages(accountId, messages)
-      }
+    if (!isAuth && localMessages.length > 0) {
+      setAnonymousMessages(localMessages)
     }
-  }, [localMessages, messages, isAuth, role, accountId])
+  }, [localMessages, isAuth])
 
-  useEffect(() => {
-    if (isAuth && accountId && activeSession?._id) {
-      if (role === 'Guest') {
-        setGuestSessionId(accountId, activeSession._id)
-      } else if (role === 'Customer') {
-        setCustomerSessionId(accountId, activeSession._id)
-      }
-    }
-  }, [isAuth, accountId, activeSession, role])
-
+  // Check if should render
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const isManagePage = window.location.pathname.startsWith('/manage')
@@ -375,84 +241,10 @@ export default function ChatWidget() {
     }
   }, [isAuth, role])
 
-  useEffect(() => {
-    const initializeSession = async () => {
-      if (hasInitialized || !shouldRender) return
-
-      if (isAuth && role && (role === 'Customer' || role === 'Guest') && accountId) {
-        const storedSessionId = role === 'Guest' ? getGuestSessionId(accountId) : getCustomerSessionId(accountId)
-
-        if (storedSessionId) {
-          try {
-            // Verify session exists on server
-            const response = await chatApiRequest.listMessages(storedSessionId, { limit: 1 })
-            if (response.payload.result.length >= 0) {
-              // Session is valid, set it as active
-              if (role === 'Customer') {
-                setCustomerSessionId(accountId, storedSessionId)
-              } else {
-                setGuestSessionId(accountId, storedSessionId)
-              }
-              // Trigger fetch to ensure session data is up-to-date
-              setShouldFetchSession(true)
-              const refetchFn = role === 'Customer' ? refetchCustomerSession : refetchGuestSession
-              await refetchFn()
-            } else {
-              // Clear invalid session
-              if (role === 'Customer') {
-                removeFromStorage(`${STORAGE_KEYS.CUSTOMER_SESSION_PREFIX}${accountId}`)
-                removeFromStorage(`${STORAGE_KEYS.CUSTOMER_MESSAGES_PREFIX}${accountId}`)
-              } else {
-                removeFromStorage(`${STORAGE_KEYS.GUEST_SESSION_PREFIX}${accountId}`)
-                removeFromStorage(`${STORAGE_KEYS.GUEST_MESSAGES_PREFIX}${accountId}`)
-              }
-              setShouldFetchSession(true)
-              const refetchFn = role === 'Customer' ? refetchCustomerSession : refetchGuestSession
-              await refetchFn()
-            }
-          } catch (error) {
-            console.error('Stored session invalid, fetching new session:', error)
-            // Clear invalid session
-            if (role === 'Customer') {
-              removeFromStorage(`${STORAGE_KEYS.CUSTOMER_SESSION_PREFIX}${accountId}`)
-              removeFromStorage(`${STORAGE_KEYS.CUSTOMER_MESSAGES_PREFIX}${accountId}`)
-            } else {
-              removeFromStorage(`${STORAGE_KEYS.GUEST_SESSION_PREFIX}${accountId}`)
-              removeFromStorage(`${STORAGE_KEYS.GUEST_MESSAGES_PREFIX}${accountId}`)
-            }
-            setShouldFetchSession(true)
-            const refetchFn = role === 'Customer' ? refetchCustomerSession : refetchGuestSession
-            await refetchFn()
-          }
-        } else {
-          // No stored session, fetch from server
-          setShouldFetchSession(true)
-          const refetchFn = role === 'Customer' ? refetchCustomerSession : refetchGuestSession
-          await refetchFn()
-        }
-
-        setHasInitialized(true)
-      } else if (!isAuth) {
-        const storedSessionId = getAnonymousSessionId()
-        if (storedSessionId) {
-          try {
-            await chatApiRequest.listMessages(storedSessionId, { limit: 1 })
-            setAnonymousSessionId(storedSessionId)
-          } catch {
-            clearAnonymousStorage()
-            setLocalMessages([])
-          }
-        }
-        setHasInitialized(true)
-      }
-    }
-
-    initializeSession()
-  }, [isAuth, role, shouldRender, hasInitialized, accountId, refetchCustomerSession, refetchGuestSession])
-
+  // Load existing anonymous messages from server khi có sessionId
   useEffect(() => {
     const loadExistingMessages = async () => {
-      if (anonymousSessionId && localMessages.length === 0) {
+      if (!isAuth && anonymousSessionId && localMessages.length === 0) {
         try {
           const response = await chatApiRequest.listMessages(anonymousSessionId, { limit: 50 })
           if (response.payload.result.length > 0) {
@@ -464,24 +256,16 @@ export default function ChatWidget() {
       }
     }
     loadExistingMessages()
-  }, [anonymousSessionId, localMessages.length])
+  }, [anonymousSessionId, isAuth, localMessages.length])
 
-  useEffect(() => {
-    if (activeSession && messages && messages.length > 0) {
-      return
-    }
-
-    if (activeSession && (!messages || messages.length === 0)) {
-      refetch()
-    }
-  }, [activeSession, messages, refetch])
-
+  // Auto scroll to bottom
   useEffect(() => {
     if (!isLoadingMore) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [allMessages, isLoadingMore])
+  }, [localMessages, serverMessages, isLoadingMore])
 
+  // Socket listeners cho authenticated users
   useEffect(() => {
     if (!isAuth || !socket || !activeSession) return
 
@@ -512,6 +296,7 @@ export default function ChatWidget() {
     }
   }, [socket, activeSession, open, refetch, isAuth])
 
+  // Polling cho anonymous users
   useEffect(() => {
     if (isAuth || !anonymousSessionId || !open) return
 
@@ -523,11 +308,19 @@ export default function ChatWidget() {
         setLocalMessages((prev) => {
           if (JSON.stringify(prev) !== JSON.stringify(newMessages)) {
             const newMsgCount = newMessages.filter(
-              (nm: ChatMessage) => !prev.some((pm) => pm._id === nm._id) && nm.sender_type === 'staff'
+              (nm: ChatMessage) =>
+                !prev.some((pm) => pm._id === nm._id) && (nm.sender_type === 'staff' || nm.sender_type === 'bot')
             ).length
 
             if (newMsgCount > 0 && !open) {
               setUnreadCount((count) => count + newMsgCount)
+            }
+
+            const hasNewBotMessage = newMessages.some(
+              (nm: ChatMessage) => !prev.some((pm) => pm._id === nm._id) && nm.sender_type === 'bot'
+            )
+            if (hasNewBotMessage) {
+              setIsGPTTyping(false)
             }
 
             return newMessages
@@ -545,11 +338,15 @@ export default function ChatWidget() {
     return () => clearInterval(interval)
   }, [isAuth, anonymousSessionId, open])
 
+  // Load more messages
   const loadMoreMessages = useCallback(async () => {
-    if (!sessionId || allMessages.length === 0 || isLoadingMore || !hasMore) return
+    if (!sessionId || isLoadingMore || !hasMore) return
+
+    const currentMessages = isAuth ? serverMessages : localMessages
+    if (!currentMessages || currentMessages.length === 0) return
 
     setIsLoadingMore(true)
-    const oldestMessageId = allMessages[0]._id
+    const oldestMessageId = currentMessages[0]._id
 
     const container = messagesContainerRef.current
     const scrollHeightBefore = container?.scrollHeight || 0
@@ -563,14 +360,8 @@ export default function ChatWidget() {
       }
 
       if (newMessages.length > 0) {
-        setIsManuallyMerging(true)
         if (isAuth) {
           await refetch()
-          setAllMessages((prev) => {
-            const merged = [...newMessages, ...prev]
-            const unique = merged.filter((msg, index, self) => index === self.findIndex((m) => m._id === msg._id))
-            return unique
-          })
         } else {
           setLocalMessages((prev) => {
             const merged = [...newMessages, ...prev]
@@ -579,7 +370,6 @@ export default function ChatWidget() {
           })
         }
 
-        setIsManuallyMerging(false)
         setTimeout(() => {
           if (container) {
             const scrollHeightAfter = container.scrollHeight
@@ -593,7 +383,7 @@ export default function ChatWidget() {
     } finally {
       setIsLoadingMore(false)
     }
-  }, [sessionId, allMessages, isLoadingMore, hasMore, refetch, isAuth])
+  }, [sessionId, serverMessages, localMessages, isLoadingMore, hasMore, refetch, isAuth])
 
   const handleScroll = useCallback(() => {
     const container = messagesContainerRef.current
@@ -604,46 +394,19 @@ export default function ChatWidget() {
     }
   }, [loadMoreMessages, isLoadingMore])
 
+  // Ensure session exists
   const ensureSession = async () => {
     if (isAuth && activeSession?._id) {
-      // Return existing session ID if available
       return activeSession._id
     }
 
-    if (isAuth && !activeSession && !isCreatingSession && accountId) {
+    if (isAuth && !activeSession && !isCreatingSession) {
       setIsCreatingSession(true)
       try {
-        // Check localStorage first
-        const storedSessionId = role === 'Customer' ? getCustomerSessionId(accountId) : getGuestSessionId(accountId)
-        if (storedSessionId) {
-          // Verify stored session
-          try {
-            await chatApiRequest.listMessages(storedSessionId, { limit: 1 })
-            return storedSessionId
-          } catch {
-            // Clear invalid session
-            if (role === 'Customer') {
-              removeFromStorage(`${STORAGE_KEYS.CUSTOMER_SESSION_PREFIX}${accountId}`)
-              removeFromStorage(`${STORAGE_KEYS.CUSTOMER_MESSAGES_PREFIX}${accountId}`)
-            } else {
-              removeFromStorage(`${STORAGE_KEYS.GUEST_SESSION_PREFIX}${accountId}`)
-              removeFromStorage(`${STORAGE_KEYS.GUEST_MESSAGES_PREFIX}${accountId}`)
-            }
-          }
-        }
-
-        // Fetch or create new session
-        setShouldFetchSession(true)
         const refetchFn = role === 'Customer' ? refetchCustomerSession : refetchGuestSession
         const result = await refetchFn()
 
         if (result.data?._id) {
-          // Save new session ID
-          if (role === 'Customer') {
-            setCustomerSessionId(accountId, result.data._id)
-          } else {
-            setGuestSessionId(accountId, result.data._id)
-          }
           return result.data._id
         }
 
@@ -677,6 +440,7 @@ export default function ChatWidget() {
     return anonymousSessionId
   }
 
+  // Send message
   const handleSend = async () => {
     const content = text.trim()
     if (!content || isSending || isCreatingSession) return
@@ -704,6 +468,7 @@ export default function ChatWidget() {
           sendMessage(content)
         }
       } else {
+        // Anonymous user - add temp message
         const tempMessage: ChatMessage = {
           _id: `temp_${Date.now()}`,
           session_id: currentSessionId,
@@ -713,6 +478,31 @@ export default function ChatWidget() {
         }
 
         setLocalMessages((prev) => [...prev, tempMessage])
+
+        // Check if should trigger GPT
+        const shouldTriggerGPT =
+          content.toLowerCase().includes('món') ||
+          content.toLowerCase().includes('thực đơn') ||
+          content.toLowerCase().includes('menu') ||
+          content.toLowerCase().includes('giá') ||
+          content.toLowerCase().includes('đặt bàn') ||
+          content.toLowerCase().includes('đặt món') ||
+          content.toLowerCase().includes('có gì') ||
+          content.toLowerCase().includes('ăn gì') ||
+          content.toLowerCase().includes('nên ăn') ||
+          content.toLowerCase().includes('khuyến nghị') ||
+          content.toLowerCase().includes('tư vấn') ||
+          content.toLowerCase().includes('giờ mở') ||
+          content.toLowerCase().includes('địa chỉ') ||
+          content.toLowerCase().includes('số điện thoại') ||
+          content.toLowerCase().includes('thông tin')
+
+        if (shouldTriggerGPT) {
+          setIsGPTTyping(true)
+          setTimeout(() => {
+            setIsGPTTyping(false)
+          }, 10000)
+        }
 
         try {
           const response = await chatApiRequest.sendMessage(currentSessionId, {
@@ -753,7 +543,8 @@ export default function ChatWidget() {
     return null
   }
 
-  const displayMessages = allMessages
+  // Hiển thị messages: authenticated users dùng serverMessages, anonymous dùng localMessages
+  const displayMessages = isAuth ? serverMessages : localMessages
 
   return (
     <div className='fixed bottom-4 right-4 z-50'>
@@ -820,13 +611,25 @@ export default function ChatWidget() {
                     className={`max-w-[85%] px-3 py-2 rounded-lg shadow-sm ${
                       m.sender_type === 'user'
                         ? 'bg-blue-600 text-white rounded-br-sm'
+                        : m.sender_type === 'bot'
+                        ? 'bg-gradient-to-r from-green-500 to-green-600 text-white rounded-bl-sm'
                         : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-bl-sm border border-gray-200 dark:border-gray-700'
                     }`}
                   >
+                    {m.sender_type === 'bot' && (
+                      <div className='flex items-center gap-1 mb-1'>
+                        <div className='w-2 h-2 bg-green-300 rounded-full animate-pulse'></div>
+                        <span className='text-xs text-green-100 font-medium'>AI Assistant</span>
+                      </div>
+                    )}
                     <div className='text-sm break-words'>{m.message}</div>
                     <div
                       className={`text-xs mt-1 ${
-                        m.sender_type === 'user' ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
+                        m.sender_type === 'user'
+                          ? 'text-blue-100'
+                          : m.sender_type === 'bot'
+                          ? 'text-green-100'
+                          : 'text-gray-500 dark:text-gray-400'
                       }`}
                     >
                       {new Date(m.created_at || Date.now()).toLocaleTimeString('vi-VN', {
@@ -844,6 +647,18 @@ export default function ChatWidget() {
                 </div>
                 <p className='font-medium'>Chào mừng bạn đến với QRMeal!</p>
                 <p className='text-xs mt-1'>Chúng tôi sẵn sàng hỗ trợ bạn 24/7</p>
+                <div className='mt-3 p-3 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg border border-green-200 dark:border-green-700'>
+                  <div className='flex items-center gap-2 mb-2'>
+                    <div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>
+                    <span className='text-xs font-medium text-green-700 dark:text-green-300'>AI Assistant</span>
+                  </div>
+                  <p className='text-xs text-green-600 dark:text-green-400'>
+                    🤖 Tôi có thể giúp bạn tìm hiểu thực đơn, đặt bàn, tư vấn món ăn và trả lời các câu hỏi về nhà hàng!
+                  </p>
+                </div>
+
+                <ChatSuggestions onSuggestionClick={setText} />
+
                 {!isAuth && (
                   <p className='text-xs mt-3 text-blue-600 dark:text-blue-400'>
                     💡 Bạn có thể chat ngay mà không cần đăng nhập
@@ -865,6 +680,28 @@ export default function ChatWidget() {
                       className='w-2 h-2 bg-gray-400 rounded-full animate-bounce'
                       style={{ animationDelay: '0.2s' }}
                     ></div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isGPTTyping && (
+              <div className='flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300'>
+                <div className='bg-gradient-to-r from-green-500 to-green-600 px-4 py-3 rounded-lg rounded-bl-sm shadow-sm'>
+                  <div className='flex items-center gap-2'>
+                    <div className='w-2 h-2 bg-green-300 rounded-full animate-pulse'></div>
+                    <span className='text-xs text-green-100 font-medium'>AI Assistant</span>
+                    <div className='flex space-x-1.5 ml-2'>
+                      <div className='w-2 h-2 bg-green-300 rounded-full animate-bounce'></div>
+                      <div
+                        className='w-2 h-2 bg-green-300 rounded-full animate-bounce'
+                        style={{ animationDelay: '0.1s' }}
+                      ></div>
+                      <div
+                        className='w-2 h-2 bg-green-300 rounded-full animate-bounce'
+                        style={{ animationDelay: '0.2s' }}
+                      ></div>
+                    </div>
                   </div>
                 </div>
               </div>

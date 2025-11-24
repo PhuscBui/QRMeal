@@ -6,6 +6,7 @@ import {
   CreateDishReqBody,
   DeleteDishParam,
   GetDishParam,
+  ImageSearchReqBody,
   UpdateDishParam,
   UpdateDishReqBody
 } from '~/models/requests/Dishes.request'
@@ -66,5 +67,23 @@ export const deleteDishController = async (req: Request<DeleteDishParam>, res: R
   res.json({
     message: DISHES_MESSAGE.DISH_DELETED,
     result: result
+  })
+}
+
+export const imageSearchController = async (
+  req: Request<ParamsDictionary, unknown, ImageSearchReqBody>,
+  res: Response
+) => {
+  const { image_url, image_base64, maxResults } = req.body
+
+  const result = await dishesService.searchDishByImage({
+    image_url,
+    image_base64,
+    maxResults
+  })
+
+  res.json({
+    message: DISHES_MESSAGE.DISH_IMAGE_SEARCH_SUCCESS,
+    result
   })
 }

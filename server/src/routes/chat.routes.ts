@@ -7,7 +7,8 @@ import {
   getOrCreateCustomerSessionController,
   getOrCreateAnonymousSessionController,
   listChatMessagesController,
-  listChatSessionsController
+  listChatSessionsController,
+  testGPTController
 } from '~/controllers/chat.controller'
 import { accessTokenValidator, optionalAccessTokenValidator } from '~/middlewares/auth.middlewares'
 import { wrapRequestHandler } from '~/utils/handlers'
@@ -43,5 +44,8 @@ chatRouter.post(
   optionalAccessTokenValidator,
   wrapRequestHandler(addChatMessageController)
 )
+
+// Debug endpoint để test GPT
+chatRouter.post('/test-gpt', wrapRequestHandler(testGPTController))
 
 export default chatRouter

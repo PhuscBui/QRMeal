@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import chatService from '~/services/chat.service'
+import gptService from '~/services/gpt.service'
 import { CHAT_MESSAGES } from '~/constants/messages'
 import { TokenPayload } from '~/models/requests/Account.request'
 import socketService from '~/utils/socket'
@@ -100,17 +101,60 @@ export const addChatMessageController = async (req: Request, res: Response) => {
   const { sessionId } = req.params
   const { message, sender = 'user' } = req.body
 
-  const result = await chatService.addMessage(sessionId, sender, message)
+  console.log('Chat Controller - Received message:', { sessionId, message, sender })
+
+  const result = await chatService.addMessageWithGPT(sessionId, sender, message)
+
+  console.log('Chat Controller - Result:', {
+    userMessage: result.userMessage._id,
+    botMessage: result.botMessage?._id
+  })
 
   // Broadcast to managers via socket (for anonymous users who don't have socket connection)
   try {
-    socketService.emitToRoom(ManagerRoom, 'chat:new-message', result)
+    socketService.emitToRoom(ManagerRoom, 'chat:new-message', result.userMessage)
+
+    // Nếu có phản hồi từ bot, cũng broadcast
+    if (result.botMessage) {
+      socketService.emitToRoom(ManagerRoom, 'chat:new-message', result.botMessage)
+    }
   } catch (error) {
     console.error('Failed to broadcast message to managers:', error)
   }
 
   res.json({
     message: CHAT_MESSAGES.SEND_MESSAGE_SUCCESS,
-    result
+    result: result.userMessage
   })
+}
+
+// Debug endpoint để test GPT
+export const testGPTController = async (req: Request, res: Response) => {
+  console.log(req.body)
+  const { message } = req.body
+
+  console.log('GPT test request received:', message)
+
+  if (!message) {
+    res.status(400).json({
+      message: 'Message is required'
+    })
+    return
+  }
+
+  try {
+    const response = await gptService.generateResponse(message, 'test-session')
+    res.json({
+      message: 'GPT test successful',
+      result: response
+    })
+
+    console.log('GPT test successful:', response)
+  } catch (error: any) {
+    console.error('GPT test error:', error)
+    res.status(500).json({
+      message: 'GPT test failed',
+      error: error.message
+    })
+  }
 }

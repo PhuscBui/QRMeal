@@ -33,3 +33,9 @@ export interface UpdateDishReqBody {
   image?: string
   status: string
 }
+
+export interface ImageSearchReqBody {
+  image_url?: string
+  image_base64?: string
+  maxResults?: number
+}

@@ -46,3 +46,31 @@ export const DishParams = z.object({
   id: z.string()
 })
 export type DishParamsType = z.TypeOf<typeof DishParams>
+
+export const ImageSearchBodySchema = z
+  .object({
+    image_url: z.string().url().optional(),
+    image_base64: z.string().optional(),
+    maxResults: z.number().min(1).max(20).optional().default(5)
+  })
+  .refine((data) => data.image_url || data.image_base64, { message: 'Either image_url or image_base64 is required' })
+
+export type ImageSearchBodyType = z.TypeOf<typeof ImageSearchBodySchema>
+
+export const ImageSearchResSchema = z.object({
+  message: z.string(),
+  result: z.object({
+    dishes: z.array(DishSchema),
+    labels: z.array(
+      z.object({
+        description: z.string().optional(),
+        score: z.number().optional()
+      })
+    ),
+    searchStrategy: z.string().optional(),
+    keywords: z.array(z.string()).optional(),
+    expandedKeywords: z.array(z.string()).optional()
+  })
+})
+
+export type ImageSearchResType = z.TypeOf<typeof ImageSearchResSchema>

@@ -57,5 +57,7 @@ export const envConfig = {
   sepayWebhookSecret: process.env.SEPAY_WEBHOOK_SECRET as string,
   sepayAccountNumber: process.env.SEPAY_ACCOUNT_NUMBER as string,
   sepayBankName: process.env.SEPAY_BANK_NAME as string,
-  sepayAccountName: process.env.SEPAY_ACCOUNT_NAME as string
+  sepayAccountName: process.env.SEPAY_ACCOUNT_NAME as string,
+
+  openaiApiKey: process.env.OPENAI_API_KEY as string
 }

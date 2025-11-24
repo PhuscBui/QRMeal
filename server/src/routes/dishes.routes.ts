@@ -4,6 +4,7 @@ import {
   deleteDishController,
   getDishController,
   getDishesController,
+  imageSearchController,
   updateDishController
 } from '~/controllers/dishes.controller'
 import { isEmployeeValidator } from '~/middlewares/account.middlewares'
@@ -77,5 +78,7 @@ dishesRouter.delete(
   dishIdValidator,
   wrapRequestHandler(deleteDishController)
 )
+
+dishesRouter.post('/image-search', wrapRequestHandler(imageSearchController))
 
 export default dishesRouter
