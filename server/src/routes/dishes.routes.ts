@@ -4,6 +4,7 @@ import {
   deleteDishController,
   getDishController,
   getDishesController,
+  getDishRecommendationsForMeController,
   imageSearchController,
   updateDishController
 } from '~/controllers/dishes.controller'
@@ -80,5 +81,7 @@ dishesRouter.delete(
 )
 
 dishesRouter.post('/image-search', wrapRequestHandler(imageSearchController))
+
+dishesRouter.get('/recommendations/me', accessTokenValidator, wrapRequestHandler(getDishRecommendationsForMeController))
 
 export default dishesRouter

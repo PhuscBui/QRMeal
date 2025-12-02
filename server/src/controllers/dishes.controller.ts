@@ -2,6 +2,8 @@ import { Request, Response } from 'express'
 import { ParamsDictionary } from 'express-serve-static-core'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { DISHES_MESSAGE } from '~/constants/messages'
+import { Role } from '~/constants/type'
+import { TokenPayload } from '~/models/requests/Account.request'
 import {
   CreateDishReqBody,
   DeleteDishParam,
@@ -11,6 +13,7 @@ import {
   UpdateDishReqBody
 } from '~/models/requests/Dishes.request'
 import dishesService from '~/services/dishes.service'
+import recommendationsService from '~/services/recommendations.service'
 
 export const getDishesController = async (req: Request<ParamsDictionary>, res: Response) => {
   const result = await dishesService.getDishes()
@@ -84,6 +87,24 @@ export const imageSearchController = async (
 
   res.json({
     message: DISHES_MESSAGE.DISH_IMAGE_SEARCH_SUCCESS,
+    result
+  })
+}
+
+export const getDishRecommendationsForMeController = async (req: Request, res: Response) => {
+  const { account_id, role } = req.decoded_authorization as TokenPayload
+
+  if (role !== Role.Customer) {
+    res.status(HTTP_STATUS.FORBIDDEN).json({
+      message: 'Chỉ khách hàng mới có lịch sử đặt hàng để gợi ý món'
+    })
+    return
+  }
+
+  const result = await recommendationsService.getRecommendationsForCustomer(account_id)
+
+  res.json({
+    message: 'Gợi ý món ăn theo lịch sử đặt hàng',
     result
   })
 }

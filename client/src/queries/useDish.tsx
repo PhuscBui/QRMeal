@@ -61,3 +61,10 @@ export const useImageSearchMutation = () => {
     mutationFn: dishApiRequest.searchByImage
   })
 }
+
+export const useDishRecommendationsForMeQuery = () => {
+  return useQuery({
+    queryKey: ['dishes', 'recommendations', 'me'],
+    queryFn: dishApiRequest.recommendationsForMe
+  })
+}

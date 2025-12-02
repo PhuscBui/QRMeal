@@ -74,3 +74,17 @@ export const ImageSearchResSchema = z.object({
 })
 
 export type ImageSearchResType = z.TypeOf<typeof ImageSearchResSchema>
+
+export const DishRecommendationItemSchema = z.object({
+  dish: DishSchema,
+  total_quantity: z.number(),
+  last_order_at: z.string()
+})
+
+export const DishRecommendationsResSchema = z.object({
+  message: z.string(),
+  result: z.array(DishRecommendationItemSchema)
+})
+
+export type DishRecommendationItemType = z.TypeOf<typeof DishRecommendationItemSchema>
+export type DishRecommendationsResType = z.TypeOf<typeof DishRecommendationsResSchema>

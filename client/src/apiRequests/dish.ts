@@ -2,6 +2,7 @@ import http from '@/lib/http'
 import {
   CreateDishBodyType,
   DishListResType,
+  DishRecommendationsResType,
   DishResType,
   ImageSearchBodyType,
   ImageSearchResType,
@@ -14,7 +15,8 @@ const dishApiRequest = {
   getDish: (id: string) => http.get<DishResType>(`dishes/${id}`),
   updateDish: (id: string, body: UpdateDishBodyType) => http.put<DishResType>(`dishes/${id}`, body),
   deleteDish: (id: string) => http.delete<DishResType>(`dishes/${id}`),
-  searchByImage: (body: ImageSearchBodyType) => http.post<ImageSearchResType>('dishes/image-search', body)
+  searchByImage: (body: ImageSearchBodyType) => http.post<ImageSearchResType>('dishes/image-search', body),
+  recommendationsForMe: () => http.get<DishRecommendationsResType>('dishes/recommendations/me')
 }
 
 export default dishApiRequest

@@ -17,6 +17,7 @@ import { TableInfo } from '@/types/common.type'
 import { DishReviewsModal } from '@/components/dish-reviews-modal'
 import { DishResType } from '@/schemaValidations/dish.schema'
 import { ImageSearchModal } from '@/components/image-search-modal'
+import { DishRecommendations } from '@/components/dish-recommendations'
 
 const sortOptions = [
   { value: 'popular', label: 'Popular' },
@@ -274,6 +275,17 @@ export default function MenuPage() {
             ))}
           </TabsList>
         </Tabs>
+      </div>
+
+      {/* 👉 GỢI Ý MÓN CHO CUSTOMER HIỆN TẠI */}
+      <div className='mb-8'>
+        <DishRecommendations
+          onSelectDish={(dish) => {
+            addToCart(dish._id)
+            const element = document.getElementById(`dish-${dish._id}`)
+            element?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }}
+        />
       </div>
 
       {/* Dishes Grid */}
