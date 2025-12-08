@@ -34,6 +34,8 @@ const STORAGE_KEYS = {
 const MAX_STORED_MESSAGES = 50
 const CLEANUP_INTERVAL_DAYS = 7
 const MESSAGE_EXPIRY_DAYS = 30
+const POLLING_INTERVAL = 3000
+const TYPING_TIMEOUT = 3000
 
 // Helper functions for localStorage
 const getFromStorage = (key: string) => {
@@ -51,15 +53,13 @@ const setToStorage = (key: string, value: string) => {
     localStorage.setItem(key, value)
   } catch (error) {
     if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-      console.warn('Storage quota exceeded, cleaning up and retrying...')
+      console.warn('Storage quota exceeded, cleaning up...')
       cleanupOldMessages()
       try {
         localStorage.setItem(key, value)
-      } catch (retryError) {
-        console.error('Failed to save even after cleanup:', retryError)
+      } catch {
+        console.error('Failed to save after cleanup')
       }
-    } else {
-      console.error('Failed to save to localStorage:', error)
     }
   }
 }
@@ -159,18 +159,29 @@ export default function ChatWidget() {
   const [isSending, setIsSending] = useState(false)
   const [shouldRender, setShouldRender] = useState(false)
   const [isCreatingSession, setIsCreatingSession] = useState(false)
+  const [text, setText] = useState('')
 
   const { data: me } = useAccountMe(isAuth && role === 'Customer')
   const { data: guestMe } = useGuestMe(isAuth && role === 'Guest')
 
-  // CHỈ fetch session khi user đã đăng nhập
+  const bottomRef = useRef<HTMLDivElement | null>(null)
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null)
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const gptTypingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const isCreatingSessionRef = useRef(false)
+
+  // CHỈ fetch session khi user đã đăng nhập VÀ có accountId
+  const guestEnabled = isAuth && role === 'Guest' && !!guestMe?.payload.result._id
+  const customerEnabled = isAuth && role === 'Customer' && !!me?.payload.result._id
+
   const { data: guestSession, refetch: refetchGuestSession } = useMyChatSessionQuery(
-    isAuth && role === 'Guest',
+    guestEnabled,
     true,
     guestMe?.payload.result._id || undefined
   )
   const { data: customerSession, refetch: refetchCustomerSession } = useMyCustomerChatSessionQuery(
-    isAuth && role === 'Customer',
+    customerEnabled,
     true,
     me?.payload.result._id || undefined
   )
@@ -183,10 +194,6 @@ export default function ChatWidget() {
   // CHỈ fetch messages từ server khi có sessionId
   const { data: serverMessages, refetch } = useChatMessagesQuery(sessionId, messagesParams)
   const { mutate: sendMessage } = useSendChatMessageMutation(sessionId)
-
-  const [text, setText] = useState('')
-  const bottomRef = useRef<HTMLDivElement | null>(null)
-  const messagesContainerRef = useRef<HTMLDivElement | null>(null)
 
   // Cleanup khi mount
   useEffect(() => {
@@ -275,6 +282,13 @@ export default function ChatWidget() {
         if (!open) {
           setUnreadCount((prev) => prev + 1)
         }
+        // Clear GPT typing nếu có bot message
+        if (message.sender_type === 'bot') {
+          setIsGPTTyping(false)
+          if (gptTypingTimeoutRef.current) {
+            clearTimeout(gptTypingTimeoutRef.current)
+          }
+        }
       }
     }
 
@@ -282,7 +296,10 @@ export default function ChatWidget() {
       if (sessionId === activeSession._id) {
         setIsTyping(typing)
         if (typing) {
-          setTimeout(() => setIsTyping(false), 3000)
+          if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current)
+          }
+          typingTimeoutRef.current = setTimeout(() => setIsTyping(false), TYPING_TIMEOUT)
         }
       }
     }
@@ -293,12 +310,22 @@ export default function ChatWidget() {
     return () => {
       socket.off('chat:new-message', onIncoming)
       socket.off('chat:typing', onTyping)
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+      }
     }
   }, [socket, activeSession, open, refetch, isAuth])
 
   // Polling cho anonymous users
   useEffect(() => {
-    if (isAuth || !anonymousSessionId || !open) return
+    if (isAuth || !anonymousSessionId || !open) {
+      // Clear polling nếu không cần
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+        pollingIntervalRef.current = null
+      }
+      return
+    }
 
     const pollMessages = async () => {
       try {
@@ -306,84 +333,122 @@ export default function ChatWidget() {
         const newMessages = response.payload.result
 
         setLocalMessages((prev) => {
-          if (JSON.stringify(prev) !== JSON.stringify(newMessages)) {
-            const newMsgCount = newMessages.filter(
-              (nm: ChatMessage) =>
-                !prev.some((pm) => pm._id === nm._id) && (nm.sender_type === 'staff' || nm.sender_type === 'bot')
-            ).length
-
-            if (newMsgCount > 0 && !open) {
-              setUnreadCount((count) => count + newMsgCount)
-            }
-
-            const hasNewBotMessage = newMessages.some(
-              (nm: ChatMessage) => !prev.some((pm) => pm._id === nm._id) && nm.sender_type === 'bot'
-            )
-            if (hasNewBotMessage) {
-              setIsGPTTyping(false)
-            }
-
-            return newMessages
+          // So sánh messages để tránh update không cần thiết
+          if (JSON.stringify(prev.map((m) => m._id)) === JSON.stringify(newMessages.map((m: ChatMessage) => m._id))) {
+            return prev
           }
-          return prev
+
+          const newMsgCount = newMessages.filter(
+            (nm: ChatMessage) =>
+              !prev.some((pm) => pm._id === nm._id) && (nm.sender_type === 'staff' || nm.sender_type === 'bot')
+          ).length
+
+          if (newMsgCount > 0 && !open) {
+            setUnreadCount((count) => count + newMsgCount)
+          }
+
+          // Check có bot message mới không
+          const hasNewBotMessage = newMessages.some(
+            (nm: ChatMessage) => !prev.some((pm) => pm._id === nm._id) && nm.sender_type === 'bot'
+          )
+          if (hasNewBotMessage) {
+            setIsGPTTyping(false)
+            if (gptTypingTimeoutRef.current) {
+              clearTimeout(gptTypingTimeoutRef.current)
+            }
+          }
+
+          return newMessages
         })
       } catch (error) {
         console.error('Failed to poll messages:', error)
       }
     }
 
-    const interval = setInterval(pollMessages, 3000)
+    // Poll ngay lập tức
     pollMessages()
 
-    return () => clearInterval(interval)
+    // Set interval
+    pollingIntervalRef.current = setInterval(pollMessages, POLLING_INTERVAL)
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+        pollingIntervalRef.current = null
+      }
+    }
   }, [isAuth, anonymousSessionId, open])
 
+  // Cleanup GPT typing timeout
+  useEffect(() => {
+    return () => {
+      if (gptTypingTimeoutRef.current) {
+        clearTimeout(gptTypingTimeoutRef.current)
+      }
+    }
+  }, [])
+
   // Load more messages
-  const loadMoreMessages = useCallback(async () => {
-    if (!sessionId || isLoadingMore || !hasMore) return
+  const loadMoreMessages = useCallback(() => {
+    // THÊM KIỂM TRA NGHIÊM NGẶT
+    if (!sessionId || typeof sessionId !== 'string' || !/^[a-f\d]{24}$/i.test(sessionId)) {
+      console.warn('Invalid sessionId for loadMoreMessages:', sessionId)
+      return
+    }
+
+    if (isLoadingMore || !hasMore) return
 
     const currentMessages = isAuth ? serverMessages : localMessages
     if (!currentMessages || currentMessages.length === 0) return
 
-    setIsLoadingMore(true)
     const oldestMessageId = currentMessages[0]._id
+
+    // Kiểm tra cả oldestMessageId
+    if (!oldestMessageId || !/^[a-f\d]{24}$/i.test(oldestMessageId)) {
+      return
+    }
 
     const container = messagesContainerRef.current
     const scrollHeightBefore = container?.scrollHeight || 0
 
-    try {
-      const response = await chatApiRequest.listMessages(sessionId, { limit: 50, before: oldestMessageId })
-      const newMessages = response.payload.result
+    setIsLoadingMore(true)
 
-      if (!newMessages || newMessages.length === 0 || newMessages.length < 50) {
-        setHasMore(false)
-      }
+    chatApiRequest
+      .listMessages(sessionId, { limit: 50, before: oldestMessageId })
+      .then((response) => {
+        const newMessages = response.payload.result || []
 
-      if (newMessages.length > 0) {
-        if (isAuth) {
-          await refetch()
-        } else {
-          setLocalMessages((prev) => {
-            const merged = [...newMessages, ...prev]
-            const unique = merged.filter((msg, index, self) => index === self.findIndex((m) => m._id === msg._id))
-            return unique
-          })
+        if (newMessages.length < 50) {
+          setHasMore(false)
         }
 
-        setTimeout(() => {
-          if (container) {
-            const scrollHeightAfter = container.scrollHeight
-            const scrollDiff = scrollHeightAfter - scrollHeightBefore
-            container.scrollTop = scrollDiff
+        if (newMessages.length > 0) {
+          if (isAuth) {
+            void refetch()
+          } else {
+            setLocalMessages((prev) => {
+              const merged = [...newMessages, ...prev]
+              const unique = Array.from(new Map(merged.map((m) => [m._id, m])).values())
+              return unique
+            })
           }
-        }, 0)
-      }
-    } catch (error) {
-      console.error('Error loading more messages:', error)
-    } finally {
-      setIsLoadingMore(false)
-    }
-  }, [sessionId, serverMessages, localMessages, isLoadingMore, hasMore, refetch, isAuth])
+
+          setTimeout(() => {
+            if (container) {
+              const diff = container.scrollHeight - scrollHeightBefore
+              container.scrollTop += diff
+            }
+          }, 100)
+        }
+      })
+      .catch((error) => {
+        console.error('Load more failed:', error)
+        // Có thể là do sessionId không hợp lệ → có thể cần tạo lại session
+      })
+      .finally(() => {
+        setIsLoadingMore(false)
+      })
+  }, [sessionId, isLoadingMore, hasMore, isAuth, serverMessages, localMessages, refetch])
 
   const handleScroll = useCallback(() => {
     const container = messagesContainerRef.current
@@ -394,15 +459,41 @@ export default function ChatWidget() {
     }
   }, [loadMoreMessages, isLoadingMore])
 
-  // Ensure session exists
+  // Ensure session exists với mutex pattern
   const ensureSession = async () => {
+    // Nếu đã có session, return ngay
     if (isAuth && activeSession?._id) {
       return activeSession._id
     }
 
-    if (isAuth && !activeSession && !isCreatingSession) {
-      setIsCreatingSession(true)
-      try {
+    if (anonymousSessionId && !isAuth) {
+      return anonymousSessionId
+    }
+
+    // Kiểm tra mutex
+    if (isCreatingSessionRef.current) {
+      // Đợi session được tạo xong
+      let attempts = 0
+      while (isCreatingSessionRef.current && attempts < 50) {
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        attempts++
+      }
+
+      // Kiểm tra lại sau khi đợi
+      if (isAuth && activeSession?._id) {
+        return activeSession._id
+      }
+      if (anonymousSessionId && !isAuth) {
+        return anonymousSessionId
+      }
+    }
+
+    // Set mutex
+    isCreatingSessionRef.current = true
+    setIsCreatingSession(true)
+
+    try {
+      if (isAuth && !activeSession) {
         const refetchFn = role === 'Customer' ? refetchCustomerSession : refetchGuestSession
         const result = await refetchFn()
 
@@ -410,18 +501,10 @@ export default function ChatWidget() {
           return result.data._id
         }
 
-        throw new Error('Failed to create session')
-      } catch (error) {
-        console.error('Failed to create session:', error)
-        throw error
-      } finally {
-        setIsCreatingSession(false)
+        throw new Error('Failed to create authenticated session')
       }
-    }
 
-    if (!anonymousSessionId && !isCreatingSession) {
-      setIsCreatingSession(true)
-      try {
+      if (!isAuth) {
         const anonymousId = getAnonymousId()
         const response = await chatApiRequest.createAnonymousSession({ anonymousId })
         if (response.payload.result._id) {
@@ -429,21 +512,23 @@ export default function ChatWidget() {
           saveAnonymousSessionId(response.payload.result._id)
           return response.payload.result._id
         }
-      } catch (error) {
-        console.error('Failed to create anonymous session:', error)
-        throw error
-      } finally {
-        setIsCreatingSession(false)
+        throw new Error('Failed to create anonymous session')
       }
+    } catch (error) {
+      console.error('Failed to create session:', error)
+      throw error
+    } finally {
+      isCreatingSessionRef.current = false
+      setIsCreatingSession(false)
     }
 
-    return anonymousSessionId
+    return null
   }
 
   // Send message
   const handleSend = async () => {
     const content = text.trim()
-    if (!content || isSending || isCreatingSession) return
+    if (!content || isSending || isCreatingSessionRef.current) return
 
     setIsSending(true)
     setText('')
@@ -458,6 +543,7 @@ export default function ChatWidget() {
       }
 
       if (isAuth && activeSession) {
+        // Authenticated user - use socket or mutation
         if (socket) {
           socket.emit('chat:send', {
             sessionId: activeSession._id,
@@ -468,9 +554,10 @@ export default function ChatWidget() {
           sendMessage(content)
         }
       } else {
-        // Anonymous user - add temp message
+        // Anonymous user
+        const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         const tempMessage: ChatMessage = {
-          _id: `temp_${Date.now()}`,
+          _id: tempId,
           session_id: currentSessionId,
           sender_type: 'user',
           message: content,
@@ -499,9 +586,12 @@ export default function ChatWidget() {
 
         if (shouldTriggerGPT) {
           setIsGPTTyping(true)
-          setTimeout(() => {
+          if (gptTypingTimeoutRef.current) {
+            clearTimeout(gptTypingTimeoutRef.current)
+          }
+          gptTypingTimeoutRef.current = setTimeout(() => {
             setIsGPTTyping(false)
-          }, 10000)
+          }, 15000) // Max 15s
         }
 
         try {
@@ -510,16 +600,18 @@ export default function ChatWidget() {
             sender: 'user'
           })
 
-          setLocalMessages((prev) => prev.map((m) => (m._id === tempMessage._id ? response.payload.result : m)))
+          // Replace temp message with real message
+          setLocalMessages((prev) => prev.map((m) => (m._id === tempId ? response.payload.result : m)))
         } catch (error) {
           console.error('Failed to send message:', error)
-          setLocalMessages((prev) => prev.filter((m) => m._id !== tempMessage._id))
-          setText(content)
+          // Remove temp message on error
+          setLocalMessages((prev) => prev.filter((m) => m._id !== tempId))
+          setText(content) // Restore text
         }
       }
     } catch (error) {
       console.error('Error in handleSend:', error)
-      setText(content)
+      setText(content) // Restore text
     } finally {
       setIsSending(false)
     }
@@ -622,7 +714,7 @@ export default function ChatWidget() {
                         <span className='text-xs text-green-100 font-medium'>AI Assistant</span>
                       </div>
                     )}
-                    <div className='text-sm break-words'>{m.message}</div>
+                    <div className='text-sm break-words whitespace-pre-wrap'>{m.message}</div>
                     <div
                       className={`text-xs mt-1 ${
                         m.sender_type === 'user'
@@ -672,6 +764,10 @@ export default function ChatWidget() {
                 <div className='bg-white dark:bg-gray-800 px-4 py-3 rounded-lg rounded-bl-sm border border-gray-200 dark:border-gray-700 shadow-sm'>
                   <div className='flex space-x-1.5'>
                     <div className='w-2 h-2 bg-gray-400 rounded-full animate-bounce'></div>
+                    <div
+                      className='w-2 h-2 bg-gray-400 rounded-full animate-bounce'
+                      style={{ animationDelay: '0.1s' }}
+                    ></div>
                     <div
                       className='w-2 h-2 bg-gray-400 rounded-full animate-bounce'
                       style={{ animationDelay: '0.1s' }}
