@@ -20,13 +20,13 @@ export const metadata: Metadata = {
   description: 'QRMeal'
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <html lang='en' suppressHydrationWarning>
+    <html suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <AppProvider>
           <ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange>
