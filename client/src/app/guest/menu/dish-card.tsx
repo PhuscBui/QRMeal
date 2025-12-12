@@ -9,6 +9,7 @@ import type { DishResType } from '@/schemaValidations/dish.schema'
 import { DishReviewsModal } from '@/components/dish-reviews-modal'
 import { Star } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 interface DishCardProps {
   dish: DishResType['result']
@@ -18,6 +19,7 @@ interface DishCardProps {
 
 export default function DishCard({ dish, orders, handleQuantityChange }: DishCardProps) {
   const [showReviewModal, setShowReviewModal] = useState(false)
+  const t = useTranslations('guestMenuOrder')
 
   return (
     <>
@@ -30,7 +32,7 @@ export default function DishCard({ dish, orders, handleQuantityChange }: DishCar
         <div className='flex-shrink-0 relative'>
           {dish.status === DishStatus.Unavailable && (
             <div className='absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg'>
-              <span className='text-white text-xs font-medium px-2 py-1 bg-red-600 rounded'>Hết hàng</span>
+              <span className='text-white text-xs font-medium px-2 py-1 bg-red-600 rounded'>{t('outOfStock')}</span>
             </div>
           )}
           <Image
@@ -53,7 +55,7 @@ export default function DishCard({ dish, orders, handleQuantityChange }: DishCar
               className='flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors'
             >
               <Star className='w-4 h-4' />
-              <span>{dish.avg_rating ? dish.avg_rating.toFixed(1) : 'Chưa có đánh giá'}</span>
+              <span>{dish.avg_rating ? dish.avg_rating.toFixed(1) : t('noReviews')}</span>
             </button>
           </div>
         </div>

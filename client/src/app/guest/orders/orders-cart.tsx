@@ -18,16 +18,19 @@ import DishReviewForm from '@/components/dish-review-form'
 import ExistingReview from '@/components/existing-review'
 import { useCreatePaymentLinkMutation } from '@/queries/usePayment'
 import SepayPaymentDialog from '@/components/payment-qr-dialog'
-
-// Payment method config
-const paymentMethodConfig = {
-  banking: {
-    label: 'Bank Transfer',
-    icon: Building2
-  }
-}
+import { useTranslations } from 'next-intl'
 
 export default function OrdersCart() {
+  const t = useTranslations('guestOrdersCart')
+  const tCommon = useTranslations('common')
+  
+  // Payment method config
+  const paymentMethodConfig = {
+    banking: {
+      label: t('bankTransfer'),
+      icon: Building2
+    }
+  }
   const { data, refetch } = useGuestGetOrderListQuery()
   const [reviewingDish, setReviewingDish] = useState<{ id: string; name: string } | null>(null)
   const { data: userData } = useGuestMe()
@@ -124,10 +127,8 @@ export default function OrdersCart() {
         dish_snapshot: { name },
         quantity
       } = data
-      toast('Success', {
-        description: `The item ${name} (SL: ${quantity}) has just been updated with the status "${getOrderStatus(
-          data.status
-        )}"`
+      toast(tCommon('success'), {
+        description: t('itemUpdatedStatus', { name, quantity, status: getOrderStatus(data.status) })
       })
       refetch()
     }
@@ -138,16 +139,20 @@ export default function OrdersCart() {
         const guestInfo = orderGroup.guest
         const totalOrders = data.reduce((sum, group) => sum + group.orders.length, 0)
 
-        toast.success('Payment successful!', {
-          description: `${guestInfo?.name} at table ${guestInfo?.table_number} has paid for ${totalOrders} of food. You can rate the food now!`
+        toast.success(t('paymentSuccessful'), {
+          description: t('guestPaidForOrders', {
+            name: guestInfo?.name,
+            table: guestInfo?.table_number,
+            count: totalOrders
+          })
         })
       }
       refetch()
     }
 
     function onSepayPayment() {
-      toast.success('Payment successful!', {
-        description: `Payment has been paid successfully!`
+      toast.success(t('paymentSuccessful'), {
+        description: t('paymentPaidSuccessfully')
       })
       refetch()
     }
@@ -176,7 +181,7 @@ export default function OrdersCart() {
   // Open payment dialog
   const handleOpenPayment = () => {
     if (waitingForPaying.quantity === 0) {
-      toast.error('No orders to pay')
+      toast.error(t('noOrdersToPay'))
       return
     }
     setIsPayDialogOpen(true)
@@ -208,7 +213,7 @@ export default function OrdersCart() {
         // SepayPaymentDialog sẽ tự động mở
       } catch (error) {
         console.error('Error creating payment link:', error)
-        toast.error('Unable to create payment link. Please try again!')
+        toast.error(t('unableToCreatePaymentLink'))
       }
       return
     }
@@ -223,10 +228,10 @@ export default function OrdersCart() {
       // Refetch orders to update status
       await refetch()
 
-      toast.success('Payment successful!')
+      toast.success(t('paymentSuccessful'))
     } catch (error) {
       console.error('Error after payment success:', error)
-      toast.error('An error occurred after payment. Please try again!')
+      toast.error(t('errorAfterPayment'))
     }
   }
 
@@ -241,7 +246,7 @@ export default function OrdersCart() {
       {currentTable && (
         <div className='mb-4 p-3 rounded-lg'>
           <div className='text-sm font-semibold'>
-            Table:{' '}
+            {t('table')}:{' '}
             <Badge variant='outline' className='ml-1'>
               {currentTable}
             </Badge>
@@ -252,7 +257,7 @@ export default function OrdersCart() {
       {orderGroups.map((orderGroup, groupIndex) => (
         <div key={orderGroup._id} className='mb-6'>
           <div className='text-sm font-medium text-gray-500 mb-3 border-b pb-2'>
-            Order group #{groupIndex + 1} • {new Date(orderGroup.created_at).toLocaleDateString('vi-VN')}
+            {t('orderGroup')} #{groupIndex + 1} • {new Date(orderGroup.created_at).toLocaleDateString('vi-VN')}
             <Badge variant='outline' className='ml-2'>
               {getOrderStatus(orderGroup.status)}
             </Badge>
@@ -278,7 +283,7 @@ export default function OrdersCart() {
                     {formatCurrency(order.dish_snapshot.price)} x <Badge className='px-1'>{order.quantity}</Badge>
                   </div>
                   <div className='text-xs text-gray-500'>
-                    Total: {formatCurrency(order.dish_snapshot.price * order.quantity)}
+                    {t('total')}: {formatCurrency(order.dish_snapshot.price * order.quantity)}
                   </div>
                 </div>
                 <div className='flex-shrink-0 ml-auto flex flex-col justify-center items-end gap-2'>
@@ -301,7 +306,7 @@ export default function OrdersCart() {
                         className='text-xs px-2 py-1 h-auto'
                       >
                         <Star size={12} className='mr-1' />
-                        Rate
+                        {t('rate')}
                       </Button>
                     )}
                 </div>
@@ -319,7 +324,7 @@ export default function OrdersCart() {
       <div className='sticky bottom-0 border-t pt-4 space-y-2'>
         {paid.quantity > 0 && (
           <div className='w-full flex justify-between text-green-600 font-semibold'>
-            <span>Paid • {paid.quantity} item</span>
+            <span>{t('paid')} • {paid.quantity} {paid.quantity === 1 ? t('item') : t('items')}</span>
             <span>{formatCurrency(paid.price)}</span>
           </div>
         )}
@@ -327,19 +332,19 @@ export default function OrdersCart() {
         {waitingForPaying.quantity > 0 && (
           <>
             <div className='w-full flex justify-between text-xl font-bold text-orange-600'>
-              <span>Waiting for payment • {waitingForPaying.quantity} item</span>
+              <span>{t('waitingForPayment')} • {waitingForPaying.quantity} {waitingForPaying.quantity === 1 ? t('item') : t('items')}</span>
               <span>{formatCurrency(waitingForPaying.price)}</span>
             </div>
 
             {/* Payment Button */}
             <Button className='w-full mt-2' size='lg' onClick={handleOpenPayment}>
               <CreditCard className='h-5 w-5 mr-2' />
-              Thanh toán ngay
+              {t('payNow')}
             </Button>
           </>
         )}
 
-        {orders.length === 0 && <div className='text-center text-gray-500 py-8'>No orders yet</div>}
+        {orders.length === 0 && <div className='text-center text-gray-500 py-8'>{t('noOrders')}</div>}
       </div>
 
       {/* Modal đánh giá */}
@@ -357,23 +362,23 @@ export default function OrdersCart() {
           <DialogHeader>
             <DialogTitle className='flex items-center gap-2'>
               <CreditCard className='h-5 w-5' />
-              Choose payment method
+              {t('choosePaymentMethod')}
             </DialogTitle>
-            <DialogDescription>Pay for {waitingForPaying.quantity} dishes</DialogDescription>
+            <DialogDescription>{t('payForDishes', { count: waitingForPaying.quantity })}</DialogDescription>
           </DialogHeader>
 
           <div className='space-y-6'>
             {/* Tóm tắt thanh toán */}
             <div className='bg-muted p-4 rounded-lg space-y-3'>
-              <h4 className='font-medium text-sm'>Payment Details</h4>
+              <h4 className='font-medium text-sm'>{t('paymentDetails')}</h4>
               <div className='space-y-2 text-sm'>
                 <div className='flex justify-between'>
-                  <span>Number of dishes:</span>
-                  <span>{waitingForPaying.quantity} dishes</span>
+                  <span>{t('numberOfDishes')}:</span>
+                  <span>{waitingForPaying.quantity} {t('dishes')}</span>
                 </div>
                 <div className='border-t pt-2 mt-2'>
                   <div className='flex justify-between items-center font-semibold text-base'>
-                    <span>Total:</span>
+                    <span>{t('total')}:</span>
                     <span className='text-lg text-primary'>{formatCurrency(waitingForPaying.price)}</span>
                   </div>
                 </div>
@@ -382,7 +387,7 @@ export default function OrdersCart() {
 
             {/* Choose payment method */}
             <div>
-              <h4 className='font-medium text-sm mb-3'>Choose payment method</h4>
+              <h4 className='font-medium text-sm mb-3'>{t('choosePaymentMethod')}</h4>
               <RadioGroup value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
                 {Object.entries(paymentMethodConfig).map(([key, info]) => {
                   const IconComp = info.icon
@@ -409,11 +414,11 @@ export default function OrdersCart() {
             {/* Buttons */}
             <div className='flex gap-3'>
               <Button variant='outline' onClick={handleClosePayment} className='flex-1'>
-                Cancel
+                {tCommon('cancel')}
               </Button>
               <Button onClick={confirmPay} className='flex-1'>
                 <CreditCard className='h-4 w-4 mr-2' />
-                Confirm Payment
+                {t('confirmPayment')}
               </Button>
             </div>
           </div>

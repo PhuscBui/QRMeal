@@ -24,6 +24,7 @@ export default function NavItems({ className }: { className?: string }) {
   const logoutMutation = useLogoutMutation()
   const router = useRouter()
   const t = useTranslations('navItems')
+  const tCommon = useTranslations('common')
 
   const menuItems: {
     titleKey: string
@@ -132,7 +133,7 @@ export default function NavItems({ className }: { className?: string }) {
               <AlertDialogDescription>{t('logoutDescription')}</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>{t('cancel', { ns: 'common' })}</AlertDialogCancel>
+              <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
               <AlertDialogAction onClick={logout}>{t('ok')}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

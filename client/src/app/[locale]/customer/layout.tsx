@@ -2,7 +2,6 @@
 
 import type React from 'react'
 
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, Menu, ShoppingCart, User, Gift, Package2, Bell, QrCode, ChevronDown, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -12,7 +11,9 @@ import DarkModeToggle from '@/components/dark-mode-toggle'
 import { cn } from '@/lib/utils'
 import { useEffect, useState } from 'react'
 import ChatWidget from '@/components/chat-widget'
+import { Link } from '@/i18n/routing'
 import { useTranslations } from 'next-intl'
+import LanguageSwitcher from '@/components/language-switcher'
 
 export default function CustomerLayout({
   children
@@ -21,23 +22,25 @@ export default function CustomerLayout({
 }>) {
   const pathname = usePathname()
   const [orderType, setOrderType] = useState<string | null>(null)
-  const t = useTranslations('customerLayout')
+  const t = useTranslations('customerNav')
+  const tNav = useTranslations('nav')
 
   const navigation = [
-    { name: t('home'), href: '/customer', icon: Home },
-    { name: t('selectOrderType'), href: '/customer/order-type', icon: Menu },
-    { name: t('promotions'), href: '/customer/promotions', icon: Gift },
-    { name: t('scanQR'), href: '/customer/scan-qr', icon: QrCode },
-    { name: t('reservations'), href: '/customer/reservations', icon: Package2 },
-    { name: t('support'), href: '/customer/support', icon: MessageCircle },
+    { nameKey: 'home', href: '/customer', icon: Home },
+    { nameKey: 'selectOrderType', href: '/customer/order-type', icon: Menu },
+    { nameKey: 'promotions', href: '/customer/promotions', icon: Gift, useNav: true },
+    { nameKey: 'scanQRCode', href: '/customer/scan-qr', icon: QrCode },
+    { nameKey: 'reservations', href: '/customer/reservations', icon: Package2, useNav: true },
+    { nameKey: 'support', href: '/customer/support', icon: MessageCircle, useNav: true },
     {
-      name: t('account'),
+      nameKey: 'account',
       href: '/customer/account/profile',
       icon: User,
+      useNav: true,
       children: [
-        { name: t('profile'), href: '/customer/account/profile' },
-        { name: t('orders'), href: '/customer/account/orders' },
-        { name: t('settings'), href: '/customer/account/settings' }
+        { nameKey: 'profile', href: '/customer/account/profile' },
+        { nameKey: 'orders', href: '/customer/account/orders' },
+        { nameKey: 'settings', href: '/customer/account/settings' }
       ]
     }
   ]
@@ -60,10 +63,11 @@ export default function CustomerLayout({
         <nav className='hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6'>
           {navigation.map((item) => {
             const isActive = pathname === item.href || (item.href !== '/customer' && pathname.startsWith(item.href))
+            const itemName = item.useNav ? tNav(item.nameKey) : t(item.nameKey)
 
             if (item.children) {
               return (
-                <DropdownMenu key={item.name}>
+                <DropdownMenu key={item.nameKey}>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant='ghost'
@@ -73,13 +77,13 @@ export default function CustomerLayout({
                       )}
                     >
                       <item.icon className='h-4 w-4' />
-                      <span className='hidden lg:inline'>{item.name}</span>
+                      <span className='hidden lg:inline'>{itemName}</span>
                       <ChevronDown className='h-3 w-3' />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align='start' className='w-48'>
                     {item.children.map((child) => (
-                      <DropdownMenuItem key={child.name} asChild>
+                      <DropdownMenuItem key={child.nameKey} asChild>
                         <Link
                           href={child.href}
                           className={cn(
@@ -87,7 +91,7 @@ export default function CustomerLayout({
                             pathname === child.href && 'bg-accent text-accent-foreground'
                           )}
                         >
-                          {child.name}
+                          {t(child.nameKey)}
                         </Link>
                       </DropdownMenuItem>
                     ))}
@@ -98,7 +102,7 @@ export default function CustomerLayout({
 
             return (
               <Link
-                key={item.name}
+                key={item.nameKey}
                 href={item.href}
                 className={cn(
                   'flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground',
@@ -106,7 +110,7 @@ export default function CustomerLayout({
                 )}
               >
                 <item.icon className='h-4 w-4' />
-                <span className='hidden lg:inline'>{item.name}</span>
+                <span className='hidden lg:inline'>{itemName}</span>
               </Link>
             )
           })}
@@ -124,6 +128,7 @@ export default function CustomerLayout({
             </Link>
           </Button>
 
+          <LanguageSwitcher />
           <DarkModeToggle />
         </div>
 
@@ -132,7 +137,7 @@ export default function CustomerLayout({
           <SheetTrigger asChild>
             <Button variant='outline' size='icon' className='shrink-0 md:hidden'>
               <Menu className='h-5 w-5' />
-              <span className='sr-only'>{t('toggleMenu')}</span>
+              <span className='sr-only'>Toggle navigation menu</span>
             </Button>
           </SheetTrigger>
           <SheetContent side='left' className='w-64'>
@@ -146,10 +151,11 @@ export default function CustomerLayout({
                 {navigation.map((item) => {
                   const isActive =
                     pathname === item.href || (item.href !== '/customer' && pathname.startsWith(item.href))
+                  const itemName = item.useNav ? tNav(item.nameKey) : t(item.nameKey)
 
                   if (item.children) {
                     return (
-                      <div key={item.name} className='space-y-1'>
+                      <div key={item.nameKey} className='space-y-1'>
                         <div
                           className={cn(
                             'flex items-center gap-3 text-muted-foreground p-2 rounded-md font-medium',
@@ -157,19 +163,19 @@ export default function CustomerLayout({
                           )}
                         >
                           <item.icon className='h-5 w-5' />
-                          {item.name}
+                          {itemName}
                         </div>
                         <div className='ml-8 space-y-1'>
                           {item.children.map((child) => (
                             <Link
-                              key={child.name}
+                              key={child.nameKey}
                               href={child.href}
                               className={cn(
                                 'block text-sm text-muted-foreground transition-colors hover:text-foreground p-2 rounded-md',
                                 pathname === child.href && 'text-foreground font-medium bg-accent'
                               )}
                             >
-                              {child.name}
+                              {t(child.nameKey)}
                             </Link>
                           ))}
                         </div>
@@ -179,7 +185,7 @@ export default function CustomerLayout({
 
                   return (
                     <Link
-                      key={item.name}
+                      key={item.nameKey}
                       href={item.href}
                       className={cn(
                         'flex items-center gap-3 text-muted-foreground transition-colors hover:text-foreground p-2 rounded-md',
@@ -187,7 +193,7 @@ export default function CustomerLayout({
                       )}
                     >
                       <item.icon className='h-5 w-5' />
-                      {item.name}
+                      {itemName}
                     </Link>
                   )
                 })}
@@ -207,9 +213,10 @@ export default function CustomerLayout({
         <nav className='flex items-center justify-around py-2'>
           {navigation.slice(0, 4).map((item) => {
             const isActive = pathname === item.href || (item.href !== '/customer' && pathname.startsWith(item.href))
+            const itemName = item.useNav ? tNav(item.nameKey) : t(item.nameKey)
             return (
               <Link
-                key={item.name}
+                key={item.nameKey}
                 href={item.href}
                 className={cn(
                   'flex flex-col items-center gap-1 p-2 text-xs transition-colors',
@@ -217,7 +224,7 @@ export default function CustomerLayout({
                 )}
               >
                 <item.icon className='h-5 w-5' />
-                <span className='text-xs'>{item.name}</span>
+                <span className='text-xs'>{itemName}</span>
               </Link>
             )
           })}
@@ -229,3 +236,4 @@ export default function CustomerLayout({
     </div>
   )
 }
+

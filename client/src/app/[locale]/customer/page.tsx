@@ -1,0 +1,233 @@
+'use client'
+
+import { useState } from 'react'
+import Image from 'next/image'
+import { Search, Star, ChefHat, Award, Users, QrCode, Package, Truck, BookImageIcon, MessageCircle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { RestaurantInfo } from '@/components/restaurant-info'
+import { useDishListQuery } from '@/queries/useDish'
+import { usePromotionListQuery } from '@/queries/usePromotion'
+import { formatDateTimeToLocaleString } from '@/lib/utils'
+import { Link } from '@/i18n/routing'
+import { useTranslations } from 'next-intl'
+
+export default function CustomerHomePage() {
+  const { data: dishesData } = useDishListQuery()
+  const { data: promotionsData } = usePromotionListQuery()
+  const promotions = promotionsData?.payload.result.slice(0, 4) || []
+  const [searchQuery, setSearchQuery] = useState('')
+  const dishes = dishesData?.payload.result || []
+  const featuredDishes = dishes.slice(0, 6)
+  
+  const t = useTranslations('customerHome')
+  const tNav = useTranslations('nav')
+  const tCommon = useTranslations('common')
+
+  return (
+    <div className='container mx-auto px-4 py-6 space-y-8'>
+      {/* Hero Section */}
+      <div className='relative rounded-2xl overflow-hidden bg-gradient-to-r from-orange-500 to-red-500 text-white'>
+        <div className='absolute inset-0 bg-black/20' />
+        <div className='relative p-8 md:p-12'>
+          <div className='max-w-2xl'>
+            <h1 className='text-3xl md:text-5xl font-bold mb-4'>{t('welcome')}</h1>
+            <p className='text-lg md:text-xl mb-6 opacity-90'>{t('subtitle')}</p>
+            <div className='flex flex-col sm:flex-row gap-4'>
+              <Link href='/customer/order-type'>
+                <Button size='lg' className='md:w-auto w-full'>
+                  <ChefHat className='mr-2 h-5 w-5' />
+                  {t('orderNow')}
+                </Button>
+              </Link>
+              <Link href='/customer/order-type'>
+                <Button size='lg' variant='secondary' className='md:w-auto w-full'>
+                  <QrCode className='mr-2 h-5 w-5' />
+                  {t('scanQRCode')}
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className='relative max-w-2xl mx-auto'>
+        <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4' />
+        <Input
+          placeholder={t('searchPlaceholder')}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className='pl-10 h-12 text-lg'
+        />
+      </div>
+
+      {/* Restaurant Info */}
+      <RestaurantInfo />
+
+      {/* Featured Dishes */}
+      <div>
+        <div className='flex items-center justify-between mb-6'>
+          <h2 className='text-2xl font-bold'>{t('outstandingDishes')}</h2>
+          <Link href='/customer/order-type'>
+            <Button variant='outline'>{t('viewAll')}</Button>
+          </Link>
+        </div>
+        <div className='grid md:grid-cols-2 lg:grid-cols-3 gap-6'>
+          {featuredDishes.map((dish) => (
+            <Card key={dish._id} className='overflow-hidden hover:shadow-lg transition-shadow'>
+              <div className='relative'>
+                <Image
+                  src={dish.image || ''}
+                  alt={dish.name}
+                  width={300}
+                  height={200}
+                  className='w-full h-48 object-cover'
+                />
+                <Badge className='absolute top-2 left-2 bg-red-500'>{dish.status}</Badge>
+                <Badge variant='secondary' className='absolute top-2 right-2'>
+                  {dish.category_name || t('uncategorized')}
+                </Badge>
+              </div>
+              <CardContent className='p-4'>
+                <div className='flex items-start justify-between mb-2'>
+                  <h3 className='font-semibold text-lg'>{dish.name}</h3>
+                  <div className='flex items-center gap-1'>
+                    <Star className='h-4 w-4 fill-yellow-400 text-yellow-400' />
+                    <span className='text-sm font-medium'>{dish.avg_rating}</span>
+                  </div>
+                </div>
+                <p className='text-muted-foreground text-sm mb-3 line-clamp-2'>{dish.description}</p>
+                <div className='flex items-center justify-between'>
+                  <span className='text-lg font-bold text-primary'>{dish.price.toLocaleString('vi-VN')}đ</span>
+                  <Button size='sm'>{t('addToCart')}</Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Promotions */}
+      <div>
+        <div className='flex items-center justify-between mb-6'>
+          <h2 className='text-2xl font-bold mb-6'>{t('todayPromotion')}</h2>
+          <Link href='/customer/promotions'>
+            <Button variant='outline'>{t('viewAll')}</Button>
+          </Link>
+        </div>
+        <div className='grid md:grid-cols-2 gap-6'>
+          {promotions.map((promo) => (
+            <Card key={promo._id} className='border-orange-200 bg-orange-50 dark:bg-orange-950/20'>
+              <CardContent className='p-6'>
+                <div className='flex items-start justify-between mb-4'>
+                  <div>
+                    <h3 className='font-semibold text-lg mb-2'>{promo.name}</h3>
+                    <p className='text-muted-foreground'>{promo.description}</p>
+                  </div>
+                </div>
+                <div className='flex items-center justify-between'>
+                  <span className='text-sm text-muted-foreground'>
+                    {t('validUntil')}: {formatDateTimeToLocaleString(promo.end_date)}
+                  </span>
+                  <Button size='sm' variant='outline'>
+                    {t('useNow')}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Order Type Selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('chooseWayToEnjoy')}</CardTitle>
+          <CardDescription>{t('chooseWayDescription')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className='grid md:grid-cols-3 gap-4'>
+            <Link href='/customer/scan-qr'>
+              <Card className='hover:shadow-lg transition-shadow cursor-pointer border-blue-200 bg-blue-50 dark:bg-blue-950/20'>
+                <CardContent className='p-6 text-center'>
+                  <QrCode className='h-12 w-12 mx-auto mb-4 text-blue-600' />
+                  <h3 className='font-semibold text-lg mb-2'>{t('inStoreDining')}</h3>
+                  <p className='text-sm text-muted-foreground mb-4'>{t('inStoreDiningDesc')}</p>
+                  <Button className='w-full'>{t('scanQRCode')}</Button>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href='/customer/takeaway/menu'>
+              <Card className='hover:shadow-lg transition-shadow cursor-pointer border-orange-200 bg-orange-50 dark:bg-orange-950/20'>
+                <CardContent className='p-6 text-center'>
+                  <Package className='h-12 w-12 mx-auto mb-4 text-orange-600' />
+                  <h3 className='font-semibold text-lg mb-2'>{t('takeout')}</h3>
+                  <p className='text-sm text-muted-foreground mb-4'>{t('takeoutDesc')}</p>
+                  <Button className='w-full'>{t('order')}</Button>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href='/customer/delivery/menu'>
+              <Card className='hover:shadow-lg transition-shadow cursor-pointer border-green-200 bg-green-50 dark:bg-green-950/20'>
+                <CardContent className='p-6 text-center'>
+                  <Truck className='h-12 w-12 mx-auto mb-4 text-green-600' />
+                  <h3 className='font-semibold text-lg mb-2'>{t('delivery')}</h3>
+                  <p className='text-sm text-muted-foreground mb-4'>{t('deliveryDesc')}</p>
+                  <Button className='w-full'>{t('order')}</Button>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('quickActions')}</CardTitle>
+          <CardDescription>{t('quickActionsDesc')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className='grid grid-cols-2 md:grid-cols-5 gap-4'>
+            <Link href='/customer/order-type'>
+              <Button variant='outline' className='w-full h-20 flex-col gap-2'>
+                <ChefHat className='h-6 w-6' />
+                <span>{t('order')}</span>
+              </Button>
+            </Link>
+            <Link href='/customer/reservations'>
+              <Button variant='outline' className='w-full h-20 flex-col gap-2'>
+                <BookImageIcon className='h-6 w-6' />
+                <span>{tNav('reservations')}</span>
+              </Button>
+            </Link>
+            <Link href='/customer/promotions'>
+              <Button variant='outline' className='w-full h-20 flex-col gap-2'>
+                <Award className='h-6 w-6' />
+                <span>{tNav('promotions')}</span>
+              </Button>
+            </Link>
+            <Link href='/customer/support'>
+              <Button variant='outline' className='w-full h-20 flex-col gap-2'>
+                <MessageCircle className='h-6 w-6' />
+                <span>{tNav('support')}</span>
+              </Button>
+            </Link>
+            <Link href='/customer/account/profile'>
+              <Button variant='outline' className='w-full h-20 flex-col gap-2'>
+                <Users className='h-6 w-6' />
+                <span>{tNav('account')}</span>
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
