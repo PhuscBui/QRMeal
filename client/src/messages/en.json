@@ -220,6 +220,105 @@
     "serverError": "Server error",
     "unauthorized": "Unauthorized access",
     "notFound": "Not found"
+  },
+  "home": {
+    "title": "QRMeal Restaurant",
+    "subtitle": "Experience the finest Vietnamese cuisine with our carefully crafted dishes",
+    "exploreMenu": "Explore Menu",
+    "bookTable": "Book a Table",
+    "masterChefs": "Master Chefs",
+    "masterChefsDesc": "Our dishes are prepared by experienced chefs with passion for Vietnamese cuisine",
+    "qualityFood": "Quality Food",
+    "qualityFoodDesc": "We use only the freshest ingredients to ensure the highest quality of our dishes",
+    "fastService": "Fast Service",
+    "fastServiceDesc": "Quick and attentive service to make your dining experience pleasant",
+    "ourDeliciousDishes": "Our Delicious Dishes",
+    "dishesDescription": "Discover our menu of authentic Vietnamese cuisine, prepared with love and tradition",
+    "orderNow": "Order now",
+    "whatCustomersSay": "What Our Customers Say",
+    "customerTestimonial": "The food at QRMeal Restaurant is absolutely delicious. The flavors are authentic and the service is excellent. Highly recommended!",
+    "regularVisitor": "Regular Visitor",
+    "visitToday": "Visit Us Today",
+    "visitDescription": "We're conveniently located in the heart of the city. Come experience the best Vietnamese cuisine!",
+    "address": "123 Restaurant Street, Ho Chi Minh City, Vietnam",
+    "openingHours": "Opening Hours:",
+    "hours": "Monday - Sunday: 10:00 AM - 10:00 PM",
+    "getDirections": "Get Directions",
+    "footerTagline": "Bringing the authentic taste of Vietnam to your table since 2010",
+    "allRightsReserved": "All rights reserved"
+  },
+  "booking": {
+    "tableReservation": "Table Reservation",
+    "selectTable": "Select a table to make your reservation",
+    "gridView": "Grid View",
+    "listView": "List View",
+    "filters": "Filters",
+    "capacity": "Capacity",
+    "location": "Location",
+    "allCapacities": "All Capacities",
+    "allLocations": "All Locations",
+    "people": "People",
+    "table": "Table",
+    "bookingNow": "Booking Now",
+    "notAvailable": "Not Available",
+    "hidden": "Hidden",
+    "action": "Action",
+    "reserve": "Reserve",
+    "view": "View",
+    "bookingTable": "Booking Table"
+  },
+  "navItems": {
+    "homePage": "Home Page",
+    "booking": "Booking",
+    "promotions": "Promotions",
+    "menu": "Menu",
+    "orders": "Orders",
+    "selectOrderType": "Select Order Type",
+    "account": "Account",
+    "loginEmployee": "Login by Employee",
+    "loginCustomer": "Login by Customer",
+    "dashboard": "Dashboard",
+    "logout": "Log out",
+    "logoutConfirm": "Do you want to log out?",
+    "logoutDescription": "You will be redirected to the home page",
+    "ok": "OK"
+  },
+  "customerLogin": {
+    "title": "Login to order",
+    "loggingIn": "Logging in...",
+    "noAccount": "Don't have an account? Register"
+  },
+  "customerRegister": {
+    "title": "Register",
+    "dateOfBirth": "Date Of Birth",
+    "alreadyHaveAccount": "Already have an account? Login",
+    "creatingAccount": "Creating account...",
+    "createAccount": "Create Account"
+  },
+  "reserveForm": {
+    "tableNumber": "Table Number",
+    "reservationDateTime": "Reservation Date & Time",
+    "pickDate": "Pick a date",
+    "specialRequests": "Special Requests (Optional)",
+    "dietaryRequirements": "Any dietary requirements or special requests?",
+    "submitting": "Submitting...",
+    "confirmReservation": "Confirm Reservation",
+    "tableReservedSuccess": "Table reserved successfully!",
+    "enterName": "Enter your name",
+    "enterPhone": "Enter your phone number",
+    "enterTableNumber": "Enter table number",
+    "note": "Note"
+  },
+  "employeeLogin": {
+    "title": "Log in",
+    "description": "Enter your email and password to log in",
+    "emailPlaceholder": "m@example.com",
+    "success": "Success"
+  },
+  "guestLogin": {
+    "title": "Login to order",
+    "loggingIn": "Logging in...",
+    "loginAsCustomer": "Login as customer"
   }
 }
 

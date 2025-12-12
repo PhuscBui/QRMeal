@@ -220,6 +220,105 @@
     "serverError": "Lỗi máy chủ",
     "unauthorized": "Không có quyền truy cập",
     "notFound": "Không tìm thấy"
+  },
+  "home": {
+    "title": "QRMeal Restaurant",
+    "subtitle": "Trải nghiệm ẩm thực Việt Nam tuyệt vời với các món ăn được chế biến tinh tế",
+    "exploreMenu": "Khám phá thực đơn",
+    "bookTable": "Đặt bàn",
+    "masterChefs": "Đầu bếp bậc thầy",
+    "masterChefsDesc": "Các món ăn của chúng tôi được chế biến bởi những đầu bếp giàu kinh nghiệm với niềm đam mê ẩm thực Việt Nam",
+    "qualityFood": "Thực phẩm chất lượng",
+    "qualityFoodDesc": "Chúng tôi chỉ sử dụng nguyên liệu tươi ngon nhất để đảm bảo chất lượng cao nhất cho các món ăn",
+    "fastService": "Phục vụ nhanh chóng",
+    "fastServiceDesc": "Dịch vụ nhanh chóng và chu đáo để mang lại trải nghiệm ăn uống tuyệt vời",
+    "ourDeliciousDishes": "Các món ăn ngon của chúng tôi",
+    "dishesDescription": "Khám phá thực đơn ẩm thực Việt Nam đích thực, được chế biến với tình yêu và truyền thống",
+    "orderNow": "Đặt hàng ngay",
+    "whatCustomersSay": "Khách hàng nói gì về chúng tôi",
+    "customerTestimonial": "Thực phẩm tại QRMeal Restaurant thực sự ngon tuyệt. Hương vị đích thực và dịch vụ tuyệt vời. Rất đáng để thử!",
+    "regularVisitor": "Khách hàng thường xuyên",
+    "visitToday": "Ghé thăm chúng tôi hôm nay",
+    "visitDescription": "Chúng tôi nằm ở vị trí thuận tiện ngay trung tâm thành phố. Hãy đến trải nghiệm ẩm thực Việt Nam tuyệt vời nhất!",
+    "address": "123 Đường Nhà hàng, Thành phố Hồ Chí Minh, Việt Nam",
+    "openingHours": "Giờ mở cửa:",
+    "hours": "Thứ Hai - Chủ Nhật: 10:00 - 22:00",
+    "getDirections": "Chỉ đường",
+    "footerTagline": "Mang hương vị đích thực của Việt Nam đến bàn ăn của bạn từ năm 2010",
+    "allRightsReserved": "Đã đăng ký bản quyền"
+  },
+  "booking": {
+    "tableReservation": "Đặt bàn",
+    "selectTable": "Chọn một bàn để đặt chỗ",
+    "gridView": "Dạng lưới",
+    "listView": "Dạng danh sách",
+    "filters": "Bộ lọc",
+    "capacity": "Sức chứa",
+    "location": "Vị trí",
+    "allCapacities": "Tất cả sức chứa",
+    "allLocations": "Tất cả vị trí",
+    "people": "người",
+    "table": "Bàn",
+    "bookingNow": "Đặt ngay",
+    "notAvailable": "Không có sẵn",
+    "hidden": "Ẩn",
+    "action": "Hành động",
+    "reserve": "Đặt chỗ",
+    "view": "Xem",
+    "bookingTable": "Đặt bàn"
+  },
+  "navItems": {
+    "homePage": "Trang chủ",
+    "booking": "Đặt chỗ",
+    "promotions": "Khuyến mãi",
+    "menu": "Thực đơn",
+    "orders": "Đơn hàng",
+    "selectOrderType": "Chọn loại đơn",
+    "account": "Tài khoản",
+    "loginEmployee": "Đăng nhập nhân viên",
+    "loginCustomer": "Đăng nhập khách hàng",
+    "dashboard": "Bảng điều khiển",
+    "logout": "Đăng xuất",
+    "logoutConfirm": "Bạn có muốn đăng xuất?",
+    "logoutDescription": "Bạn sẽ được chuyển về trang chủ",
+    "ok": "Đồng ý"
+  },
+  "customerLogin": {
+    "title": "Đăng nhập để đặt hàng",
+    "loggingIn": "Đang đăng nhập...",
+    "noAccount": "Chưa có tài khoản? Đăng ký"
+  },
+  "customerRegister": {
+    "title": "Đăng ký",
+    "dateOfBirth": "Ngày sinh",
+    "alreadyHaveAccount": "Đã có tài khoản? Đăng nhập",
+    "creatingAccount": "Đang tạo tài khoản...",
+    "createAccount": "Tạo tài khoản"
+  },
+  "reserveForm": {
+    "tableNumber": "Số bàn",
+    "reservationDateTime": "Ngày & giờ đặt bàn",
+    "pickDate": "Chọn ngày",
+    "specialRequests": "Yêu cầu đặc biệt (Tùy chọn)",
+    "dietaryRequirements": "Bạn có yêu cầu đặc biệt nào không?",
+    "submitting": "Đang gửi...",
+    "confirmReservation": "Xác nhận đặt bàn",
+    "tableReservedSuccess": "Đặt bàn thành công!",
+    "enterName": "Nhập tên của bạn",
+    "enterPhone": "Nhập số điện thoại của bạn",
+    "enterTableNumber": "Nhập số bàn",
+    "note": "Ghi chú"
+  },
+  "employeeLogin": {
+    "title": "Đăng nhập",
+    "description": "Nhập email và mật khẩu để đăng nhập",
+    "emailPlaceholder": "m@example.com",
+    "success": "Thành công"
+  },
+  "guestLogin": {
+    "title": "Đăng nhập để đặt hàng",
+    "loggingIn": "Đang đăng nhập...",
+    "loginAsCustomer": "Đăng nhập bằng tài khoản khách hàng"
   }
 }
 
