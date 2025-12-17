@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CalendarDays, User, MapPin, Phone, Mail, Package, Edit3 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface EditOrderProps {
   id?: string | undefined
@@ -27,6 +28,8 @@ interface EditOrderProps {
 }
 
 export default function EditOrder({ id, setId, onSubmitSuccess }: EditOrderProps) {
+  const t = useTranslations('order')
+  const tCommon = useTranslations('common')
   const [selectedDish, setSelectedDish] = useState<DishListResType['result'][0] | null>(null)
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
   const [selectedOrderIndex, setSelectedOrderIndex] = useState<number>(0)
@@ -71,7 +74,7 @@ export default function EditOrder({ id, setId, onSubmitSuccess }: EditOrderProps
           price: dish_snapshot.price,
           description: dish_snapshot.description,
           status: dish_snapshot.status,
-          category_ids: dish_snapshot.category_ids,
+          category_id: dish_snapshot.category_id,
           created_at: dish_snapshot.created_at,
           updated_at: dish_snapshot.updated_at
         })
@@ -90,8 +93,8 @@ export default function EditOrder({ id, setId, onSubmitSuccess }: EditOrderProps
 
       const result = await updateOrderMutation.mutateAsync(body)
 
-      toast.success('Success', {
-        description: result.payload.message || 'Order updated successfully'
+      toast.success(tCommon('success'), {
+        description: result.payload.message || tCommon('updateSuccess')
       })
 
       reset()
@@ -136,7 +139,7 @@ export default function EditOrder({ id, setId, onSubmitSuccess }: EditOrderProps
         <DialogHeader className=''>
           <DialogTitle className='flex items-center gap-2 text-xl'>
             <Edit3 className='w-5 h-5' />
-            Edit Order
+            {t('editOrder')}
           </DialogTitle>
         </DialogHeader>
 
@@ -144,14 +147,14 @@ export default function EditOrder({ id, setId, onSubmitSuccess }: EditOrderProps
           <div className='flex justify-center py-12'>
             <div className='text-center space-y-2'>
               <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto'></div>
-              <p className='text-sm text-muted-foreground'>Loading order details...</p>
+              <p className='text-sm text-muted-foreground'>{tCommon('loading')}</p>
             </div>
           </div>
         ) : error ? (
           <div className='flex justify-center py-12'>
             <div className='text-center space-y-2'>
               <div className='text-red-500 text-lg'>⚠️</div>
-              <p className='text-red-500'>Error loading order details. Please try again.</p>
+              <p className='text-red-500'>{tCommon('errorLoading')}</p>
             </div>
           </div>
         ) : (
@@ -161,11 +164,11 @@ export default function EditOrder({ id, setId, onSubmitSuccess }: EditOrderProps
                 <TabsList className='grid w-full grid-cols-2 mb-2'>
                   <TabsTrigger value='info' className='flex items-center gap-2'>
                     <Package className='w-4 h-4' />
-                    Order Info
+                    {t('orderInfo')}
                   </TabsTrigger>
                   <TabsTrigger value='edit' className='flex items-center gap-2'>
                     <Edit3 className='w-4 h-4' />
-                    Edit Item
+                    {t('editItem')}
                   </TabsTrigger>
                 </TabsList>
 
@@ -175,7 +178,7 @@ export default function EditOrder({ id, setId, onSubmitSuccess }: EditOrderProps
                     <Card>
                       <CardHeader className=''>
                         <div className='flex items-center justify-between'>
-                          <CardTitle className='text-lg'>Order Summary</CardTitle>
+                          <CardTitle className='text-lg'>{t('orderSummary')}</CardTitle>
                           <Badge variant={orderGroup.status === OrderStatus.Delivered ? 'default' : 'secondary'}>
                             {getOrderStatus(orderGroup.status)}
                           </Badge>
@@ -186,16 +189,16 @@ export default function EditOrder({ id, setId, onSubmitSuccess }: EditOrderProps
                           <div className='flex items-center gap-3'>
                             <CalendarDays className='w-4 h-4 text-muted-foreground' />
                             <div>
-                              <p className='text-sm text-muted-foreground'>Created</p>
+                              <p className='text-sm text-muted-foreground'>{tCommon('created')}</p>
                               <p className='text-sm font-medium'>{new Date(orderGroup.created_at).toLocaleString()}</p>
                             </div>
                           </div>
                           <div className='flex items-center gap-3'>
                             <MapPin className='w-4 h-4 text-muted-foreground' />
                             <div>
-                              <p className='text-sm text-muted-foreground'>Type</p>
+                              <p className='text-sm text-muted-foreground'>{t('orderType')}</p>
                               <Badge variant='outline'>
-                                {orderGroup.order_type === 'dine-in' ? 'Dine In' : 'Delivery'}
+                                {orderGroup.order_type === 'dine-in' ? t('dineIn') : t('delivery')}
                               </Badge>
                             </div>
                           </div>
@@ -205,7 +208,7 @@ export default function EditOrder({ id, setId, onSubmitSuccess }: EditOrderProps
                           <div className='flex items-center gap-3'>
                             <MapPin className='w-4 h-4 text-muted-foreground' />
                             <div>
-                              <p className='text-sm text-muted-foreground'>Table Number</p>
+                              <p className='text-sm text-muted-foreground'>{t('tableNumber')}</p>
                               <p className='text-sm font-medium'>{orderGroup.table_number}</p>
                             </div>
                           </div>
@@ -219,14 +222,14 @@ export default function EditOrder({ id, setId, onSubmitSuccess }: EditOrderProps
                         <CardHeader className=''>
                           <CardTitle className='text-lg flex items-center gap-2'>
                             <User className='w-4 h-4' />
-                            {customer ? 'Customer' : 'Guest'} Information
+                            {customer ? t('customerInfo') : t('guestInfo')}
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
                           {customer && (
                             <div className='space-y-3'>
                               <div>
-                                <p className='text-sm text-muted-foreground'>Name</p>
+                                <p className='text-sm text-muted-foreground'>{tCommon('name')}</p>
                                 <p className='font-medium'>{customer.name}</p>
                               </div>
                               <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
@@ -245,7 +248,7 @@ export default function EditOrder({ id, setId, onSubmitSuccess }: EditOrderProps
                           {guest && (
                             <div className='space-y-3'>
                               <div>
-                                <p className='text-sm text-muted-foreground'>Name</p>
+                                <p className='text-sm text-muted-foreground'>{tCommon('name')}</p>
                                 <p className='font-medium'>{guest.name}</p>
                               </div>
                               <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>

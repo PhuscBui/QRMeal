@@ -42,6 +42,7 @@ import { toast } from 'sonner'
 import { useGetOrderListQuery, useUpdateOrderMutation } from '@/queries/useOrder'
 import { useTableListQuery } from '@/queries/useTable'
 import { useAppContext } from '@/components/app-provider'
+import { useTranslations } from 'next-intl'
 
 // Updated context type to work with OrderGroup
 export const OrderTableContext = createContext({
@@ -71,6 +72,8 @@ const initFromDate = startOfDay(new Date())
 const initToDate = endOfDay(new Date())
 
 export default function OrderTable() {
+  const t = useTranslations('order')
+  const tCommon = useTranslations('common')
   const searchParam = useSearchParams()
   const { socket } = useAppContext()
   const [openStatusFilter, setOpenStatusFilter] = useState(false)
@@ -199,8 +202,8 @@ export default function OrderTable() {
         dish_snapshot: { name },
         quantity
       } = data
-      toast('Success', {
-        description: `Item ${name} (SL: ${quantity}) has just been updated to status "${getOrderStatus(data.status)}"`
+      toast(tCommon('success'), {
+        description: t('itemUpdatedStatus', { name, quantity, status: getOrderStatus(data.status) })
       })
       refetch()
     }
@@ -210,10 +213,13 @@ export default function OrderTable() {
       const customer = data.orderGroup.customer // FIX: Also handle customer
       const displayName = customer?.name || guest?.name || 'Unknown'
 
-      toast('Success', {
-        description: `${displayName} at table ${data.orderGroup.table_number} just placed ${data.orders.length} order${
-          data.orders.length > 1 ? 's' : ''
-        }`
+      const key = data.orders.length === 1 ? 'newOrderPlaced' : 'newOrdersPlaced'
+      toast(tCommon('success'), {
+        description: t(key, {
+          name: displayName,
+          tableNumber: data.orderGroup.table_number || 'N/A',
+          count: data.orders.length
+        })
       })
       refetch()
     }
@@ -223,8 +229,8 @@ export default function OrderTable() {
       const customer = data[0].customer // FIX: Also handle customer
       const displayName = customer?.name || guest?.name || 'Unknown'
 
-      toast('Success', {
-        description: `${displayName} just paid for their order`
+      toast(tCommon('success'), {
+        description: t('paidOrder', { name: displayName })
       })
       refetch()
     }
@@ -232,7 +238,7 @@ export default function OrderTable() {
     function OnUpdateDeliveryStatus(data: UpdateDeliveryResType['result']) {
       const { status, customer } = data
 
-      toast.success(`${customer}'s Order Delivery status updated to "${status}"`)
+      toast.success(t('deliveryStatusUpdated', { name: customer?.name || 'Unknown', status }))
       refetch()
     }
 
@@ -251,7 +257,7 @@ export default function OrderTable() {
       socket?.off('payment', OnPayOrder)
       socket?.off('delivery-status-update', OnUpdateDeliveryStatus)
     }
-  }, [refetchOrderList, fromDate, toDate, socket])
+  }, [refetchOrderList, fromDate, toDate, socket, tCommon, t])
 
   return (
     <OrderTableContext.Provider
@@ -267,26 +273,26 @@ export default function OrderTable() {
         <div className='flex items-center'>
           <div className='flex flex-wrap gap-2'>
             <div className='flex items-center'>
-              <span className='mr-2'>From</span>
+              <span className='mr-2'>{t('from')}</span>
               <Input
                 type='datetime-local'
-                placeholder='From'
+                placeholder={t('from')}
                 className='text-sm'
                 value={format(fromDate, 'yyyy-MM-dd HH:mm').replace(' ', 'T')}
                 onChange={(event) => setFromDate(new Date(event.target.value))}
               />
             </div>
             <div className='flex items-center'>
-              <span className='mr-2'>To</span>
+              <span className='mr-2'>{t('to')}</span>
               <Input
                 type='datetime-local'
-                placeholder='To'
+                placeholder={t('to')}
                 value={format(toDate, 'yyyy-MM-dd HH:mm').replace(' ', 'T')}
                 onChange={(event) => setToDate(new Date(event.target.value))}
               />
             </div>
             <Button className='' variant={'outline'} onClick={resetDateFilter}>
-              Reset
+              {t('reset')}
             </Button>
           </div>
           <div className='ml-auto'>
@@ -295,13 +301,13 @@ export default function OrderTable() {
         </div>
         <div className='flex flex-wrap items-center gap-4 py-4'>
           <Input
-            placeholder='Guest/Customer name'
+            placeholder={t('guestCustomerName')}
             value={(table.getColumn('guestName')?.getFilterValue() as string) ?? ''}
             onChange={(event) => table.getColumn('guestName')?.setFilterValue(event.target.value)}
             className='max-w-[140px]'
           />
           <Input
-            placeholder='Table'
+            placeholder={t('table')}
             value={(table.getColumn('table_number')?.getFilterValue() as string) ?? ''}
             onChange={(event) => table.getColumn('table_number')?.setFilterValue(event.target.value)}
             className='max-w-[80px]'
@@ -316,7 +322,7 @@ export default function OrderTable() {
               >
                 {table.getColumn('status')?.getFilterValue()
                   ? getOrderStatus(table.getColumn('status')?.getFilterValue() as (typeof OrderStatusValues)[number])
-                  : 'Group Status'}
+                  : t('groupStatus')}
                 <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
               </Button>
             </PopoverTrigger>
