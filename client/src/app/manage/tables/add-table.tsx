@@ -59,6 +59,9 @@ export default function AddTable() {
       capacity: 2,
       status: TableStatus.Hidden,
       location: "",
+      x: undefined,
+      y: undefined,
+      shape: undefined,
     },
   });
   const reset = () => {
@@ -98,9 +101,9 @@ export default function AddTable() {
           </span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-screen overflow-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-screen overflow-auto">
         <DialogHeader>
-          <DialogTitle>{t('addTable')}</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">{t('addTable')}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form
@@ -109,130 +112,219 @@ export default function AddTable() {
               console.log(e);
             })}
             onReset={reset}
-            className="grid auto-rows-max items-start gap-4 md:gap-8"
+            className="space-y-6"
             id="add-table-form"
           >
-            <div className="grid gap-4 py-4">
-              <FormField
-                control={form.control}
-                name="number"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="name" className="text-sm font-bold">
+            {/* Thông tin cơ bản */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-foreground/80 pb-2 border-b">
+                {t('basicInfo') || 'Thông tin cơ bản'}
+              </h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Label htmlFor="number" className="text-sm font-medium">
                         {t('tableNumber')}
                       </Label>
-                      <div className="col-span-3 w-full space-y-2">
+                      <FormControl>
                         <Input
                           id="number"
                           type="number"
                           className="w-full"
+                          placeholder="1"
                           {...field}
                         />
-                        <FormMessage />
-                      </div>
-                    </div>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="capacity"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="price" className="text-sm font-bold">
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="capacity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Label htmlFor="capacity" className="text-sm font-medium">
                         {t('capacity')}
                       </Label>
-                      <div className="col-span-3 w-full space-y-2">
+                      <FormControl>
                         <Input
                           id="capacity"
                           className="w-full"
-                          {...field}
                           type="number"
+                          placeholder="2"
+                          {...field}
                         />
-                        <FormMessage />
-                      </div>
-                    </div>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label
-                        htmlFor="description"
-                        className="text-sm font-bold"
-                      >
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Label className="text-sm font-medium">
                         {tCommon('status')}
                       </Label>
-                      <div className="col-span-3 w-full space-y-2">
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder={t('selectStatus')} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {TableStatusValues.map((status) => (
-                              <SelectItem key={status} value={status}>
-                                {getTableStatus(status)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('selectStatus')} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {TableStatusValues.map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {getTableStatus(status)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
-                    </div>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="location" className="text-sm font-bold">
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Label className="text-sm font-medium">
                         {t('location')}
                       </Label>
-                      <div className="col-span-3 w-full space-y-2">
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder={t('selectLocation')} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {locationOptions.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('selectLocation')} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {locationOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
-                    </div>
-                  </FormItem>
-                )}
-              />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Vị trí trên sơ đồ */}
+            <div className="space-y-4 rounded-lg border p-4 bg-muted/30">
+              <div className="space-y-1">
+                <Label className="text-sm font-semibold">
+                  {t('floorMapPosition') || 'Vị trí trên sơ đồ'}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {t('floorMapPositionHint') || 'Để trống để tự động tạo vị trí'}
+                </p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <FormField
+                  control={form.control}
+                  name="x"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Label htmlFor="x" className="text-sm font-medium">
+                        {t('xPosition') || 'Vị trí X'}
+                      </Label>
+                      <FormControl>
+                        <Input
+                          id="x"
+                          type="number"
+                          placeholder="0"
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="y"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Label htmlFor="y" className="text-sm font-medium">
+                        {t('yPosition') || 'Vị trí Y'}
+                      </Label>
+                      <FormControl>
+                        <Input
+                          id="y"
+                          type="number"
+                          placeholder="0"
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="shape"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Label className="text-sm font-medium">
+                        {t('shape') || 'Hình dạng'}
+                      </Label>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('selectShape') || 'Chọn hình dạng'} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="circle">{t('circle') || 'Tròn'}</SelectItem>
+                          <SelectItem value="rect">{t('rect') || 'Vuông'}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
           </form>
         </Form>
-        <DialogFooter>
-          <Button type="submit" form="add-table-form">
-            {t('addTable')}
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => setOpen(false)}
+          >
+            {tCommon('cancel') || 'Hủy'}
+          </Button>
+          <Button 
+            type="submit" 
+            form="add-table-form"
+            disabled={addTableMutation.isPending}
+          >
+            {addTableMutation.isPending ? tCommon('adding') || 'Đang thêm...' : t('addTable')}
           </Button>
         </DialogFooter>
       </DialogContent>

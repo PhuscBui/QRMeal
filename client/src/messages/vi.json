@@ -48,7 +48,9 @@
     "createSuccess": "Tạo thành công",
     "table": "Bàn",
     "guest": "Khách",
-    "customer": "Khách hàng"
+    "customer": "Khách hàng",
+    "adding": "Đang thêm...",
+    "updating": "Đang cập nhật..."
   },
   "auth": {
     "login": "Đăng nhập",
@@ -336,6 +338,7 @@
     "rect": "Vuông",
     "selectShape": "Chọn hình dạng",
     "floorMapPositionHint": "Để trống để tự động tạo vị trí",
+    "basicInfo": "Thông tin cơ bản",
     "addNewReservation": "Thêm đặt chỗ mới cho bàn {tableNumber}",
     "reservationDialogDesc": "Chọn tạo đặt chỗ cho khách mới hoặc chọn khách hàng hiện có.",
     "bookForCustomer": "Đặt cho khách hàng hiện có",

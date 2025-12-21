@@ -21,7 +21,7 @@ export default function CustomerHomePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const dishes = dishesData?.payload.result || []
   const featuredDishes = dishes.slice(0, 6)
-  
+
   const t = useTranslations('customerHome')
   const tNav = useTranslations('nav')
   const tCommon = useTranslations('common')
@@ -212,12 +212,6 @@ export default function CustomerHomePage() {
                 <span>{tNav('promotions')}</span>
               </Button>
             </Link>
-            <Link href='/customer/support'>
-              <Button variant='outline' className='w-full h-20 flex-col gap-2'>
-                <MessageCircle className='h-6 w-6' />
-                <span>{tNav('support')}</span>
-              </Button>
-            </Link>
             <Link href='/customer/account/profile'>
               <Button variant='outline' className='w-full h-20 flex-col gap-2'>
                 <Users className='h-6 w-6' />
@@ -230,4 +224,3 @@ export default function CustomerHomePage() {
     </div>
   )
 }
-

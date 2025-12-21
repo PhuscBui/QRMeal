@@ -34,10 +34,12 @@ export const useUpdateTableMutation = () => {
 
   return useMutation({
     mutationFn: ({ id, ...body }: UpdateTableBodyType & { id: number }) => tableApiRequest.updateTable(id, body),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ['tables'],
-        exact: true
+        queryKey: ['tables']
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['tables', variables.id]
       })
     }
   })

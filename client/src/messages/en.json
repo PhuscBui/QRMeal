@@ -48,7 +48,9 @@
     "createSuccess": "Created successfully",
     "table": "Table",
     "guest": "Guest",
-    "customer": "Customer"
+    "customer": "Customer",
+    "adding": "Adding...",
+    "updating": "Updating..."
   },
   "auth": {
     "login": "Login",
@@ -336,6 +338,7 @@
     "rect": "Rectangle",
     "selectShape": "Select shape",
     "floorMapPositionHint": "Leave empty to auto-generate position",
+    "basicInfo": "Basic Information",
     "addNewReservation": "Add New Reservation for Table {tableNumber}",
     "reservationDialogDesc": "Choose to create a reservation for a new guest or select an existing customer.",
     "bookForCustomer": "Book for existing customer",

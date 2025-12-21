@@ -3,7 +3,7 @@
 import type React from 'react'
 
 import { usePathname } from 'next/navigation'
-import { Home, Menu, ShoppingCart, User, Gift, Package2, Bell, QrCode, ChevronDown, MessageCircle } from 'lucide-react'
+import { Home, Menu, ShoppingCart, User, Gift, Package2, Bell, QrCode, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -31,7 +31,6 @@ export default function CustomerLayout({
     { nameKey: 'promotions', href: '/customer/promotions', icon: Gift, useNav: true },
     { nameKey: 'scanQRCode', href: '/customer/scan-qr', icon: QrCode },
     { nameKey: 'reservations', href: '/customer/reservations', icon: Package2, useNav: true },
-    { nameKey: 'support', href: '/customer/support', icon: MessageCircle, useNav: true },
     {
       nameKey: 'account',
       href: '/customer/account/profile',
@@ -236,4 +235,3 @@ export default function CustomerLayout({
     </div>
   )
 }
-
