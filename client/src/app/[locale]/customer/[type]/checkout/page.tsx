@@ -19,6 +19,13 @@ import { toast } from 'sonner'
 import { useCreateOrderMutation } from '@/queries/useOrder'
 import { CreateOrderGroupBodyType } from '@/schemaValidations/order.schema'
 import { useTranslations } from 'next-intl'
+import dynamic from 'next/dynamic'
+
+// Dynamic import để tránh lỗi SSR với Leaflet
+const MapPicker = dynamic(() => import('@/components/map-picker'), {
+  ssr: false,
+  loading: () => <div className='h-[400px] w-full bg-muted animate-pulse rounded-lg' />
+})
 
 // Define cart item type
 interface CartItem {
@@ -59,6 +66,10 @@ export default function CheckoutPage() {
     address: '',
     notes: ''
   })
+  const [selectedLocation, setSelectedLocation] = useState<{
+    lat: number
+    lng: number
+  } | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -222,8 +233,8 @@ export default function CheckoutPage() {
       return
     }
 
-    if (currentConfig.showAddress && !customerInfo.address.trim()) {
-      toast.error(t('enterAddress'))
+    if (currentConfig.showAddress && !customerInfo.address.trim() && !selectedLocation) {
+      toast.error(t('enterAddress') || 'Vui lòng nhập địa chỉ hoặc chọn vị trí trên bản đồ')
       return
     }
 
@@ -241,7 +252,9 @@ export default function CheckoutPage() {
       })),
       delivery_info: currentConfig.showAddress
         ? {
-            address: customerInfo.address,
+            address: selectedLocation
+              ? `${customerInfo.address} (Tọa độ: ${selectedLocation.lat.toFixed(6)}, ${selectedLocation.lng.toFixed(6)})`
+              : customerInfo.address,
             receiver_name: customerInfo.name,
             receiver_phone: customerInfo.phone,
             notes: customerInfo.notes || null
@@ -401,18 +414,41 @@ export default function CheckoutPage() {
               </div>
 
               {currentConfig.showAddress && (
-                <div>
-                  <Label className='mb-1' htmlFor='address'>
-                    {t('deliveryAddress')} <span className='text-red-500'>*</span>
-                  </Label>
-                  <Textarea
-                    id='address'
-                    value={customerInfo.address}
-                    onChange={(e) => setCustomerInfo((prev) => ({ ...prev, address: e.target.value }))}
-                    placeholder={t('enterDeliveryAddress')}
-                    rows={3}
-                    required
-                  />
+                <div className='space-y-4'>
+                  <div>
+                    <Label className='mb-1' htmlFor='address'>
+                      {t('deliveryAddress')} <span className='text-red-500'>*</span>
+                    </Label>
+                    <Textarea
+                      id='address'
+                      value={customerInfo.address}
+                      onChange={(e) => setCustomerInfo((prev) => ({ ...prev, address: e.target.value }))}
+                      placeholder={t('enterDeliveryAddress') || 'Nhập địa chỉ giao hàng hoặc chọn trên bản đồ'}
+                      rows={3}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label className='mb-1'>
+                      Chọn vị trí trên bản đồ (tùy chọn)
+                    </Label>
+                    <MapPicker
+                      onLocationSelect={(location) => {
+                        setSelectedLocation({ lat: location.lat, lng: location.lng })
+                        // Tự động điền địa chỉ nếu có
+                        if (location.address && !customerInfo.address) {
+                          setCustomerInfo((prev) => ({ ...prev, address: location.address || '' }))
+                        } else if (!customerInfo.address && location.lat !== 0 && location.lng !== 0) {
+                          // Nếu không có địa chỉ, điền tọa độ
+                          setCustomerInfo((prev) => ({
+                            ...prev,
+                            address: `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`
+                          }))
+                        }
+                      }}
+                      initialPosition={selectedLocation || undefined}
+                    />
+                  </div>
                 </div>
               )}
 
@@ -584,7 +620,7 @@ export default function CheckoutPage() {
                   disabled={
                     !customerInfo.name.trim() ||
                     !customerInfo.phone.trim() ||
-                    (currentConfig.showAddress && !customerInfo.address.trim()) ||
+                    (currentConfig.showAddress && !customerInfo.address.trim() && !selectedLocation) ||
                     cartItems.length === 0
                   }
                 >

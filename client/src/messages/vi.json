@@ -50,7 +50,8 @@
     "guest": "Khách",
     "customer": "Khách hàng",
     "adding": "Đang thêm...",
-    "updating": "Đang cập nhật..."
+    "updating": "Đang cập nhật...",
+    "clear": "Xóa"
   },
   "auth": {
     "login": "Đăng nhập",
@@ -298,6 +299,7 @@
     "title": "Bàn",
     "tablesManagement": "Quản lý bàn và đặt chỗ",
     "tableNumber": "Số bàn",
+    "table": "Bàn",
     "tableStatus": "Trạng thái bàn",
     "available": "Trống",
     "occupied": "Đang sử dụng",
@@ -338,6 +340,11 @@
     "rect": "Vuông",
     "selectShape": "Chọn hình dạng",
     "floorMapPositionHint": "Để trống để tự động tạo vị trí",
+    "selectPosition": "Chọn vị trí",
+    "clickToSelectPosition": "Click vào bản đồ để chọn vị trí",
+    "kitchen": "Bếp",
+    "bar": "Quầy Bar",
+    "entrance": "Lối Vào",
     "basicInfo": "Thông tin cơ bản",
     "addNewReservation": "Thêm đặt chỗ mới cho bàn {tableNumber}",
     "reservationDialogDesc": "Chọn tạo đặt chỗ cho khách mới hoặc chọn khách hàng hiện có.",

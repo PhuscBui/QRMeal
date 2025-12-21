@@ -34,9 +34,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAddTableMutation } from "@/queries/useTable";
+import { useAddTableMutation, useTableListQuery } from "@/queries/useTable";
 import { toast } from "sonner";
 import { useTranslations } from 'next-intl'
+import FloorMapPicker from '@/components/floor-map-picker'
 
 export default function AddTable() {
   const t = useTranslations('table')
@@ -52,6 +53,9 @@ export default function AddTable() {
   
   const [open, setOpen] = useState(false);
   const addTableMutation = useAddTableMutation();
+  const tablesQuery = useTableListQuery();
+  const existingTables = tablesQuery.data?.payload.result ?? [];
+  
   const form = useForm<CreateTableBodyType>({
     resolver: zodResolver(CreateTableBody),
     defaultValues: {
@@ -228,31 +232,20 @@ export default function AddTable() {
 
             {/* Vị trí trên sơ đồ */}
             <div className="space-y-4 rounded-lg border p-4 bg-muted/30">
-              <div className="space-y-1">
-                <Label className="text-sm font-semibold">
-                  {t('floorMapPosition') || 'Vị trí trên sơ đồ'}
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  {t('floorMapPositionHint') || 'Để trống để tự động tạo vị trí'}
-                </p>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-4">
                 <FormField
                   control={form.control}
                   name="x"
                   render={({ field }) => (
-                    <FormItem>
-                      <Label htmlFor="x" className="text-sm font-medium">
-                        {t('xPosition') || 'Vị trí X'}
-                      </Label>
+                    <FormItem className="hidden">
                       <FormControl>
-                        <Input
-                          id="x"
-                          type="number"
-                          placeholder="0"
-                          {...field}
-                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                          value={field.value ?? ''}
+                        <Input 
+                          type="hidden" 
+                          value={field.value ?? ''} 
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
                         />
                       </FormControl>
                       <FormMessage />
@@ -263,23 +256,37 @@ export default function AddTable() {
                   control={form.control}
                   name="y"
                   render={({ field }) => (
-                    <FormItem>
-                      <Label htmlFor="y" className="text-sm font-medium">
-                        {t('yPosition') || 'Vị trí Y'}
-                      </Label>
+                    <FormItem className="hidden">
                       <FormControl>
-                        <Input
-                          id="y"
-                          type="number"
-                          placeholder="0"
-                          {...field}
-                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                          value={field.value ?? ''}
+                        <Input 
+                          type="hidden" 
+                          value={field.value ?? ''} 
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
+                />
+                <FloorMapPicker
+                  onPositionSelect={(position) => {
+                    if (position) {
+                      form.setValue('x', position.x)
+                      form.setValue('y', position.y)
+                    } else {
+                      form.setValue('x', undefined)
+                      form.setValue('y', undefined)
+                    }
+                  }}
+                  initialPosition={
+                    form.watch('x') !== undefined && form.watch('y') !== undefined
+                      ? { x: form.watch('x')!, y: form.watch('y')! }
+                      : undefined
+                  }
+                  existingTables={existingTables}
                 />
                 <FormField
                   control={form.control}

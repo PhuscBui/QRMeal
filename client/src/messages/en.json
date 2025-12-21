@@ -50,7 +50,8 @@
     "guest": "Guest",
     "customer": "Customer",
     "adding": "Adding...",
-    "updating": "Updating..."
+    "updating": "Updating...",
+    "clear": "Clear"
   },
   "auth": {
     "login": "Login",
@@ -298,6 +299,7 @@
     "title": "Tables",
     "tablesManagement": "Tables management and reservations",
     "tableNumber": "Table Number",
+    "table": "Table",
     "tableStatus": "Table Status",
     "available": "Available",
     "occupied": "Occupied",
@@ -338,6 +340,11 @@
     "rect": "Rectangle",
     "selectShape": "Select shape",
     "floorMapPositionHint": "Leave empty to auto-generate position",
+    "selectPosition": "Select Position",
+    "clickToSelectPosition": "Click on the map to select position",
+    "kitchen": "Kitchen",
+    "bar": "Bar",
+    "entrance": "Entrance",
     "basicInfo": "Basic Information",
     "addNewReservation": "Add New Reservation for Table {tableNumber}",
     "reservationDialogDesc": "Choose to create a reservation for a new guest or select an existing customer.",
