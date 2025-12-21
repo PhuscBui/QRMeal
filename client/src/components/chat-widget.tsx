@@ -14,6 +14,7 @@ import { MessageCircle, X, Send, Loader2 } from 'lucide-react'
 import { useAccountMe } from '@/queries/useAccount'
 import { useGuestMe } from '@/queries/useGuest'
 import ChatSuggestions from './chat-suggestions'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface ChatMessage {
   _id: string
@@ -148,9 +149,11 @@ const cleanupOldMessages = () => {
 
 export default function ChatWidget() {
   const { socket, isAuth, role } = useAppContext()
+  const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [anonymousSessionId, setAnonymousSessionId] = useState<string | null>(null)
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([])
+  const [optimisticMessages, setOptimisticMessages] = useState<ChatMessage[]>([]) // For authenticated users
   const [unreadCount, setUnreadCount] = useState(0)
   const [isTyping, setIsTyping] = useState(false)
   const [isGPTTyping, setIsGPTTyping] = useState(false)
@@ -265,12 +268,22 @@ export default function ChatWidget() {
     loadExistingMessages()
   }, [anonymousSessionId, isAuth, localMessages.length])
 
+  // Clear optimistic messages that are now in serverMessages
+  useEffect(() => {
+    if (isAuth && serverMessages && serverMessages.length > 0) {
+      setOptimisticMessages((prev) => {
+        const serverMessageIds = new Set(serverMessages.map((m: ChatMessage) => m._id))
+        return prev.filter((m) => !serverMessageIds.has(m._id))
+      })
+    }
+  }, [serverMessages, isAuth])
+
   // Auto scroll to bottom
   useEffect(() => {
     if (!isLoadingMore) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [localMessages, serverMessages, isLoadingMore])
+  }, [localMessages, serverMessages, optimisticMessages, isLoadingMore])
 
   // Socket listeners cho authenticated users
   useEffect(() => {
@@ -543,15 +556,64 @@ export default function ChatWidget() {
       }
 
       if (isAuth && activeSession) {
-        // Authenticated user - use socket or mutation
-        if (socket) {
-          socket.emit('chat:send', {
-            sessionId: activeSession._id,
+        // Authenticated user - use HTTP API for immediate response (like anonymous users)
+        // Socket will still receive updates for real-time messages from staff/bot
+        
+        // Optimistic update: add temp message immediately to local state
+        const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        const tempMessage: ChatMessage = {
+          _id: tempId,
+          session_id: activeSession._id,
+          sender_type: 'user',
+          message: content,
+          created_at: new Date().toISOString()
+        }
+
+        // Add optimistic message immediately
+        setOptimisticMessages((prev) => [...prev, tempMessage])
+
+        // Show GPT typing indicator
+        setIsGPTTyping(true)
+        if (gptTypingTimeoutRef.current) {
+          clearTimeout(gptTypingTimeoutRef.current)
+        }
+        gptTypingTimeoutRef.current = setTimeout(() => {
+          setIsGPTTyping(false)
+        }, 15000) // Max 15s
+
+        try {
+          const response = await chatApiRequest.sendMessage(activeSession._id, {
             message: content,
             sender: 'user'
           })
-        } else {
-          sendMessage(content)
+
+          // Remove temp message and add real message + bot response
+          setOptimisticMessages((prev) => {
+            let updated = prev.filter((m) => m._id !== tempId)
+            // Add real message
+            updated = [...updated, response.payload.result]
+            // Add bot message if exists
+            if (response.payload.botMessage) {
+              updated = [...updated, response.payload.botMessage]
+              setIsGPTTyping(false)
+              if (gptTypingTimeoutRef.current) {
+                clearTimeout(gptTypingTimeoutRef.current)
+              }
+            }
+            return updated
+          })
+
+          // Refetch to sync with server (optimistic messages will be cleared by useEffect)
+          refetch()
+        } catch (error) {
+          console.error('Failed to send message:', error)
+          // Remove temp message on error
+          setOptimisticMessages((prev) => prev.filter((m) => m._id !== tempId))
+          setText(content) // Restore text
+          setIsGPTTyping(false)
+          if (gptTypingTimeoutRef.current) {
+            clearTimeout(gptTypingTimeoutRef.current)
+          }
         }
       } else {
         // Anonymous user
@@ -629,12 +691,21 @@ export default function ChatWidget() {
     }
   }
 
+  // Hiển thị messages: authenticated users dùng serverMessages + optimisticMessages, anonymous dùng localMessages
+  // Remove duplicates based on _id
+  // NOTE: This must be before early return to maintain hook order
+  const displayMessages = React.useMemo(() => {
+    if (isAuth) {
+      const serverIds = new Set((serverMessages || []).map((m: ChatMessage) => m._id))
+      const uniqueOptimistic = optimisticMessages.filter((m) => !serverIds.has(m._id))
+      return [...(serverMessages || []), ...uniqueOptimistic]
+    }
+    return localMessages
+  }, [isAuth, serverMessages, optimisticMessages, localMessages])
+
   if (!shouldRender) {
     return null
   }
-
-  // Hiển thị messages: authenticated users dùng serverMessages, anonymous dùng localMessages
-  const displayMessages = isAuth ? serverMessages : localMessages
 
   return (
     <div className='fixed bottom-4 right-4 z-50'>
