@@ -6,6 +6,9 @@ export interface CreateTableReqBody {
   capacity: number
   status: string
   location: string
+  x?: number
+  y?: number
+  shape?: 'circle' | 'rect'
 }
 
 export interface UpdateTableReqBody {
@@ -13,6 +16,9 @@ export interface UpdateTableReqBody {
   status: string
   changeToken?: boolean
   location: string
+  x?: number
+  y?: number
+  shape?: 'circle' | 'rect'
 }
 
 export interface UpdateStatusTableReqBody {

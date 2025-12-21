@@ -12,6 +12,7 @@ import { Clock, Filter, Users } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useTableListQuery } from '@/queries/useTable'
 import { useTranslations } from 'next-intl'
+import FloorMapView from '@/components/floor-map-view'
 
 export default function TableReservationPage() {
   const { data } = useTableListQuery()
@@ -37,11 +38,22 @@ export default function TableReservationPage() {
   const locationOptions = Array.from(new Set(tableList.map((table) => table.location)))
 
   const [selectedTable, setSelectedTable] = useState<(typeof tableList)[0] | null>(null)
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
 
   const handleOpen = (table: (typeof tableList)[0]) => {
     setSelectedTable(table)
     setOpen(true)
+  }
+
+  const handleTableSelect = (table: (typeof tableList)[0] | null) => {
+    if (table) {
+      setSelectedTable(table)
+      setSelectedTableId(table._id)
+      setOpen(true)
+    } else {
+      setSelectedTableId(null)
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -75,9 +87,10 @@ export default function TableReservationPage() {
         </div>
 
         <Tabs defaultValue='grid' className='w-full md:w-auto' onValueChange={setViewMode}>
-          <TabsList className='grid w-full md:w-[200px] grid-cols-2'>
+          <TabsList className='grid w-full md:w-[300px] grid-cols-3'>
             <TabsTrigger value='grid'>{t('gridView')}</TabsTrigger>
             <TabsTrigger value='list'>{t('listView')}</TabsTrigger>
+            <TabsTrigger value='map'>{t('mapView') || 'Sơ Đồ'}</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -134,6 +147,14 @@ export default function TableReservationPage() {
 
       {/* Tables Display */}
       <Tabs value={viewMode} onValueChange={setViewMode}>
+        <TabsContent value='map' className='mt-0'>
+          <FloorMapView
+            tables={filteredTables}
+            onTableSelect={handleTableSelect}
+            selectedTableId={selectedTableId}
+          />
+        </TabsContent>
+
         <TabsContent value='grid' className='mt-0'>
           <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'>
             {filteredTables.map((table) => (

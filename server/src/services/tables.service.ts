@@ -30,7 +30,10 @@ class TablesService {
         status: payload.status,
         token,
         location: payload.location,
-        reservation: null
+        reservation: null,
+        x: payload.x,
+        y: payload.y,
+        shape: payload.shape
       })
     )
     return await databaseService.tables.findOne({ _id: result.insertedId })
@@ -45,6 +48,17 @@ class TablesService {
   }
 
   async updateTable(number: number, payload: UpdateTableReqBody) {
+    const updateFields: any = {
+      capacity: payload.capacity,
+      status: payload.status,
+      location: payload.location
+    }
+    
+    // Only update x, y, shape if they are provided
+    if (payload.x !== undefined) updateFields.x = payload.x
+    if (payload.y !== undefined) updateFields.y = payload.y
+    if (payload.shape !== undefined) updateFields.shape = payload.shape
+    
     if (payload.changeToken) {
       const token = randomId()
       const [table] = await Promise.all([
@@ -54,10 +68,8 @@ class TablesService {
           },
           {
             $set: {
-              capacity: payload.capacity,
-              status: payload.status,
-              token,
-              location: payload.location
+              ...updateFields,
+              token
             },
             $currentDate: { updated_at: true }
           },
@@ -80,11 +92,7 @@ class TablesService {
         number
       },
       {
-        $set: {
-          capacity: payload.capacity,
-          status: payload.status,
-          location: payload.location
-        },
+        $set: updateFields,
         $currentDate: { updated_at: true }
       },
       { returnDocument: 'after' }

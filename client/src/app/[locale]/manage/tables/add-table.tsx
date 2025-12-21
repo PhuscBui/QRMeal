@@ -59,6 +59,9 @@ export default function AddTable() {
       capacity: 2,
       status: TableStatus.Hidden,
       location: "",
+      x: undefined,
+      y: undefined,
+      shape: undefined,
     },
   });
   const reset = () => {
@@ -227,6 +230,80 @@ export default function AddTable() {
                   </FormItem>
                 )}
               />
+              <div className="col-span-4 border-t pt-4">
+                <Label className="text-sm font-bold mb-4 block">{t('floorMapPosition') || 'Vị trí trên sơ đồ'}</Label>
+                <div className="grid grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="x"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Label htmlFor="x" className="text-sm">
+                          {t('xPosition') || 'Vị trí X'}
+                        </Label>
+                        <Input
+                          id="x"
+                          type="number"
+                          placeholder="0"
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                          value={field.value ?? ''}
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="y"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Label htmlFor="y" className="text-sm">
+                          {t('yPosition') || 'Vị trí Y'}
+                        </Label>
+                        <Input
+                          id="y"
+                          type="number"
+                          placeholder="0"
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                          value={field.value ?? ''}
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="shape"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Label htmlFor="shape" className="text-sm">
+                          {t('shape') || 'Hình dạng'}
+                        </Label>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t('selectShape') || 'Chọn hình dạng'} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="circle">{t('circle') || 'Tròn'}</SelectItem>
+                            <SelectItem value="rect">{t('rect') || 'Vuông'}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {t('floorMapPositionHint') || 'Để trống để tự động tạo vị trí'}
+                </p>
+              </div>
             </div>
           </form>
         </Form>

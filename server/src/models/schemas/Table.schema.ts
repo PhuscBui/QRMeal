@@ -10,6 +10,9 @@ interface TableType {
   location: string
   reservation: TableReservation | null
   current_customer_id?: ObjectId | null
+  x?: number
+  y?: number
+  shape?: 'circle' | 'rect'
   created_at?: Date
   updated_at?: Date
 }
@@ -23,6 +26,9 @@ export class Table {
   location: string
   reservation: TableReservation | null
   current_customer_id?: ObjectId | null
+  x?: number
+  y?: number
+  shape?: 'circle' | 'rect'
   created_at: Date
   updated_at: Date
 
@@ -36,6 +42,9 @@ export class Table {
     this.location = table.location
     this.reservation = table.reservation || null
     this.current_customer_id = table.current_customer_id || null
+    this.x = table.x
+    this.y = table.y
+    this.shape = table.shape
     this.created_at = table.created_at || date
     this.updated_at = table.updated_at || date
   }
