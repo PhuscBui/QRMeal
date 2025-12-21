@@ -118,15 +118,97 @@ class ChatService {
   }
 
   async getOrCreateSessionForCustomer(customerId: string) {
-    // Always look for active session first
-    let session = await databaseService.chatSessions.findOne({
-      customer_id: new ObjectId(customerId),
-      end_time: { $exists: false }
-    })
+    // Find all active sessions for this customer
+    const customerObjectId = new ObjectId(customerId)
+    
+    // Query for active sessions (no end_time)
+    let activeSessions = await databaseService.chatSessions
+      .find({
+        customer_id: customerObjectId,
+        $or: [
+          { end_time: { $exists: false } },
+          { end_time: null }
+        ]
+      })
+      .sort({ start_time: -1 }) // Get most recent first
+      .toArray()
 
-    if (!session) {
+    console.log('getOrCreateSessionForCustomer - Active sessions:', activeSessions.length, 'for customer:', customerId)
+    
+    // Debug: Log all sessions for this customer to see what's in DB
+    if (activeSessions.length === 0) {
+      const allSessionsForCustomer = await databaseService.chatSessions
+        .find({
+          customer_id: customerObjectId
+        })
+        .toArray()
+      console.log('getOrCreateSessionForCustomer - All sessions (including ended):', allSessionsForCustomer.length)
+      if (allSessionsForCustomer.length > 0) {
+        console.log('getOrCreateSessionForCustomer - Sample sessions:', allSessionsForCustomer.slice(0, 3).map(s => ({
+          _id: s._id?.toString(),
+          customer_id: s.customer_id?.toString(),
+          end_time: s.end_time,
+          start_time: s.start_time
+        })))
+      }
+    }
+
+    // If there are multiple active sessions, find the one with the most recent message
+    let session: WithId<ChatSession> | null = null
+    
+    if (activeSessions.length === 0) {
+      // No active session, create new one
+      console.log('Creating new session for customer:', customerId)
       const created = await this.createSession(customerId, 'customer')
       session = created as WithId<ChatSession>
+      console.log('Created new session:', session._id?.toString())
+    } else if (activeSessions.length === 1) {
+      // Only one active session, use it
+      session = activeSessions[0] as WithId<ChatSession>
+      console.log('Using single active session:', session._id?.toString())
+    } else {
+      // Multiple active sessions, find the one with the most recent message
+      console.log('Multiple active sessions found, finding one with most recent message')
+      let sessionWithMostRecentMessage: WithId<ChatSession> | null = null
+      let mostRecentMessageTime: Date | null = null
+
+      for (const s of activeSessions) {
+        const latestMessage = await databaseService.chatMessages
+          .findOne(
+            { session_id: s._id },
+            { sort: { created_at: -1 } }
+          )
+
+        if (latestMessage && latestMessage.created_at) {
+          const messageTime = latestMessage.created_at instanceof Date 
+            ? latestMessage.created_at 
+            : new Date(latestMessage.created_at)
+          
+          if (!mostRecentMessageTime || messageTime > mostRecentMessageTime) {
+            mostRecentMessageTime = messageTime
+            sessionWithMostRecentMessage = s as WithId<ChatSession>
+          }
+        }
+      }
+
+      // If no session has messages, use the most recent session by start_time
+      if (!sessionWithMostRecentMessage) {
+        session = activeSessions.sort((a, b) => 
+          (b.start_time?.getTime() || 0) - (a.start_time?.getTime() || 0)
+        )[0] as WithId<ChatSession>
+        console.log('No messages found, using most recent session by start_time:', session._id?.toString())
+      } else {
+        session = sessionWithMostRecentMessage
+        console.log('Using session with most recent message:', session._id?.toString())
+      }
+    }
+
+    // Check message count for debugging
+    if (session) {
+      const messageCount = await databaseService.chatMessages.countDocuments({
+        session_id: session._id
+      })
+      console.log('Session message count:', messageCount, 'for session:', session._id?.toString())
     }
 
     return session as WithId<ChatSession>
@@ -148,22 +230,43 @@ class ChatService {
   }
 
   async listMessages(sessionId: string, limit = 100, before?: string) {
-    const filter: Record<string, unknown> = { session_id: new ObjectId(sessionId) }
-    if (before) filter._id = { $lt: new ObjectId(before) }
-    const cursor = databaseService.chatMessages.find(filter).sort({ _id: -1 }).limit(limit)
-    const reversed = (await cursor.toArray()).reverse()
-    return reversed
+    try {
+      const filter: Record<string, unknown> = { session_id: new ObjectId(sessionId) }
+      if (before) filter._id = { $lt: new ObjectId(before) }
+      
+      console.log('List messages filter:', JSON.stringify(filter))
+      
+      // First check if session exists
+      const session = await databaseService.chatSessions.findOne({ _id: new ObjectId(sessionId) })
+      console.log('Session exists:', !!session, 'Session ID:', sessionId)
+      
+      const cursor = databaseService.chatMessages.find(filter).sort({ _id: -1 }).limit(limit)
+      const messages = await cursor.toArray()
+      console.log('Found messages:', messages.length, 'for session:', sessionId)
+      
+      const reversed = messages.reverse()
+      return reversed
+    } catch (error) {
+      console.error('Error listing messages:', error)
+      throw error
+    }
   }
 
   async addMessage(sessionId: string, sender: 'user' | 'bot' | 'staff', message: string) {
+    console.log('addMessage called:', { sessionId, sender, messageLength: message.length })
     const existing = await databaseService.chatSessions.findOne({ _id: new ObjectId(sessionId) })
-    if (!existing) throw new Error('Session not found')
+    if (!existing) {
+      console.error('Session not found:', sessionId)
+      throw new Error('Session not found')
+    }
+    console.log('Session found:', existing._id?.toString(), 'customer_id:', existing.customer_id?.toString())
     const doc: ChatMessage = new ChatMessage({
       session_id: new ObjectId(sessionId),
       sender_type: sender,
       message
     })
     const result = await databaseService.chatMessages.insertOne(doc)
+    console.log('Message inserted:', result.insertedId.toString(), 'for session:', sessionId)
     return { _id: result.insertedId, ...doc }
   }
 

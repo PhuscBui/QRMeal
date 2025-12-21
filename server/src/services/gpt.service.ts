@@ -49,6 +49,10 @@ class GPTService {
 
   private async getRestaurantData() {
     try {
+      const locationInfo = {
+        time: new Date().toISOString(),
+        location: 'Ho Chi Minh City, Vietnam'
+      }
       const promotionsQuery: GetPromotionsQueryParams = {}
       const [dishesResult, categoriesResult, tablesResult, promotionsResult] = await Promise.all([
         dishService.getDishes(),
@@ -70,7 +74,8 @@ class GPTService {
           address: '123 Đường ABC, Quận 1, TP.HCM',
           phone: '0123-456-789',
           hours: '8:00 - 22:00',
-          description: 'Nhà hàng chuyên phục vụ các món ăn Việt Nam và quốc tế'
+          description: 'Nhà hàng chuyên phục vụ các món ăn Việt Nam và quốc tế',
+          locationInfo: { ...locationInfo }
         }
       }
     } catch (error) {
@@ -140,6 +145,7 @@ THÔNG TIN NHÀ HÀNG:
 - Số điện thoại: ${restaurantInfo.phone}
 - Giờ mở cửa: ${restaurantInfo.hours}
 - Mô tả: ${restaurantInfo.description}
+
 
 ${menuInfo}
 

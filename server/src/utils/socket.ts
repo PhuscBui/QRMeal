@@ -238,9 +238,20 @@ class SocketService {
   }
 
   public emitToRoom(room: string, event: string, data: unknown): void {
-    if (this.io) {
-      this.io.to(room).emit(event, data)
+    if (!this.io) {
+      console.error('Socket.IO not initialized, cannot emit to room:', room)
+      return
     }
+    
+    const roomSize = this.io.sockets.adapter.rooms.get(room)?.size || 0
+    console.log(`Emitting ${event} to room ${room}, room size: ${roomSize}`)
+    
+    this.io.to(room).emit(event, data)
+  }
+
+  public getRoomSize(room: string): number {
+    if (!this.io) return 0
+    return this.io.sockets.adapter.rooms.get(room)?.size || 0
   }
 
   public emitToSocket(socketId: string, event: string, data: unknown): void {

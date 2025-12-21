@@ -8,13 +8,13 @@ import {
   useChatMessagesQuery
 } from '@/queries/useChat'
 import chatApiRequest from '@/apiRequests/chat'
+import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MessageCircle, X, Send, Loader2 } from 'lucide-react'
 import { useAccountMe } from '@/queries/useAccount'
 import { useGuestMe } from '@/queries/useGuest'
 import ChatSuggestions from './chat-suggestions'
-import { useQueryClient } from '@tanstack/react-query'
 
 interface ChatMessage {
   _id: string
@@ -195,7 +195,7 @@ export default function ChatWidget() {
   const messagesParams = React.useMemo(() => ({ limit: 50 }), [])
 
   // CHỈ fetch messages từ server khi có sessionId
-  const { data: serverMessages, refetch } = useChatMessagesQuery(sessionId, messagesParams)
+  const { data: serverMessages, refetch, isLoading: isLoadingMessages } = useChatMessagesQuery(sessionId, messagesParams)
   const { mutate: sendMessage } = useSendChatMessageMutation(sessionId)
 
   // Cleanup khi mount
@@ -267,6 +267,104 @@ export default function ChatWidget() {
     }
     loadExistingMessages()
   }, [anonymousSessionId, isAuth, localMessages.length])
+
+  // Prefetch customer session immediately when me data is available
+  useEffect(() => {
+    if (isAuth && role === 'Customer' && me?.payload.result._id) {
+      // Prefetch session immediately to avoid delay
+      const prefetchSession = async () => {
+        try {
+          await queryClient.prefetchQuery({
+            queryKey: ['chat', 'session', 'customer', me.payload.result._id],
+            queryFn: chatApiRequest.getOrCreateCustomerSession,
+            staleTime: 5 * 60 * 1000
+          })
+        } catch (error) {
+          console.error('Failed to prefetch customer session:', error)
+        }
+      }
+      prefetchSession()
+      
+      // Also refetch to ensure we have the latest session
+      if (refetchCustomerSession) {
+        refetchCustomerSession()
+      }
+    }
+  }, [isAuth, role, me?.payload.result._id, refetchCustomerSession, queryClient])
+
+  // Refetch guest session when guestMe data is available (after reload)
+  useEffect(() => {
+    if (isAuth && role === 'Guest' && guestMe?.payload.result._id && refetchGuestSession) {
+      refetchGuestSession()
+    }
+  }, [isAuth, role, guestMe?.payload.result._id, refetchGuestSession])
+
+  // Fetch messages immediately when sessionId is available (don't wait for React Query)
+  useEffect(() => {
+    if (isAuth && sessionId) {
+      // Fetch messages immediately using fetchQuery to ensure it happens right away
+      const fetchMessages = async () => {
+        try {
+          await queryClient.fetchQuery({
+            queryKey: ['chat', 'messages', sessionId, JSON.stringify(messagesParams), messagesParams],
+            queryFn: () => chatApiRequest.listMessages(sessionId, messagesParams),
+            staleTime: 30000
+          })
+        } catch (error) {
+          console.error('Failed to fetch messages:', error)
+        }
+      }
+      // Fetch immediately without delay
+      fetchMessages()
+    }
+  }, [sessionId, isAuth, messagesParams, queryClient])
+
+  // Also fetch messages when activeSession is available (even before sessionId is set)
+  useEffect(() => {
+    if (isAuth && activeSession?._id && activeSession._id !== sessionId) {
+      const fetchMessages = async () => {
+        try {
+          await queryClient.fetchQuery({
+            queryKey: ['chat', 'messages', activeSession._id, JSON.stringify(messagesParams), messagesParams],
+            queryFn: () => chatApiRequest.listMessages(activeSession._id, messagesParams),
+            staleTime: 30000
+          })
+        } catch (error) {
+          console.error('Failed to fetch messages from activeSession:', error)
+        }
+      }
+      fetchMessages()
+    }
+  }, [activeSession?._id, isAuth, messagesParams, queryClient, sessionId])
+
+  // Force fetch messages immediately when sessionId changes (e.g., after reload)
+  useEffect(() => {
+    if (isAuth && sessionId && refetch) {
+      // Use fetchQuery to ensure immediate fetch, then refetch to sync with React Query
+      const forceFetch = async () => {
+        try {
+          await queryClient.fetchQuery({
+            queryKey: ['chat', 'messages', sessionId, JSON.stringify(messagesParams), messagesParams],
+            queryFn: () => chatApiRequest.listMessages(sessionId, messagesParams),
+            staleTime: 30000
+          })
+        } catch (error) {
+          console.error('Failed to force fetch messages:', error)
+        }
+        // Also trigger refetch to sync with React Query state
+        refetch()
+      }
+      forceFetch()
+    }
+  }, [sessionId, isAuth, refetch, queryClient, messagesParams])
+
+  // Also refetch when activeSession changes to ensure messages are loaded
+  useEffect(() => {
+    if (isAuth && activeSession?._id && refetch) {
+      // Refetch immediately when session is available
+      refetch()
+    }
+  }, [activeSession?._id, isAuth, refetch])
 
   // Clear optimistic messages that are now in serverMessages
   useEffect(() => {
@@ -688,19 +786,33 @@ export default function ChatWidget() {
     setOpen(willOpen)
     if (willOpen) {
       setUnreadCount(0)
+      // Refetch messages when opening chat widget to ensure latest messages are loaded
+      if (isAuth && sessionId && refetch) {
+        refetch()
+      }
     }
   }
 
   // Hiển thị messages: authenticated users dùng serverMessages + optimisticMessages, anonymous dùng localMessages
-  // Remove duplicates based on _id
+  // Remove duplicates based on _id and sort by created_at
   // NOTE: This must be before early return to maintain hook order
   const displayMessages = React.useMemo(() => {
     if (isAuth) {
       const serverIds = new Set((serverMessages || []).map((m: ChatMessage) => m._id))
       const uniqueOptimistic = optimisticMessages.filter((m) => !serverIds.has(m._id))
-      return [...(serverMessages || []), ...uniqueOptimistic]
+      const allMessages = [...(serverMessages || []), ...uniqueOptimistic]
+      // Sort by created_at to ensure correct order
+      return allMessages.sort((a, b) => {
+        const timeA = new Date(a.created_at).getTime()
+        const timeB = new Date(b.created_at).getTime()
+        return timeA - timeB
+      })
     }
-    return localMessages
+    return localMessages.sort((a, b) => {
+      const timeA = new Date(a.created_at).getTime()
+      const timeB = new Date(b.created_at).getTime()
+      return timeA - timeB
+    })
   }, [isAuth, serverMessages, optimisticMessages, localMessages])
 
   if (!shouldRender) {
@@ -757,6 +869,15 @@ export default function ChatWidget() {
             {isLoadingMore && (
               <div className='flex justify-center py-2'>
                 <Loader2 className='h-5 w-5 animate-spin text-blue-600' />
+              </div>
+            )}
+
+            {isLoadingMessages && displayMessages.length === 0 && (
+              <div className='flex justify-center items-center h-full'>
+                <div className='flex flex-col items-center gap-2'>
+                  <Loader2 className='h-6 w-6 animate-spin text-blue-600' />
+                  <p className='text-sm text-gray-500 dark:text-gray-400'>Đang tải tin nhắn...</p>
+                </div>
               </div>
             )}
 

@@ -89,7 +89,9 @@ export const listChatMessagesController = async (req: Request, res: Response) =>
   const limit = Number(req.query.limit) || 100
   const before = req.query.before as string | undefined
 
+  console.log('List messages request:', { sessionId, limit, before })
   const messages = await chatService.listMessages(sessionId, limit, before)
+  console.log('List messages result:', { sessionId, messageCount: messages.length })
 
   res.json({
     message: CHAT_MESSAGES.LIST_MESSAGES_SUCCESS,
@@ -110,13 +112,35 @@ export const addChatMessageController = async (req: Request, res: Response) => {
     botMessage: result.botMessage?._id
   })
 
-  // Broadcast to managers via socket (for anonymous users who don't have socket connection)
+  // Broadcast to managers via socket (for customers who send via HTTP API)
   try {
-    socketService.emitToRoom(ManagerRoom, 'chat:new-message', result.userMessage)
+    // Serialize message object to ensure ObjectId and Date are properly converted
+    const serializeMessage = (msg: any) => ({
+      _id: msg._id?.toString(),
+      session_id: msg.session_id?.toString(),
+      sender_type: msg.sender_type,
+      message: msg.message,
+      created_at: msg.created_at instanceof Date ? msg.created_at.toISOString() : msg.created_at
+    })
+
+    const userMessageSerialized = serializeMessage(result.userMessage)
+    console.log('Broadcasting user message to ManagerRoom:', {
+      sessionId: userMessageSerialized.session_id,
+      messageId: userMessageSerialized._id,
+      sender: userMessageSerialized.sender_type,
+      roomSize: socketService.getRoomSize(ManagerRoom)
+    })
+    socketService.emitToRoom(ManagerRoom, 'chat:new-message', userMessageSerialized)
 
     // Nếu có phản hồi từ bot, cũng broadcast
     if (result.botMessage) {
-      socketService.emitToRoom(ManagerRoom, 'chat:new-message', result.botMessage)
+      const botMessageSerialized = serializeMessage(result.botMessage)
+      console.log('Broadcasting bot message to ManagerRoom:', {
+        sessionId: botMessageSerialized.session_id,
+        messageId: botMessageSerialized._id,
+        sender: botMessageSerialized.sender_type
+      })
+      socketService.emitToRoom(ManagerRoom, 'chat:new-message', botMessageSerialized)
     }
   } catch (error) {
     console.error('Failed to broadcast message to managers:', error)

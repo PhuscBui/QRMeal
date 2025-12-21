@@ -20,8 +20,10 @@ export const useMyChatSessionQuery = (enabled: boolean, manualTrigger: boolean =
     queryFn: chatApiRequest.getOrCreateGuestSession,
     select: (data) => data.payload.result,
     enabled: enabled && manualTrigger && !!accountId,
-    staleTime: Infinity,
-    gcTime: Infinity
+    staleTime: 0, // Always consider data stale to allow refetch
+    gcTime: Infinity,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   })
 }
 
@@ -36,8 +38,12 @@ export const useMyCustomerChatSessionQuery = (
     queryFn: chatApiRequest.getOrCreateCustomerSession,
     select: (data) => data.payload.result,
     enabled: enabled && manualTrigger && !!accountId,
-    staleTime: Infinity,
-    gcTime: Infinity
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: Infinity,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    // Fetch immediately when enabled
+    refetchOnReconnect: true
   })
 }
 
@@ -70,8 +76,13 @@ export const useChatMessagesQuery = (sessionId: string | undefined, params: List
     queryFn: () => chatApiRequest.listMessages(sessionId!, params),
     select: (data) => data.payload.result,
     enabled: !!sessionId,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    refetchOnMount: 'always', // Always refetch when component mounts
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    // Ensure query fetches immediately when enabled changes from false to true
+    networkMode: 'online'
   })
 }
 
