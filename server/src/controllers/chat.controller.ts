@@ -124,7 +124,8 @@ export const addChatMessageController = async (req: Request, res: Response) => {
 
   res.json({
     message: CHAT_MESSAGES.SEND_MESSAGE_SUCCESS,
-    result: result.userMessage
+    result: result.userMessage,
+    ...(result.botMessage && { botMessage: result.botMessage })
   })
 }
 

@@ -566,33 +566,14 @@ export default function ChatWidget() {
 
         setLocalMessages((prev) => [...prev, tempMessage])
 
-        // Check if should trigger GPT
-        const shouldTriggerGPT =
-          content.toLowerCase().includes('món') ||
-          content.toLowerCase().includes('thực đơn') ||
-          content.toLowerCase().includes('menu') ||
-          content.toLowerCase().includes('giá') ||
-          content.toLowerCase().includes('đặt bàn') ||
-          content.toLowerCase().includes('đặt món') ||
-          content.toLowerCase().includes('có gì') ||
-          content.toLowerCase().includes('ăn gì') ||
-          content.toLowerCase().includes('nên ăn') ||
-          content.toLowerCase().includes('khuyến nghị') ||
-          content.toLowerCase().includes('tư vấn') ||
-          content.toLowerCase().includes('giờ mở') ||
-          content.toLowerCase().includes('địa chỉ') ||
-          content.toLowerCase().includes('số điện thoại') ||
-          content.toLowerCase().includes('thông tin')
-
-        if (shouldTriggerGPT) {
-          setIsGPTTyping(true)
-          if (gptTypingTimeoutRef.current) {
-            clearTimeout(gptTypingTimeoutRef.current)
-          }
-          gptTypingTimeoutRef.current = setTimeout(() => {
-            setIsGPTTyping(false)
-          }, 15000) // Max 15s
+        // Luôn hiển thị typing indicator vì bot sẽ luôn trả lời (trừ tin nhắn quá ngắn)
+        setIsGPTTyping(true)
+        if (gptTypingTimeoutRef.current) {
+          clearTimeout(gptTypingTimeoutRef.current)
         }
+        gptTypingTimeoutRef.current = setTimeout(() => {
+          setIsGPTTyping(false)
+        }, 15000) // Max 15s
 
         try {
           const response = await chatApiRequest.sendMessage(currentSessionId, {
@@ -601,12 +582,29 @@ export default function ChatWidget() {
           })
 
           // Replace temp message with real message
-          setLocalMessages((prev) => prev.map((m) => (m._id === tempId ? response.payload.result : m)))
+          setLocalMessages((prev) => {
+            let updated = prev.map((m) => (m._id === tempId ? response.payload.result : m))
+            
+            // Nếu có bot message từ response, thêm vào ngay lập tức
+            if (response.payload.botMessage) {
+              updated = [...updated, response.payload.botMessage]
+              setIsGPTTyping(false)
+              if (gptTypingTimeoutRef.current) {
+                clearTimeout(gptTypingTimeoutRef.current)
+              }
+            }
+            
+            return updated
+          })
         } catch (error) {
           console.error('Failed to send message:', error)
           // Remove temp message on error
           setLocalMessages((prev) => prev.filter((m) => m._id !== tempId))
           setText(content) // Restore text
+          setIsGPTTyping(false)
+          if (gptTypingTimeoutRef.current) {
+            clearTimeout(gptTypingTimeoutRef.current)
+          }
         }
       }
     } catch (error) {
