@@ -9,7 +9,9 @@ import {
   BookType,
   TableProperties,
   SquareUser,
-  MessagesSquare
+  MessagesSquare,
+  Star,
+  BarChart3
 } from 'lucide-react'
 
 const menuItems = [
@@ -77,6 +79,12 @@ const menuItems = [
     titleKey: 'reviews',
     Icon: Star,
     href: '/manage/reviews',
+    role: [Role.Owner, Role.Employee]
+  },
+  {
+    titleKey: 'reports',
+    Icon: BarChart3,
+    href: '/manage/reports',
     role: [Role.Owner, Role.Employee]
   }
 ]

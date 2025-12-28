@@ -51,7 +51,9 @@
     "customer": "Khách hàng",
     "adding": "Đang thêm...",
     "updating": "Đang cập nhật...",
-    "clear": "Xóa"
+    "clear": "Xóa",
+    "from": "Từ",
+    "to": "Đến"
   },
   "auth": {
     "login": "Đăng nhập",
@@ -94,6 +96,7 @@
     "reservations": "Đặt bàn",
     "support": "Hỗ trợ",
     "reviews": "Đánh giá",
+    "reports": "Báo cáo & Thống kê",
     "shifts": "Ca làm",
     "myShifts": "Ca của tôi",
     "booking": "Đặt chỗ",
@@ -1009,6 +1012,26 @@
     "ascending": "Tăng dần",
     "noComment": "Không có bình luận",
     "unknown": "Không xác định"
+  },
+  "reports": {
+    "title": "Báo cáo & Thống kê",
+    "description": "Xem thống kê doanh thu và món ăn để tối ưu hóa hoạt động kinh doanh",
+    "revenueStatistics": "Thống kê Doanh thu",
+    "revenueStatisticsDesc": "Xem doanh thu theo ngày, tuần, tháng",
+    "byDay": "Theo ngày",
+    "byWeek": "Theo tuần",
+    "byMonth": "Theo tháng",
+    "revenue": "Doanh thu",
+    "bestSellers": "Món bán chạy nhất",
+    "bestSellersDesc": "Top 10 món được đặt nhiều nhất",
+    "leastOrdered": "Món ít người gọi",
+    "leastOrderedDesc": "Top 10 món được đặt ít nhất",
+    "neverOrdered": "Món chưa được đặt",
+    "neverOrderedDesc": "Các món chưa có ai đặt",
+    "quantity": "Số lượng",
+    "notOrderedYet": "Chưa được đặt",
+    "noData": "Không có dữ liệu",
+    "summary": "Tổng: {total} món | Đã đặt: {ordered} món | Chưa đặt: {neverOrdered} món"
   },
   "customerMenu": {
     "dineInTitle": "Thực đơn - Ăn tại nhà hàng",

@@ -51,7 +51,9 @@
     "customer": "Customer",
     "adding": "Adding...",
     "updating": "Updating...",
-    "clear": "Clear"
+    "clear": "Clear",
+    "from": "From",
+    "to": "To"
   },
   "auth": {
     "login": "Login",
@@ -94,6 +96,7 @@
     "reservations": "Reservations",
     "support": "Support",
     "reviews": "Reviews",
+    "reports": "Reports & Statistics",
     "shifts": "Shifts",
     "myShifts": "My Shifts",
     "booking": "Booking",
@@ -1039,6 +1042,26 @@
     "ascending": "Ascending",
     "noComment": "No comment",
     "unknown": "Unknown"
+  },
+  "reports": {
+    "title": "Reports & Statistics",
+    "description": "View revenue and dish statistics to optimize business operations",
+    "revenueStatistics": "Revenue Statistics",
+    "revenueStatisticsDesc": "View revenue by day, week, month",
+    "byDay": "By Day",
+    "byWeek": "By Week",
+    "byMonth": "By Month",
+    "revenue": "Revenue",
+    "bestSellers": "Best Sellers",
+    "bestSellersDesc": "Top 10 most ordered dishes",
+    "leastOrdered": "Least Ordered",
+    "leastOrderedDesc": "Top 10 least ordered dishes",
+    "neverOrdered": "Never Ordered",
+    "neverOrderedDesc": "Dishes that haven't been ordered",
+    "quantity": "Quantity",
+    "notOrderedYet": "Not ordered yet",
+    "noData": "No data",
+    "summary": "Total: {total} dishes | Ordered: {ordered} dishes | Never ordered: {neverOrdered} dishes"
   },
   "customerMenu": {
     "dineInTitle": "Menu - Eat at the restaurant",
