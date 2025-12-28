@@ -72,6 +72,12 @@ const menuItems = [
     Icon: MessagesSquare,
     href: '/manage/support',
     role: [Role.Owner, Role.Employee]
+  },
+  {
+    titleKey: 'reviews',
+    Icon: Star,
+    href: '/manage/reviews',
+    role: [Role.Owner, Role.Employee]
   }
 ]
 

@@ -9,7 +9,8 @@ import {
   BookType,
   TableProperties,
   SquareUser,
-  MessagesSquare
+  MessagesSquare,
+  Star
 } from 'lucide-react'
 
 const menuItems = [
@@ -71,6 +72,12 @@ const menuItems = [
     titleKey: 'support',
     Icon: MessagesSquare,
     href: '/manage/support',
+    role: [Role.Owner, Role.Employee]
+  },
+  {
+    titleKey: 'reviews',
+    Icon: Star,
+    href: '/manage/reviews',
     role: [Role.Owner, Role.Employee]
   }
 ]

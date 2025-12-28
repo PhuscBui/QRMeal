@@ -29,12 +29,20 @@ export const DishReviewByDishListRes = z.object({
         comment: z.string().optional(),
         created_at: z.string().optional(),
         updated_at: z.string().optional(),
+        dish_id: z.string().optional(),
         author: z.object({
           _id: z.string(),
           name: z.string(),
           role: z.string(),
-          avatar: z.string().optional()
-        })
+          avatar: z.string().optional(),
+          email: z.string().optional(),
+          phone: z.string().optional()
+        }).optional(),
+        dish: z.object({
+          _id: z.string(),
+          name: z.string(),
+          image: z.string().optional()
+        }).optional()
       })
     ),
     total: z.number()
