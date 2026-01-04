@@ -11,7 +11,8 @@ import {
   SquareUser,
   MessagesSquare,
   Star,
-  BarChart3
+  BarChart3,
+  Clock
 } from 'lucide-react'
 
 const menuItems = [
@@ -86,6 +87,18 @@ const menuItems = [
     Icon: BarChart3,
     href: '/manage/reports',
     role: [Role.Owner, Role.Employee]
+  },
+  {
+    titleKey: 'attendance',
+    Icon: Clock,
+    href: '/manage/attendance',
+    role: [Role.Employee, Role.Owner]
+  },
+  {
+    titleKey: 'attendanceManagement',
+    Icon: Clock,
+    href: '/manage/attendance-management',
+    role: [Role.Owner]
   }
 ]
 

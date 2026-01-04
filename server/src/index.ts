@@ -27,6 +27,7 @@ import dishReviewsRouter from '~/routes/dish-reviews.routes'
 import loyaltiesRouter from '~/routes/loyalty.routes'
 import customer_promotionRouter from '~/routes/customer-promotion.routes'
 import shiftsRouter from '~/routes/shifts.routes'
+import attendanceRouter from '~/routes/attendance.routes'
 import webhooksRouter from '~/routes/webhooks.routes'
 
 initFolder()
@@ -80,6 +81,7 @@ app.use('/reports', reportsRouter)
 app.use('/categories', categoriesRouter)
 app.use('/dish-reviews', dishReviewsRouter)
 app.use('/shifts', shiftsRouter)
+app.use('/attendance', attendanceRouter)
 app.use('/webhooks', webhooksRouter)
 
 app.use(defaultErrorHandler)

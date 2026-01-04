@@ -19,6 +19,7 @@ import Promotion from '~/models/schemas/Promotion.schema'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import Revenue from '~/models/schemas/Revenue.schema'
 import Shift from '~/models/schemas/Shift.schema'
+import Attendance from '~/models/schemas/Attendance.schema'
 import Socket from '~/models/schemas/Socket.schema'
 import { Table } from '~/models/schemas/Table.schema'
 
@@ -115,6 +116,10 @@ class DatabaseService {
 
   get shifts(): Collection<Shift> {
     return this.db.collection(envConfig.dbShiftsCollection)
+  }
+
+  get attendances(): Collection<Attendance> {
+    return this.db.collection(envConfig.dbAttendancesCollection)
   }
 
   get payments(): Collection<Payment> {

@@ -202,26 +202,44 @@ export default function UpdateProfileForm() {
                 <FormField
                   control={form.control}
                   name='date_of_birth'
-                  render={({ field }) => (
-                    <FormItem className='w-full'>
-                      <div className='grid gap-2'>
-                        <Label htmlFor='date_of_birth' className='text-sm font-bold'>
-                          {t('dateOfBirth')}
-                        </Label>
-                        <Input
-                          id='date_of_birth'
-                          type='date'
-                          className='w-fit'
-                          value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                          onChange={(e) => field.onChange(new Date(e.target.value))}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                          ref={field.ref}
-                        />
-                        <FormMessage className='text-xs text-red-500' />
-                      </div>
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    // Ensure value is always a string (never undefined)
+                    const dateValue = field.value
+                      ? (() => {
+                          const date = field.value instanceof Date ? field.value : new Date(field.value)
+                          return !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : ''
+                        })()
+                      : ''
+                    
+                    return (
+                      <FormItem className='w-full'>
+                        <div className='grid gap-2'>
+                          <Label htmlFor='date_of_birth' className='text-sm font-bold'>
+                            {t('dateOfBirth')}
+                          </Label>
+                          <Input
+                            id='date_of_birth'
+                            type='date'
+                            className='w-fit'
+                            value={dateValue}
+                            onChange={(e) => {
+                              const value = e.target.value
+                              if (value) {
+                                const date = new Date(value)
+                                field.onChange(!isNaN(date.getTime()) ? date : undefined)
+                              } else {
+                                field.onChange(undefined)
+                              }
+                            }}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                          />
+                          <FormMessage className='text-xs text-red-500' />
+                        </div>
+                      </FormItem>
+                    )
+                  }}
                 />
               </div>
 

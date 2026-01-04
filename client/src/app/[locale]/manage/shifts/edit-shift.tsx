@@ -56,9 +56,12 @@ export default function EditShift({
   useEffect(() => {
     if (data) {
       const { staff_id, shift_date, start_time, end_time } = data.payload.result
+      const dateValue = shift_date ? new Date(shift_date) : undefined
+      // Validate date before setting
+      const validDate = dateValue && !isNaN(dateValue.getTime()) ? dateValue : undefined
       form.reset({
         staff_id,
-        shift_date: new Date(shift_date),
+        shift_date: validDate,
         start_time,
         end_time
       })
@@ -144,21 +147,39 @@ export default function EditShift({
             <FormField
               control={form.control}
               name='shift_date'
-              render={({ field }) => (
-                <FormItem>
-                  <div className='grid grid-cols-4 items-center gap-4'>
-                    <Label className='text-sm font-bold'>{t('date')}</Label>
-                    <div className='col-span-3 space-y-2'>
-                      <Input
-                        type='date'
-                        value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                        onChange={(e) => field.onChange(new Date(e.target.value))}
-                      />
-                      <FormMessage />
+              render={({ field }) => {
+                // Ensure value is always a string (never undefined)
+                const dateValue = field.value
+                  ? (() => {
+                      const date = field.value instanceof Date ? field.value : new Date(field.value)
+                      return !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : ''
+                    })()
+                  : ''
+                
+                return (
+                  <FormItem>
+                    <div className='grid grid-cols-4 items-center gap-4'>
+                      <Label className='text-sm font-bold'>{t('date')}</Label>
+                      <div className='col-span-3 space-y-2'>
+                        <Input
+                          type='date'
+                          value={dateValue}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            if (value) {
+                              const date = new Date(value)
+                              field.onChange(!isNaN(date.getTime()) ? date : undefined)
+                            } else {
+                              field.onChange(undefined)
+                            }
+                          }}
+                        />
+                        <FormMessage />
+                      </div>
                     </div>
-                  </div>
-                </FormItem>
-              )}
+                  </FormItem>
+                )
+              }}
             />
 
             <FormField

@@ -269,7 +269,8 @@ export default function EditPromotion({
   const formatDateValue = (dateValue: Date | undefined): string => {
     if (!dateValue) return ''
     try {
-      return new Date(dateValue).toISOString().split('T')[0]
+      const date = dateValue instanceof Date ? dateValue : new Date(dateValue)
+      return !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : ''
     } catch (error) {
       console.error('Error formatting date:', error)
       return ''

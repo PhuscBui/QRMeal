@@ -103,8 +103,23 @@ export default function AddShiftRequest() {
                     <div className='col-span-3 space-y-2'>
                       <Input
                         type='date'
-                        value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                        onChange={(e) => field.onChange(new Date(e.target.value))}
+                        value={
+                          field.value
+                            ? (() => {
+                                const date = field.value instanceof Date ? field.value : new Date(field.value)
+                                return !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : ''
+                              })()
+                            : ''
+                        }
+                        onChange={(e) => {
+                          const value = e.target.value
+                          if (value) {
+                            const date = new Date(value)
+                            field.onChange(!isNaN(date.getTime()) ? date : undefined)
+                          } else {
+                            field.onChange(undefined)
+                          }
+                        }}
                       />
                       <FormMessage />
                     </div>
