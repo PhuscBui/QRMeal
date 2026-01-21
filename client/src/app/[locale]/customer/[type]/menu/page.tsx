@@ -152,24 +152,24 @@ export default function MenuPage() {
   }
 
   return (
-    <div className='container mx-auto px-4 py-6'>
+    <div className='container mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-24 sm:pb-6'>
       {/* Header */}
       <div className='mb-8'>
         <div className='flex items-center gap-3 mb-4'>
           <div className={`p-2 rounded-lg bg-muted`}>
             <currentConfig.icon className={`h-6 w-6 ${currentConfig.color}`} />
           </div>
-          <div>
-            <h1 className='text-3xl font-bold'>{currentConfig.title}</h1>
-            <p className='text-muted-foreground'>{currentConfig.description}</p>
+          <div className='flex-1 min-w-0'>
+            <h1 className='text-2xl sm:text-3xl font-bold truncate'>{currentConfig.title}</h1>
+            <p className='text-muted-foreground text-sm sm:text-base'>{currentConfig.description}</p>
           </div>
         </div>
 
         {/* Table Info for Dine-in */}
         {orderType === 'dine-in' && tableInfo && (
-          <div className='flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg'>
-            <MapPin className='h-4 w-4 text-blue-600' />
-            <span className='text-sm font-medium text-blue-800 dark:text-blue-200'>
+          <div className='flex items-center gap-2 p-2 sm:p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg'>
+            <MapPin className='h-4 w-4 text-blue-600 flex-shrink-0' />
+            <span className='text-xs sm:text-sm font-medium text-blue-800 dark:text-blue-200 truncate'>
               {tableInfo.tableNumber} - {tableInfo.location} ({t('maxPeople', { count: tableInfo.capacity })})
             </span>
           </div>
@@ -186,94 +186,101 @@ export default function MenuPage() {
       </div>
 
       {/* Search and Filters */}
-      <div className='flex flex-col md:flex-row gap-4 mb-8'>
-        <div className='relative flex-1'>
-          <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4' />
+      <div className='flex flex-col gap-3 md:gap-4 mb-8'>
+        <div className='relative w-full'>
+          <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 z-10' />
           <Input
             placeholder={t('searchDishes')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className='pl-10'
+            className='pl-10 w-full'
           />
         </div>
 
-        <Button variant='outline' onClick={() => setShowImageSearch(true)} className='gap-2'>
-          <Camera className='h-4 w-4' />
-          {t('searchByImage')}
-        </Button>
+        <div className='flex flex-col sm:flex-row gap-2'>
+          <Button 
+            variant='outline' 
+            onClick={() => setShowImageSearch(true)} 
+            className='gap-2 w-full sm:w-auto flex-shrink-0'
+          >
+            <Camera className='h-4 w-4' />
+            <span className='hidden sm:inline'>{t('searchByImage')}</span>
+            <span className='sm:hidden'>Tìm ảnh</span>
+          </Button>
 
-        <div className='flex gap-2'>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className='w-48'>
-              <SelectValue placeholder={t('sortBy')} />
-            </SelectTrigger>
-            <SelectContent>
-              {sortOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className='flex gap-2 w-full sm:w-auto'>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className='flex-1 sm:w-48 min-w-0'>
+                <SelectValue placeholder={t('sortBy')} />
+              </SelectTrigger>
+              <SelectContent>
+                {sortOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Sheet open={showFilters} onOpenChange={setShowFilters}>
-            <SheetTrigger asChild>
-              <Button variant='outline'>
-                <Filter className='h-4 w-4 mr-2' />
-                {tCommon('filter')}
-              </Button>
-            </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>{tCommon('filter')}</SheetTitle>
-              </SheetHeader>
-              <div className='space-y-4 '>
-                <div>
-                  <h3 className='font-medium mb-3 pl-2'>{tCommon('category')}</h3>
-                  <div className='space-y-2 pl-2'>
-                    <label className='flex items-center space-x-2'>
-                      <input
-                        type='radio'
-                        name='category'
-                        value='all'
-                        checked={selectedCategory === 'all'}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
-                        className='rounded'
-                      />
-                      <span>{tCommon('all')}</span>
-                    </label>
-                    {categories.map((category) => (
-                      <label key={category._id} className='flex items-center space-x-2'>
+            <Sheet open={showFilters} onOpenChange={setShowFilters}>
+              <SheetTrigger asChild>
+                <Button variant='outline' className='flex-shrink-0'>
+                  <Filter className='h-4 w-4 sm:mr-2' />
+                  <span className='hidden sm:inline'>{tCommon('filter')}</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>{tCommon('filter')}</SheetTitle>
+                </SheetHeader>
+                <div className='space-y-4 '>
+                  <div>
+                    <h3 className='font-medium mb-3 pl-2'>{tCommon('category')}</h3>
+                    <div className='space-y-2 pl-2'>
+                      <label className='flex items-center space-x-2'>
                         <input
                           type='radio'
                           name='category'
-                          value={category._id}
-                          checked={selectedCategory === category._id}
+                          value='all'
+                          checked={selectedCategory === 'all'}
                           onChange={(e) => setSelectedCategory(e.target.value)}
                           className='rounded'
                         />
-                        <span>
-                          {category.name} ({category.dish_count || 0})
-                        </span>
+                        <span>{tCommon('all')}</span>
                       </label>
-                    ))}
+                      {categories.map((category) => (
+                        <label key={category._id} className='flex items-center space-x-2'>
+                          <input
+                            type='radio'
+                            name='category'
+                            value={category._id}
+                            checked={selectedCategory === category._id}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className='rounded'
+                          />
+                          <span>
+                            {category.name} ({category.dish_count || 0})
+                          </span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </div>
 
       {/* Categories */}
-      <div className='mb-8'>
+      <div className='mb-6 sm:mb-8'>
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-          <TabsList className='grid w-full grid-cols-2 md:grid-cols-6'>
-            <TabsTrigger value='all' className='text-sm'>
+          <TabsList className='flex flex-wrap w-full gap-1.5 sm:gap-2 h-auto p-1 overflow-x-auto'>
+            <TabsTrigger value='all' className='text-xs sm:text-sm whitespace-nowrap px-2 sm:px-3'>
               {tCommon('all')}
             </TabsTrigger>
             {categories.map((category) => (
-              <TabsTrigger key={category._id} value={category._id} className='text-sm'>
+              <TabsTrigger key={category._id} value={category._id} className='text-xs sm:text-sm whitespace-nowrap px-2 sm:px-3'>
                 {category.name}
               </TabsTrigger>
             ))}
@@ -293,7 +300,7 @@ export default function MenuPage() {
       </div>
 
       {/* Dishes Grid */}
-      <div className='grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8'>
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8'>
         {sortedDishes.map((dish) => (
           <Card key={dish._id} className='overflow-hidden hover:shadow-lg transition-shadow' id={`dish-${dish._id}`}>
             <div className='relative'>
@@ -312,10 +319,10 @@ export default function MenuPage() {
               </Badge>
             </div>
 
-            <CardContent className='p-4'>
-              <div className='flex items-start justify-between mb-2'>
-                <h3 className='font-semibold text-lg'>{dish.name}</h3>
-                <div className='flex items-center gap-1'>
+            <CardContent className='p-3 sm:p-4'>
+              <div className='flex items-start justify-between mb-2 gap-2'>
+                <h3 className='font-semibold text-base sm:text-lg flex-1 min-w-0'>{dish.name}</h3>
+                <div className='flex items-center gap-1 flex-shrink-0'>
                   <button
                     onClick={() => setSelectedDish(dish)}
                     className='flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors'
@@ -329,8 +336,8 @@ export default function MenuPage() {
               <p className='text-muted-foreground text-sm mb-3 line-clamp-2'>{dish.description}</p>
 
               <div className='flex items-center justify-between mb-4'>
-                <div className='flex items-centergap-2'>
-                  <span className='text-lg font-bold text-primary'>{dish.price.toLocaleString('vi-VN')}đ</span>
+                <div className='flex items-center gap-2'>
+                  <span className='text-base sm:text-lg font-bold text-primary'>{dish.price.toLocaleString('vi-VN')}đ</span>
                 </div>
               </div>
 
@@ -362,26 +369,27 @@ export default function MenuPage() {
 
       {/* Cart Summary - Fixed Bottom on Mobile */}
       {getCartItemCount() > 0 && (
-        <div className='fixed bottom-16 left-0 right-0 md:bottom-0 md:relative bg-background border-t border-border p-4 md:p-0 md:border-0'>
+        <div className='fixed bottom-16 left-0 right-0 md:bottom-0 md:relative bg-background border-t border-border p-3 sm:p-4 md:p-0 md:border-0 z-50 md:z-auto'>
           <div className='container mx-auto'>
             <Card>
-              <CardContent className='p-4'>
-                <div className='flex items-center justify-between'>
-                  <div className='flex items-center gap-4'>
-                    <div className='relative'>
-                      <ChefHat className='h-6 w-6' />
+              <CardContent className='p-3 sm:p-4'>
+                <div className='flex items-center justify-between gap-2 sm:gap-4'>
+                  <div className='flex items-center gap-2 sm:gap-4 min-w-0 flex-1'>
+                    <div className='relative flex-shrink-0'>
+                      <ChefHat className='h-5 w-5 sm:h-6 sm:w-6' />
                       <Badge className='absolute -top-2 -right-2 h-5 w-5 p-0 text-xs flex items-center justify-center'>
                         {getCartItemCount()}
                       </Badge>
                     </div>
-                    <div>
-                      <p className='font-medium'>{getCartItemCount()} {tCommon('items')}</p>
-                      <p className='text-sm text-muted-foreground'>{tCommon('total')}: {getCartTotal().toLocaleString('vi-VN')}đ</p>
+                    <div className='min-w-0 flex-1'>
+                      <p className='font-medium text-sm sm:text-base truncate'>{getCartItemCount()} {tCommon('items')}</p>
+                      <p className='text-xs sm:text-sm text-muted-foreground truncate'>{tCommon('total')}: {getCartTotal().toLocaleString('vi-VN')}đ</p>
                     </div>
                   </div>
-                  <Button size='lg' className='md:w-auto w-auto' onClick={handleProceedToCheckout}>
-                    <ChefHat className='h-4 w-4 mr-2' />
-                    {tCommon('continue')}
+                  <Button size='sm' className='sm:size-lg flex-shrink-0' onClick={handleProceedToCheckout}>
+                    <ChefHat className='h-4 w-4 mr-1 sm:mr-2' />
+                    <span className='hidden sm:inline'>{tCommon('continue')}</span>
+                    <span className='sm:hidden'>Tiếp</span>
                   </Button>
                 </div>
               </CardContent>

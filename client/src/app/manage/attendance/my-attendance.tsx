@@ -39,23 +39,24 @@ const getColumns = (t: any): ColumnDef<AttendanceItem>[] => [
   {
     accessorKey: 'index',
     header: t('no'),
-    cell: ({ row }) => <div>{row.index + 1}</div>
+    cell: ({ row }) => <div className='text-xs sm:text-sm'>{row.index + 1}</div>,
+    enableHiding: true
   },
   {
     accessorKey: 'check_in',
     header: t('checkInTime'),
     cell: ({ row }) => {
       const checkIn = row.getValue('check_in') as string | undefined
-      if (!checkIn) return <div className='text-muted-foreground'>-</div>
+      if (!checkIn) return <div className='text-muted-foreground text-xs sm:text-sm'>-</div>
       try {
         return (
-          <div>
-            <div>{format(new Date(checkIn), 'dd/MM/yyyy', { locale: vi })}</div>
-            <div className='text-sm text-muted-foreground'>{format(new Date(checkIn), 'HH:mm:ss', { locale: vi })}</div>
+          <div className='min-w-[80px] sm:min-w-0'>
+            <div className='text-xs sm:text-sm'>{format(new Date(checkIn), 'dd/MM/yyyy', { locale: vi })}</div>
+            <div className='text-xs text-muted-foreground'>{format(new Date(checkIn), 'HH:mm', { locale: vi })}</div>
           </div>
         )
       } catch {
-        return <div>{checkIn}</div>
+        return <div className='text-xs sm:text-sm'>{checkIn}</div>
       }
     }
   },
@@ -64,18 +65,18 @@ const getColumns = (t: any): ColumnDef<AttendanceItem>[] => [
     header: t('checkOutTime'),
     cell: ({ row }) => {
       const checkOut = row.getValue('check_out') as string | undefined
-      if (!checkOut) return <div className='text-muted-foreground'>{t('notCheckedOut')}</div>
+      if (!checkOut) return <div className='text-muted-foreground text-xs sm:text-sm'>{t('notCheckedOut')}</div>
       try {
         return (
-          <div>
-            <div>{format(new Date(checkOut), 'dd/MM/yyyy', { locale: vi })}</div>
-            <div className='text-sm text-muted-foreground'>
-              {format(new Date(checkOut), 'HH:mm:ss', { locale: vi })}
+          <div className='min-w-[80px] sm:min-w-0'>
+            <div className='text-xs sm:text-sm'>{format(new Date(checkOut), 'dd/MM/yyyy', { locale: vi })}</div>
+            <div className='text-xs text-muted-foreground'>
+              {format(new Date(checkOut), 'HH:mm', { locale: vi })}
             </div>
           </div>
         )
       } catch {
-        return <div>{checkOut}</div>
+        return <div className='text-xs sm:text-sm'>{checkOut}</div>
       }
     }
   },
@@ -90,12 +91,12 @@ const getColumns = (t: any): ColumnDef<AttendanceItem>[] => [
     cell: ({ row }) => {
       const checkIn = row.original.check_in
       const checkOut = row.original.check_out
-      if (!checkIn || !checkOut) return <div className='text-muted-foreground'>-</div>
+      if (!checkIn || !checkOut) return <div className='text-muted-foreground text-xs sm:text-sm'>-</div>
       try {
         const hours = (new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60)
-        return <div>{hours.toFixed(2)} {t('hours')}</div>
+        return <div className='text-xs sm:text-sm'>{hours.toFixed(2)} {t('hours')}</div>
       } catch {
-        return <div>-</div>
+        return <div className='text-xs sm:text-sm'>-</div>
       }
     }
   }
@@ -161,6 +162,23 @@ export function MyAttendance() {
     })
   }, [table, pageIndex])
 
+  useEffect(() => {
+    // Only run on client side to avoid hydration mismatch
+    if (typeof window === 'undefined') return
+    
+    const handleResize = () => {
+      setColumnVisibility((prev) => ({
+        ...prev,
+        index: window.innerWidth < 640
+      }))
+    }
+    
+    // Set initial visibility after mount
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   if (attendanceQuery.isLoading) {
     return (
       <div className='flex items-center justify-center py-12'>
@@ -179,45 +197,49 @@ export function MyAttendance() {
 
   return (
     <div className='w-full'>
-      <div className='rounded-md border'>
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
-                  )
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                  ))}
+      <div className='rounded-md border overflow-x-auto -mx-4 sm:mx-0'>
+        <div className='inline-block min-w-full align-middle'>
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead key={header.id} className='whitespace-nowrap px-2 sm:px-4 text-xs sm:text-sm'>
+                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      </TableHead>
+                    )
+                  })}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={table.getAllColumns().length} className='h-24 text-center'>
-                  {tCommon('noResults')}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className='whitespace-nowrap px-2 sm:px-4 py-2 sm:py-3'>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={table.getAllColumns().length} className='h-24 text-center'>
+                    {tCommon('noResults')}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
-      <div className='flex items-center justify-end space-x-2 py-4'>
-        <div className='text-xs text-muted-foreground py-4 flex-1'>
+      <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 py-4'>
+        <div className='text-xs sm:text-sm text-muted-foreground'>
           {tCommon('displayItems', { count: data.length, total })}
         </div>
-        <div>
+        <div className='w-full sm:w-auto'>
           <AutoPagination
             page={table.getState().pagination.pageIndex + 1}
             pageSize={Math.ceil(total / PAGE_SIZE)}

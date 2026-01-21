@@ -9,6 +9,7 @@ import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { handleErrorApi } from '@/lib/utils'
+import { useState, useEffect } from 'react'
 
 export function CheckInOut() {
   const t = useTranslations('attendance')
@@ -21,6 +22,26 @@ export function CheckInOut() {
   const attendance = todayAttendanceQuery.data?.payload.result
   const hasCheckedIn = !!attendance?.check_in
   const hasCheckedOut = !!attendance?.check_out
+
+  // Use state to avoid hydration mismatch
+  const [currentDate, setCurrentDate] = useState<Date | null>(null)
+  const [currentTime, setCurrentTime] = useState<string>('')
+
+  useEffect(() => {
+    // Only set date/time on client side
+    const now = new Date()
+    setCurrentDate(now)
+    setCurrentTime(format(now, 'HH:mm:ss'))
+    
+    // Update time every second
+    const interval = setInterval(() => {
+      const now = new Date()
+      setCurrentDate(now)
+      setCurrentTime(format(now, 'HH:mm:ss'))
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   const handleCheckIn = async () => {
     try {
@@ -61,38 +82,40 @@ export function CheckInOut() {
         </CardTitle>
         <CardDescription>{t('timeClockDesc')}</CardDescription>
       </CardHeader>
-      <CardContent className='space-y-6'>
+      <CardContent className='space-y-4 sm:space-y-6'>
         <div className='text-center space-y-2'>
-          <div className='text-2xl font-bold'>{format(new Date(), 'EEEE, dd MMMM yyyy', { locale: vi })}</div>
-          <div className='text-lg text-muted-foreground'>{format(new Date(), 'HH:mm:ss')}</div>
+          <div className='text-lg sm:text-2xl font-bold px-2'>
+            {currentDate ? format(currentDate, 'EEEE, dd MMMM yyyy', { locale: vi }) : '...'}
+          </div>
+          <div className='text-base sm:text-lg text-muted-foreground'>{currentTime || '...'}</div>
         </div>
 
         {attendance && (
-          <div className='space-y-4 p-4 bg-muted rounded-lg'>
-            <div className='flex items-center justify-between'>
-              <span className='font-medium'>{t('status')}:</span>
-              {getStatusBadge()}
+          <div className='space-y-3 sm:space-y-4 p-3 sm:p-4 bg-muted rounded-lg'>
+            <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2'>
+              <span className='font-medium text-sm sm:text-base'>{t('status')}:</span>
+              <div className='flex justify-center sm:justify-end'>{getStatusBadge()}</div>
             </div>
             {attendance.check_in && (
-              <div className='flex items-center justify-between'>
-                <span className='text-muted-foreground'>{t('checkInTime')}:</span>
-                <span className='font-medium'>
+              <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2'>
+                <span className='text-muted-foreground text-sm sm:text-base'>{t('checkInTime')}:</span>
+                <span className='font-medium text-sm sm:text-base'>
                   {format(new Date(attendance.check_in), 'HH:mm:ss', { locale: vi })}
                 </span>
               </div>
             )}
             {attendance.check_out && (
-              <div className='flex items-center justify-between'>
-                <span className='text-muted-foreground'>{t('checkOutTime')}:</span>
-                <span className='font-medium'>
+              <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2'>
+                <span className='text-muted-foreground text-sm sm:text-base'>{t('checkOutTime')}:</span>
+                <span className='font-medium text-sm sm:text-base'>
                   {format(new Date(attendance.check_out), 'HH:mm:ss', { locale: vi })}
                 </span>
               </div>
             )}
             {attendance.check_in && attendance.check_out && (
-              <div className='flex items-center justify-between pt-2 border-t'>
-                <span className='font-medium'>{t('totalHours')}:</span>
-                <span className='font-bold text-lg'>
+              <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between pt-2 sm:pt-3 border-t gap-1 sm:gap-2'>
+                <span className='font-medium text-sm sm:text-base'>{t('totalHours')}:</span>
+                <span className='font-bold text-base sm:text-lg'>
                   {(
                     (new Date(attendance.check_out).getTime() - new Date(attendance.check_in).getTime()) /
                     (1000 * 60 * 60)
@@ -104,25 +127,25 @@ export function CheckInOut() {
           </div>
         )}
 
-        <div className='flex gap-4'>
+        <div className='flex flex-col sm:flex-row gap-2 sm:gap-4'>
           <Button
             onClick={handleCheckIn}
             disabled={hasCheckedIn || checkInMutation.isPending || checkOutMutation.isPending}
-            className='flex-1'
+            className='flex-1 w-full sm:w-auto'
             size='lg'
           >
-            <LogIn className='mr-2 h-5 w-5' />
-            {checkInMutation.isPending ? t('checkingIn') : t('checkIn')}
+            <LogIn className='mr-2 h-4 w-4 sm:h-5 sm:w-5' />
+            <span className='text-sm sm:text-base'>{checkInMutation.isPending ? t('checkingIn') : t('checkIn')}</span>
           </Button>
           <Button
             onClick={handleCheckOut}
             disabled={!hasCheckedIn || hasCheckedOut || checkInMutation.isPending || checkOutMutation.isPending}
             variant='outline'
-            className='flex-1'
+            className='flex-1 w-full sm:w-auto'
             size='lg'
           >
-            <LogOut className='mr-2 h-5 w-5' />
-            {checkOutMutation.isPending ? t('checkingOut') : t('checkOut')}
+            <LogOut className='mr-2 h-4 w-4 sm:h-5 sm:w-5' />
+            <span className='text-sm sm:text-base'>{checkOutMutation.isPending ? t('checkingOut') : t('checkOut')}</span>
           </Button>
         </div>
       </CardContent>

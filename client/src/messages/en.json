@@ -43,6 +43,7 @@
     "noResults": "No results.",
     "email": "Email",
     "phone": "Phone",
+    "created": "Created",
     "createdAt": "Created at",
     "notSelected": "Not selected",
     "createSuccess": "Created successfully",

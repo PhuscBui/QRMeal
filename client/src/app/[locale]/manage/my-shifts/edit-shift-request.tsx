@@ -161,7 +161,14 @@ export default function EditShiftRequest({
                       {t('startTime')}
                     </Label>
                     <div className='col-span-3 space-y-2'>
-                      <Input type='time' {...field} />
+                      <Input 
+                        type='time' 
+                        value={field.value || ''} 
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
                       <FormMessage />
                     </div>
                   </div>
@@ -180,7 +187,14 @@ export default function EditShiftRequest({
                       {t('endTime')}
                     </Label>
                     <div className='col-span-3 space-y-2'>
-                      <Input type='time' {...field} />
+                      <Input 
+                        type='time' 
+                        value={field.value || ''} 
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
                       <FormMessage />
                     </div>
                   </div>
@@ -199,7 +213,11 @@ export default function EditShiftRequest({
                       <Textarea
                         placeholder={t('reasonPlaceholder')}
                         className='resize-none'
-                        {...field}
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
                       />
                       <FormMessage />
                     </div>

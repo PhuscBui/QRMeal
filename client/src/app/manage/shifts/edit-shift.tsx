@@ -125,7 +125,7 @@ export default function EditShift({
                         {t('staff')}
                       </Label>
                       <div className='col-span-3 space-y-2'>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
                           <SelectTrigger>
                             <SelectValue placeholder={t('selectStaffMember')} />
                           </SelectTrigger>
@@ -193,7 +193,14 @@ export default function EditShift({
                       {t('startTime')}
                     </Label>
                     <div className='col-span-3 space-y-2'>
-                      <Input type='time' {...field} />
+                      <Input 
+                        type='time' 
+                        value={field.value || ''} 
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
                       <FormMessage />
                     </div>
                   </div>
@@ -212,7 +219,14 @@ export default function EditShift({
                       {t('endTime')}
                     </Label>
                     <div className='col-span-3 space-y-2'>
-                      <Input type='time' {...field} />
+                      <Input 
+                        type='time' 
+                        value={field.value || ''} 
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
                       <FormMessage />
                     </div>
                   </div>
