@@ -1,6 +1,5 @@
-import AttendancePage from '@/app/manage/attendance/page'
+import AttendancePage from '@/features/manage/attendance/attendance-page'
 
-export default function AttendancePageLocale() {
+export default function Page() {
   return <AttendancePage />
 }
-

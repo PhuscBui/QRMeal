@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import ChatWidget from '@/components/chat-widget'
 import LanguageSwitcher from '@/components/language-switcher'
-import NavItems from '@/features/common/nav-items'
+import NavItems from '@/features/common/navigations/nav-items'
 
 export default function HomePageLayout({
   children

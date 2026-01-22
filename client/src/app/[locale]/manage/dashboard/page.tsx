@@ -1,5 +1,5 @@
-import Dashboard from "@/app/manage/dashboard/dashboard";
+import DashboardPage from '@/features/manage/dashboard/dashboard-page'
 
-export default function DashboardPage() {
-  return <Dashboard/>
+export default function Page() {
+  return <DashboardPage />
 }

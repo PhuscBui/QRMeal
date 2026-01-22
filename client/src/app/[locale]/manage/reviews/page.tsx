@@ -1,6 +1,5 @@
-import ReviewsPage from '@/app/manage/reviews/page'
+import ReviewsPage from '@/features/manage/reviews/reviews-page'
 
-export default function ReviewsPageLocale() {
+export default function Page() {
   return <ReviewsPage />
 }
-

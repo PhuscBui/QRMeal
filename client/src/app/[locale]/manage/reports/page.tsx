@@ -1,6 +1,5 @@
-import ReportsPage from '@/app/manage/reports/page'
+import ReportsPage from '@/features/manage/reports/reports-page'
 
-export default function ReportsPageLocale() {
+export default function Page() {
   return <ReportsPage />
 }
-

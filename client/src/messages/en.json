@@ -54,7 +54,8 @@
     "updating": "Updating...",
     "clear": "Clear",
     "from": "From",
-    "to": "To"
+    "to": "To",
+    "selectStatus": "Select status"
   },
   "auth": {
     "login": "Login",
@@ -1064,7 +1065,11 @@
     "quantity": "Quantity",
     "notOrderedYet": "Not ordered yet",
     "noData": "No data",
-    "summary": "Total: {total} dishes | Ordered: {ordered} dishes | Never ordered: {neverOrdered} dishes"
+    "summary": "Total: {total} dishes | Ordered: {ordered} dishes | Never ordered: {neverOrdered} dishes",
+    "period": "Period",
+    "day": "Day",
+    "week": "Week",
+    "month": "Month"
   },
   "attendance": {
     "title": "Attendance",
