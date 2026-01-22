@@ -8,8 +8,8 @@ import { useAddGuestPromotionMutation, useDeleteGuestPromotionMutation } from '@
 import { toast } from 'sonner'
 import { handleErrorApi } from '@/lib/utils'
 import { useState } from 'react'
-import { PhoneDialog } from '@/app/guest/promotions/phone-dialog'
 import { useTranslations } from 'next-intl'
+import { PhoneDialog } from '@/features/guests/promotions/phone-dialog'
 
 interface PromotionCardProps {
   promotion: PromotionResType['result']
@@ -29,7 +29,7 @@ export default function PromotionCard({
   isUsed
 }: PromotionCardProps) {
   const t = useTranslations('guestPromotions')
-  
+
   const addPromotion = useAddGuestPromotionMutation()
   const deletePromotion = useDeleteGuestPromotionMutation()
   const [openPhoneDialog, setOpenPhoneDialog] = useState(false)
@@ -202,7 +202,11 @@ export default function PromotionCard({
         <div className='flex items-center text-sm'>
           <span className='text-muted-foreground'>{t('appliesTo')} </span>
           <Badge variant='outline' className='ml-2'>
-            {promotion.applicable_to === 'both' ? t('all') : promotion.applicable_to === 'guest' ? t('guest') : t('customer')}
+            {promotion.applicable_to === 'both'
+              ? t('all')
+              : promotion.applicable_to === 'guest'
+                ? t('guest')
+                : t('customer')}
           </Badge>
         </div>
       </div>

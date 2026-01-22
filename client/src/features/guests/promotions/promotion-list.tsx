@@ -3,7 +3,6 @@
 import { useMemo } from 'react'
 import { ShoppingBag } from 'lucide-react'
 
-import PromotionCard from '@/app/guest/promotions/promotion-card'
 import { useGuestMe } from '@/queries/useGuest'
 import { useGetGuestPromotionByPhoneQuery, useGetGuestPromotionQuery } from '@/queries/useGuestPromotion'
 import { usePromotionListQuery } from '@/queries/usePromotion'
@@ -11,10 +10,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { PromotionResType } from '@/schemaValidations/promotion.schema'
 import { GuestPromotion } from '@/schemaValidations/guest-promotion.schema'
 import { useTranslations } from 'next-intl'
+import PromotionCard from '@/features/guests/promotions/promotion-card'
 
 export default function PromotionList() {
   const t = useTranslations('guestPromotions')
-  
+
   const { data, isLoading: isPromotionsLoading } = usePromotionListQuery()
   const promotions = useMemo(
     () =>
@@ -186,7 +186,7 @@ export default function PromotionList() {
 
 function EmptyPromotions() {
   const t = useTranslations('guestPromotions')
-  
+
   return (
     <div className='text-center py-16 px-4 rounded-lg border border-dashed'>
       <ShoppingBag className='h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50' />

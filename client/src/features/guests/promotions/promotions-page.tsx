@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
-import PromotionList from '@/app/guest/promotions/promotion-list'
 import { useTranslations } from 'next-intl'
+import PromotionList from '@/features/guests/promotions/promotion-list'
 
 export default function PromotionsPage() {
   const t = useTranslations('guestPromotions')

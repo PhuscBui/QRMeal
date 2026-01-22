@@ -1,14 +1,5 @@
-import MenuOrder from '@/app/guest/menu/menu-order'
-import { getTranslations } from 'next-intl/server'
+import MenuPage from '@/features/guests/menu/menu-page'
 
-export default async function MenuPage() {
-  const t = await getTranslations('guestMenu')
-  
-  return (
-    <div className='max-w-[400px] mx-auto space-y-4'>
-      <h1 className='text-center text-xl font-bold'>🍕 {t('restaurantMenu')}</h1>
-      <MenuOrder />
-    </div>
-  )
+export default async function Page() {
+  return <MenuPage />
 }
-

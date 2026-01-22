@@ -2,7 +2,6 @@
 
 import Image from 'next/image'
 import { cn, formatCurrency } from '@/lib/utils'
-import Quantity from '@/app/guest/menu/quantity'
 import { DishStatus } from '@/constants/type'
 import type { GuestCreateOrdersBodyType } from '@/schemaValidations/guest.schema'
 import type { DishResType } from '@/schemaValidations/dish.schema'
@@ -10,6 +9,7 @@ import { DishReviewsModal } from '@/components/dish-reviews-modal'
 import { Star } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
+import Quantity from '@/features/guests/menu/quantity'
 
 interface DishCardProps {
   dish: DishResType['result']

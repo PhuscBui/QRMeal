@@ -1,4 +1,4 @@
-import Layout from '@/app/(public)/layout'
+import Layout from '@/app/[locale]/(public)/layout'
 import ChatWidget from '@/components/chat-widget'
 
 import React from 'react'
@@ -17,3 +17,4 @@ export default function GuestLayout({
     </div>
   )
 }
+

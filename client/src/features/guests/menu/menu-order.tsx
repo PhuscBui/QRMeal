@@ -4,7 +4,6 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { useDishListQuery } from '@/queries/useDish'
 import { cn, formatCurrency, handleErrorApi } from '@/lib/utils'
-import Quantity from '@/app/guest/menu/quantity'
 import { useMemo, useState, useCallback } from 'react'
 import type { GuestCreateOrdersBodyType } from '@/schemaValidations/guest.schema'
 import { useGuestOrderMutation } from '@/queries/useGuest'
@@ -14,8 +13,9 @@ import { Input } from '@/components/ui/input'
 import { Mic, MicOff, Search } from 'lucide-react'
 import { useCategoryListQuery } from '@/queries/useCategory'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import DishCard from '@/app/guest/menu/dish-card'
 import { useTranslations } from 'next-intl'
+import DishCard from '@/features/guests/menu/dish-card'
+import Quantity from '@/features/guests/menu/quantity'
 
 export default function MenuOrder() {
   const { data } = useDishListQuery()
@@ -92,7 +92,7 @@ export default function MenuOrder() {
     }
 
     recognition.start()
-  }, [])
+  }, [t])
 
   const filteredDishes = useMemo(() => {
     if (!searchText.trim()) return dishes.filter((dish) => dish.status !== DishStatus.Hidden)
@@ -148,7 +148,9 @@ export default function MenuOrder() {
                 <div className='flex-shrink-0 relative'>
                   {dish.status === DishStatus.Unavailable && (
                     <div className='absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg'>
-                      <span className='text-white text-xs font-medium px-2 py-1 bg-red-600 rounded'>{t('outOfStock')}</span>
+                      <span className='text-white text-xs font-medium px-2 py-1 bg-red-600 rounded'>
+                        {t('outOfStock')}
+                      </span>
                     </div>
                   )}
                   <Image

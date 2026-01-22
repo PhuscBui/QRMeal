@@ -47,8 +47,7 @@ export default function BookingDetails() {
       await Promise.all([
         cancelReservation.mutateAsync({
           table_number: table?.number,
-          token: table?.token,
-          guest_id: guest?._id
+          token: table?.token
         }),
         logout.mutateAsync()
       ])

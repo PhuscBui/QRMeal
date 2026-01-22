@@ -1,20 +1,9 @@
-import Layout from '@/app/[locale]/(public)/layout'
-import ChatWidget from '@/components/chat-widget'
+import GuestLayout from '@/features/common/layouts/guest-layout'
 
-import React from 'react'
-
-export default function GuestLayout({
+export default function Layout({
   children
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  return (
-    <div>
-      <Layout>
-        {' '}
-        {children} <ChatWidget />{' '}
-      </Layout>
-    </div>
-  )
+  return <GuestLayout> {children} </GuestLayout>
 }
-

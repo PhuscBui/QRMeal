@@ -23,7 +23,7 @@ import { useTranslations } from 'next-intl'
 export default function OrdersCart() {
   const t = useTranslations('guestOrdersCart')
   const tCommon = useTranslations('common')
-  
+
   // Payment method config
   const paymentMethodConfig = {
     banking: {
@@ -141,8 +141,8 @@ export default function OrdersCart() {
 
         toast.success(t('paymentSuccessful'), {
           description: t('guestPaidForOrders', {
-            name: guestInfo?.name,
-            table: guestInfo?.table_number,
+            name: guestInfo?.name ?? 'Guest',
+            table: guestInfo?.table_number ?? 'N/A',
             count: totalOrders
           })
         })
@@ -170,7 +170,7 @@ export default function OrdersCart() {
       socket?.off('payment', onPayment)
       socket?.off('sepay-payment-success', onSepayPayment)
     }
-  }, [refetch, socket])
+  }, [refetch, socket, t, tCommon])
 
   const currentTable = orderGroups.length > 0 ? orderGroups[0].table_number : null
 
@@ -324,7 +324,9 @@ export default function OrdersCart() {
       <div className='sticky bottom-0 border-t pt-4 space-y-2'>
         {paid.quantity > 0 && (
           <div className='w-full flex justify-between text-green-600 font-semibold'>
-            <span>{t('paid')} • {paid.quantity} {paid.quantity === 1 ? t('item') : t('items')}</span>
+            <span>
+              {t('paid')} • {paid.quantity} {paid.quantity === 1 ? t('item') : t('items')}
+            </span>
             <span>{formatCurrency(paid.price)}</span>
           </div>
         )}
@@ -332,7 +334,10 @@ export default function OrdersCart() {
         {waitingForPaying.quantity > 0 && (
           <>
             <div className='w-full flex justify-between text-xl font-bold text-orange-600'>
-              <span>{t('waitingForPayment')} • {waitingForPaying.quantity} {waitingForPaying.quantity === 1 ? t('item') : t('items')}</span>
+              <span>
+                {t('waitingForPayment')} • {waitingForPaying.quantity}{' '}
+                {waitingForPaying.quantity === 1 ? t('item') : t('items')}
+              </span>
               <span>{formatCurrency(waitingForPaying.price)}</span>
             </div>
 
@@ -374,7 +379,9 @@ export default function OrdersCart() {
               <div className='space-y-2 text-sm'>
                 <div className='flex justify-between'>
                   <span>{t('numberOfDishes')}:</span>
-                  <span>{waitingForPaying.quantity} {t('dishes')}</span>
+                  <span>
+                    {waitingForPaying.quantity} {t('dishes')}
+                  </span>
                 </div>
                 <div className='border-t pt-2 mt-2'>
                   <div className='flex justify-between items-center font-semibold text-base'>
