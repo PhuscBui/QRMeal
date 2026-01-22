@@ -1,5 +1,5 @@
-import GuestLoginForm from '@/app/(public)/tables/[number]/guest-login-form'
+import TableNumberPage from '@/features/guests/tables/[number]/table-number-page'
 
-export default function TableNumberPage() {
-  return <GuestLoginForm />
+export default function Page() {
+  return <TableNumberPage />
 }

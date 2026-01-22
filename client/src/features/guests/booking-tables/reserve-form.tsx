@@ -20,13 +20,17 @@ import { format } from 'date-fns'
 import { useGuestLoginMutation } from '@/queries/useGuest'
 import { useReserveTableMutation } from '@/queries/useTable'
 import { useAppContext } from '@/components/app-provider'
-import { TimePicker } from '@/app/(public)/booking-tables/time-picker'
+import { useTranslations } from 'next-intl'
+import { TimePicker } from '@/features/guests/booking-tables/time-picker'
 
 export default function ReserveForm({ token, table_number }: { token: string; table_number: number }) {
   const router = useRouter()
   const loginMutation = useGuestLoginMutation()
   const reserveMutation = useReserveTableMutation()
   const { setRole } = useAppContext()
+  const t = useTranslations('reserveForm')
+  const tAuth = useTranslations('auth')
+  const tCommon = useTranslations('common')
 
   const form = useForm<GuestLoginBodyType & ReserveTableBodyType>({
     resolver: zodResolver(GuestLoginBody.merge(ReserveTableBody)),
@@ -60,7 +64,7 @@ export default function ReserveForm({ token, table_number }: { token: string; ta
         token: token
       })
 
-      toast.success('Table reserved successfully!')
+      toast.success(t('tableReservedSuccess'))
       router.push('/guest/menu')
 
       //   router.push("/")
@@ -82,9 +86,9 @@ export default function ReserveForm({ token, table_number }: { token: string; ta
             render={({ field }) => (
               <FormItem>
                 <Label className='text-sm font-medium' htmlFor='name'>
-                  Name
+                  {tCommon('name')}
                 </Label>
-                <Input id='name' type='text' placeholder='Enter your name' className='mt-1.5' {...field} />
+                <Input id='name' type='text' placeholder={t('enterName')} className='mt-1.5' {...field} />
                 <FormMessage />
               </FormItem>
             )}
@@ -96,12 +100,12 @@ export default function ReserveForm({ token, table_number }: { token: string; ta
             render={({ field }) => (
               <FormItem>
                 <Label className='text-sm font-medium' htmlFor='phone'>
-                  Phone
+                  {tAuth('phone')}
                 </Label>
                 <Input
                   id='phone'
                   type='tel'
-                  placeholder='Enter your phone number'
+                  placeholder={t('enterPhone')}
                   className='mt-1.5'
                   {...field}
                   value={field.value ?? ''}
@@ -117,12 +121,12 @@ export default function ReserveForm({ token, table_number }: { token: string; ta
             render={({ field }) => (
               <FormItem>
                 <Label className='text-sm font-medium' htmlFor='table_number'>
-                  Table Number
+                  {t('tableNumber')}
                 </Label>
                 <Input
                   id='table_number'
                   type='number'
-                  placeholder='Enter table number'
+                  placeholder={t('enterTableNumber')}
                   className='mt-1.5'
                   required
                   disabled
@@ -139,7 +143,7 @@ export default function ReserveForm({ token, table_number }: { token: string; ta
             name='reservation_time'
             render={({ field }) => (
               <FormItem className='flex flex-col'>
-                <Label className='text-sm font-medium'>Reservation Date & Time</Label>
+                <Label className='text-sm font-medium'>{t('reservationDateTime')}</Label>
                 <div className='grid grid-cols-2 gap-2 mt-1.5'>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -148,7 +152,7 @@ export default function ReserveForm({ token, table_number }: { token: string; ta
                         className={cn('justify-start text-left font-normal', !field.value && 'text-muted-foreground')}
                       >
                         <CalendarIcon className='mr-2 h-4 w-4' />
-                        {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                        {field.value ? format(field.value, 'PPP') : <span>{t('pickDate')}</span>}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className='w-auto p-0' align='start'>
@@ -183,11 +187,11 @@ export default function ReserveForm({ token, table_number }: { token: string; ta
             render={({ field }) => (
               <FormItem>
                 <Label className='text-sm font-medium' htmlFor='note'>
-                  Special Requests (Optional)
+                  {t('specialRequests')}
                 </Label>
                 <Textarea
                   id='note'
-                  placeholder='Any dietary requirements or special requests?'
+                  placeholder={t('dietaryRequirements')}
                   className='mt-1.5 resize-none'
                   rows={3}
                   {...field}
@@ -199,10 +203,10 @@ export default function ReserveForm({ token, table_number }: { token: string; ta
 
           <div className='flex gap-3 pt-2'>
             <Button type='submit' className='flex-1' disabled={loginMutation.isPending || reserveMutation.isPending}>
-              {loginMutation.isPending || reserveMutation.isPending ? 'Submitting...' : 'Confirm Reservation'}
+              {loginMutation.isPending || reserveMutation.isPending ? t('submitting') : t('confirmReservation')}
             </Button>
             <Button type='button' variant='outline' className='flex-1' onClick={() => router.push('/')}>
-              Cancel
+              {tCommon('cancel')}
             </Button>
           </div>
         </div>

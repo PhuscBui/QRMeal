@@ -4,11 +4,11 @@ import React from 'react'
 
 import { Clock } from 'lucide-react'
 import { Label } from '@/components/ui/label'
-import { TimePickerInput } from '@/app/(public)/booking-tables/time-picker-input'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
+import { TimePickerInput } from '@/features/guests/booking-tables/time-picker-input'
 
 interface TimePickerProps {
   date: Date
