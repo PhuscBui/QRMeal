@@ -1,0 +1,326 @@
+'use client'
+
+import { CaretSortIcon } from '@radix-ui/react-icons'
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable
+} from '@tanstack/react-table'
+
+import { Button } from '@/components/ui/button'
+
+import { Input } from '@/components/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { AccountListResType, AccountType } from '@/schemaValidations/account.schema'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { createContext, useContext, useEffect, useState } from 'react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog'
+import { useSearchParams } from 'next/navigation'
+import AutoPagination from '@/components/auto-pagination'
+import { useDeleteAccountMutation, useGetAccountList } from '@/queries/useAccount'
+import { toast } from 'sonner'
+import { handleErrorApi } from '@/lib/utils'
+import { Pen, Trash } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import EditEmployee from '@/features/manage/accounts/edit-employee'
+import AddEmployee from '@/features/manage/accounts/add-employee'
+
+type AccountItem = AccountListResType['result'][0]
+
+const AccountTableContext = createContext<{
+  setEmployeeIdEdit: (value: string) => void
+  employeeIdEdit: string | undefined
+  employeeDelete: AccountItem | null
+  setEmployeeDelete: (value: AccountItem | null) => void
+}>({
+  setEmployeeIdEdit: () => {},
+  employeeIdEdit: undefined,
+  employeeDelete: null,
+  setEmployeeDelete: () => {}
+})
+
+const getColumns = (t: ReturnType<typeof useTranslations>): ColumnDef<AccountType>[] => [
+  {
+    accessorKey: 'index',
+    header: t('no'),
+    cell: ({ row }) => <div>{row.index + 1}</div>
+  },
+  {
+    accessorKey: '_id',
+    header: t('id')
+  },
+  {
+    accessorKey: 'avatar',
+    header: t('avatar'),
+    cell: ({ row }) => (
+      <div>
+        <Avatar className='aspect-square w-[100px] h-[100px] rounded-md object-cover'>
+          <AvatarImage src={row.getValue('avatar') || undefined} />
+          <AvatarFallback className='rounded-none'>
+            {row.original.name
+              .split(' ')
+              .map((name) => name[0])
+              .join('') || 'U'}
+          </AvatarFallback>
+        </Avatar>
+      </div>
+    )
+  },
+  {
+    accessorKey: 'name',
+    header: t('name'),
+    cell: ({ row }) => <div className='capitalize'>{row.getValue('name')}</div>
+  },
+  {
+    accessorKey: 'phone',
+    header: t('phone'),
+    cell: ({ row }) => <div>{row.getValue('phone')}</div>
+  },
+  {
+    accessorKey: 'email',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant='ghost'
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          className='font-bold'
+        >
+          {t('email')}
+          <CaretSortIcon className='ml-2 h-4 w-4' />
+        </Button>
+      )
+    }
+  },
+  {
+    accessorKey: 'date_of_birth',
+    header: t('dateOfBirth'),
+    cell: ({ row }) => {
+      const rawDate = row.getValue('date_of_birth')
+      const formattedDate = new Date(rawDate as string).toLocaleDateString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      })
+      return <div>{formattedDate}</div>
+    }
+  },
+  {
+    id: 'actions',
+    enableHiding: false,
+    cell: function Actions({ row }) {
+      const { setEmployeeIdEdit, setEmployeeDelete } = useContext(AccountTableContext)
+      const openEditEmployee = () => {
+        setEmployeeIdEdit(row.original._id)
+      }
+
+      const openDeleteEmployee = () => {
+        setEmployeeDelete(row.original)
+      }
+      return (
+        <div className='flex gap-2'>
+          <Button variant='default' className='h-8 w-8 p-0' onClick={openEditEmployee}>
+            <Pen className='h-4 w-4' />
+          </Button>
+          <Button variant='destructive' className='h-8 w-8 p-0' onClick={openDeleteEmployee}>
+            <Trash className='h-4 w-4' />
+          </Button>
+        </div>
+      )
+    }
+  }
+]
+
+function AlertDialogDeleteAccount({
+  employeeDelete,
+  setEmployeeDelete
+}: {
+  employeeDelete: AccountItem | null
+  setEmployeeDelete: (value: AccountItem | null) => void
+}) {
+  const t = useTranslations('account')
+  const tCommon = useTranslations('common')
+  const { mutateAsync } = useDeleteAccountMutation()
+  const deleteAccount = async () => {
+    if (employeeDelete) {
+      try {
+        const result = await mutateAsync(employeeDelete._id)
+        setEmployeeDelete(null)
+        toast(tCommon('success'), {
+          description: result.payload.message
+        })
+      } catch (error) {
+        handleErrorApi({
+          error
+        })
+      }
+    }
+  }
+  return (
+    <AlertDialog
+      open={Boolean(employeeDelete)}
+      onOpenChange={(value) => {
+        if (!value) {
+          setEmployeeDelete(null)
+        }
+      }}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t('deleteEmployee')}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {t('title')}{' '}
+            <span className='bg-foreground text-primary-foreground rounded p-1'>{employeeDelete?.name}</span>{' '}
+            {t('deleteConfirmation')}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
+          <AlertDialogAction onClick={deleteAccount}>{tCommon('continue')}</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+// Số lượng item trên 1 trang
+const PAGE_SIZE = 10
+export default function AccountTable() {
+  const t = useTranslations('account')
+  const searchParam = useSearchParams()
+  const page = searchParam.get('page') ? Number(searchParam.get('page')) : 1
+  const pageIndex = page - 1
+  // const params = Object.fromEntries(searchParam.entries())
+  const [employeeIdEdit, setEmployeeIdEdit] = useState<string | undefined>()
+  const [employeeDelete, setEmployeeDelete] = useState<AccountItem | null>(null)
+  const accountListQuery = useGetAccountList()
+  const data = accountListQuery.data?.payload.result ?? []
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    _id: false
+  })
+  const [rowSelection, setRowSelection] = useState({})
+  const [pagination, setPagination] = useState({
+    pageIndex, // Gía trị mặc định ban đầu, không có ý nghĩa khi data được fetch bất đồng bộ
+    pageSize: PAGE_SIZE //default page size
+  })
+
+  const columns = getColumns(t)
+
+  const table = useReactTable({
+    data,
+    columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    onPaginationChange: setPagination,
+    autoResetPageIndex: false,
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      rowSelection,
+      pagination
+    }
+  })
+
+  useEffect(() => {
+    table.setPagination({
+      pageIndex,
+      pageSize: PAGE_SIZE
+    })
+  }, [table, pageIndex])
+
+  return (
+    <AccountTableContext.Provider
+      value={{
+        employeeIdEdit,
+        setEmployeeIdEdit,
+        employeeDelete,
+        setEmployeeDelete
+      }}
+    >
+      <div className='w-full'>
+        <EditEmployee id={employeeIdEdit} setId={setEmployeeIdEdit} onSubmitSuccess={() => {}} />
+        <AlertDialogDeleteAccount employeeDelete={employeeDelete} setEmployeeDelete={setEmployeeDelete} />
+        <div className='flex items-center py-4'>
+          <Input
+            placeholder='Filter emails...'
+            value={(table.getColumn('email')?.getFilterValue() as string) ?? ''}
+            onChange={(event) => table.getColumn('email')?.setFilterValue(event.target.value)}
+            className='max-w-sm'
+          />
+          <div className='ml-auto flex items-center gap-2'>
+            <AddEmployee />
+          </div>
+        </div>
+        <div className='rounded-md border'>
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      </TableHead>
+                    )
+                  })}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className='h-24 text-center'>
+                    {t('noResults')}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        <div className='flex items-center justify-end space-x-2 py-4'>
+          <div className='text-xs text-muted-foreground py-4 flex-1 '>
+            {t('displayItems', { count: table.getPaginationRowModel().rows.length, total: data.length })}
+          </div>
+          <div>
+            <AutoPagination
+              page={table.getState().pagination.pageIndex + 1}
+              pageSize={table.getPageCount()}
+              pathname='/manage/accounts'
+            />
+          </div>
+        </div>
+      </div>
+    </AccountTableContext.Provider>
+  )
+}

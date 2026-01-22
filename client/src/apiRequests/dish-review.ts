@@ -14,6 +14,10 @@ import queryString from 'query-string'
 const dishReviewApiRequest = {
   create: (data: CreateDishReviewBodyType) => http.post<DishReviewResType>('/dish-reviews', data),
   getById: (id: string) => http.get<DishReviewResType>(`/dish-reviews/${id}`),
+  getAll: (query?: GetDishReviewsQueryType) =>
+    http.get<DishReviewByDishListResType>(
+      '/dish-reviews' + (query ? `?${queryString.stringify(query)}` : '')
+    ),
   getByDish: (dishId: string, query?: GetDishReviewsQueryType) =>
     http.get<DishReviewByDishListResType>(
       `/dish-reviews/dish/${dishId}` + (query ? `?${queryString.stringify(query)}` : '')

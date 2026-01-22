@@ -72,3 +72,11 @@ export const useGetDishReviewsByMeQuery = (enabled: boolean) => {
     enabled
   })
 }
+
+export const useGetAllDishReviewsQuery = (enabled: boolean, query?: GetDishReviewsQueryType) => {
+  return useQuery({
+    queryKey: ['dishReviews', 'all', query],
+    queryFn: () => dishReviewApiRequest.getAll(query),
+    enabled
+  })
+}

@@ -20,12 +20,14 @@ import promotionsRoutes from '~/routes/promotion.routes'
 import chatRouter from '~/routes/chat.routes'
 import guest_promotionRouter from '~/routes/guest-promotion.routes'
 import revenuesRouter from '~/routes/revenues.routes'
+import reportsRouter from '~/routes/reports.routes'
 import indicatorsRouter from '~/routes/indicators.routes'
 import categoriesRouter from '~/routes/categories.routes'
 import dishReviewsRouter from '~/routes/dish-reviews.routes'
 import loyaltiesRouter from '~/routes/loyalty.routes'
 import customer_promotionRouter from '~/routes/customer-promotion.routes'
 import shiftsRouter from '~/routes/shifts.routes'
+import attendanceRouter from '~/routes/attendance.routes'
 import webhooksRouter from '~/routes/webhooks.routes'
 
 initFolder()
@@ -75,9 +77,11 @@ app.use('/loyalties', loyaltiesRouter)
 app.use('/customer-promotion', customer_promotionRouter)
 app.use('/guest-promotion', guest_promotionRouter)
 app.use('/revenues', revenuesRouter)
+app.use('/reports', reportsRouter)
 app.use('/categories', categoriesRouter)
 app.use('/dish-reviews', dishReviewsRouter)
 app.use('/shifts', shiftsRouter)
+app.use('/attendance', attendanceRouter)
 app.use('/webhooks', webhooksRouter)
 
 app.use(defaultErrorHandler)

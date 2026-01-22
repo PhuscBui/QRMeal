@@ -179,6 +179,89 @@ class DishReviewService {
       rating_distribution: ratingDistribution
     }
   }
+
+  async getAllDishReviews(query: GetDishReviewsQuery) {
+    const limit = typeof query.limit === 'string' ? Number(query.limit) : typeof query.limit === 'number' ? query.limit : 10
+    const page = typeof query.page === 'string' ? Number(query.page) : typeof query.page === 'number' ? query.page : 1
+    const skip = (page - 1) * limit
+
+    const match: Record<string, unknown> = {}
+    if (query.rating) {
+      match.rating = Number(query.rating)
+    }
+
+    const sortBy = query.sortBy || 'created_at'
+    const sortOrder = query.sortOrder === 'asc' ? 1 : -1
+
+    const pipeline = [
+      { $match: match },
+      {
+        $lookup: {
+          from: 'accounts',
+          localField: 'author_id',
+          foreignField: '_id',
+          as: 'user_info'
+        }
+      },
+      {
+        $lookup: {
+          from: 'guests',
+          localField: 'author_id',
+          foreignField: '_id',
+          as: 'guest_info'
+        }
+      },
+      {
+        $lookup: {
+          from: 'dishes',
+          localField: 'dish_id',
+          foreignField: '_id',
+          as: 'dish_info'
+        }
+      },
+      {
+        $addFields: {
+          author: {
+            $cond: [
+              { $eq: ['$author_type', 'Customer'] },
+              { $arrayElemAt: ['$user_info', 0] },
+              { $arrayElemAt: ['$guest_info', 0] }
+            ]
+          },
+          dish: { $arrayElemAt: ['$dish_info', 0] }
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          rating: 1,
+          comment: 1,
+          created_at: 1,
+          updated_at: 1,
+          dish_id: 1,
+          'author._id': 1,
+          'author.name': 1,
+          'author.avatar': 1,
+          'author.role': 1,
+          'author.email': 1,
+          'author.phone': 1,
+          'dish._id': 1,
+          'dish.name': 1,
+          'dish.image': 1
+        }
+      },
+      { $sort: { [sortBy]: sortOrder } },
+      { $skip: skip },
+      { $limit: limit }
+    ]
+
+    const [reviews, total] = await Promise.all([
+      databaseService.dishReviews.aggregate(pipeline).toArray(),
+      databaseService.dishReviews.countDocuments(match)
+    ])
+
+    return { reviews, total }
+  }
 }
 
 const dishReviewService = new DishReviewService()

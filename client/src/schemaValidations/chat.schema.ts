@@ -77,7 +77,8 @@ export type SendMessageBodyType = z.TypeOf<typeof SendMessageBody>
 
 export const SendMessageRes = z.object({
   message: z.string(),
-  result: ChatMessageSchema
+  result: ChatMessageSchema,
+  botMessage: ChatMessageSchema.optional()
 })
 
 export type SendMessageResType = z.TypeOf<typeof SendMessageRes>

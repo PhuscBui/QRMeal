@@ -64,7 +64,7 @@ tablesRouter.put(
   accessTokenValidator,
   isEmployeeValidator,
   updateTableValidator,
-  filterMiddleware<UpdateTableReqBody>(['status', 'capacity', 'changeToken', 'location']),
+  filterMiddleware<UpdateTableReqBody>(['status', 'capacity', 'changeToken', 'location', 'x', 'y', 'shape']),
   wrapRequestHandler(updateTableController)
 )
 

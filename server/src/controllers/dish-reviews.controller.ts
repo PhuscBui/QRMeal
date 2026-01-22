@@ -100,3 +100,14 @@ export const deleteDishReviewController = async (req: Request<DeleteDishReviewPa
     message: DISH_REVIEWS_MESSAGE.DISH_REVIEW_DELETED
   })
 }
+
+export const getAllDishReviewsController = async (
+  req: Request<ParamsDictionary, unknown, unknown, GetDishReviewsQuery>,
+  res: Response
+) => {
+  const result = await dishReviewService.getAllDishReviews(req.query)
+  res.status(HTTP_STATUS.OK).json({
+    message: DISH_REVIEWS_MESSAGE.DISH_REVIEWS_FETCHED,
+    result: result
+  })
+}

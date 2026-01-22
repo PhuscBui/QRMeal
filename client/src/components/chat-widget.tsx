@@ -8,6 +8,7 @@ import {
   useChatMessagesQuery
 } from '@/queries/useChat'
 import chatApiRequest from '@/apiRequests/chat'
+import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MessageCircle, X, Send, Loader2 } from 'lucide-react'
@@ -148,9 +149,11 @@ const cleanupOldMessages = () => {
 
 export default function ChatWidget() {
   const { socket, isAuth, role } = useAppContext()
+  const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [anonymousSessionId, setAnonymousSessionId] = useState<string | null>(null)
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([])
+  const [optimisticMessages, setOptimisticMessages] = useState<ChatMessage[]>([]) // For authenticated users
   const [unreadCount, setUnreadCount] = useState(0)
   const [isTyping, setIsTyping] = useState(false)
   const [isGPTTyping, setIsGPTTyping] = useState(false)
@@ -192,7 +195,7 @@ export default function ChatWidget() {
   const messagesParams = React.useMemo(() => ({ limit: 50 }), [])
 
   // CHỈ fetch messages từ server khi có sessionId
-  const { data: serverMessages, refetch } = useChatMessagesQuery(sessionId, messagesParams)
+  const { data: serverMessages, refetch, isLoading: isLoadingMessages } = useChatMessagesQuery(sessionId, messagesParams)
   const { mutate: sendMessage } = useSendChatMessageMutation(sessionId)
 
   // Cleanup khi mount
@@ -265,12 +268,120 @@ export default function ChatWidget() {
     loadExistingMessages()
   }, [anonymousSessionId, isAuth, localMessages.length])
 
+  // Prefetch customer session immediately when me data is available
+  useEffect(() => {
+    if (isAuth && role === 'Customer' && me?.payload.result._id) {
+      // Prefetch session immediately to avoid delay
+      const prefetchSession = async () => {
+        try {
+          await queryClient.prefetchQuery({
+            queryKey: ['chat', 'session', 'customer', me.payload.result._id],
+            queryFn: chatApiRequest.getOrCreateCustomerSession,
+            staleTime: 5 * 60 * 1000
+          })
+        } catch (error) {
+          console.error('Failed to prefetch customer session:', error)
+        }
+      }
+      prefetchSession()
+      
+      // Also refetch to ensure we have the latest session
+      if (refetchCustomerSession) {
+        refetchCustomerSession()
+      }
+    }
+  }, [isAuth, role, me?.payload.result._id, refetchCustomerSession, queryClient])
+
+  // Refetch guest session when guestMe data is available (after reload)
+  useEffect(() => {
+    if (isAuth && role === 'Guest' && guestMe?.payload.result._id && refetchGuestSession) {
+      refetchGuestSession()
+    }
+  }, [isAuth, role, guestMe?.payload.result._id, refetchGuestSession])
+
+  // Fetch messages immediately when sessionId is available (don't wait for React Query)
+  useEffect(() => {
+    if (isAuth && sessionId) {
+      // Fetch messages immediately using fetchQuery to ensure it happens right away
+      const fetchMessages = async () => {
+        try {
+          await queryClient.fetchQuery({
+            queryKey: ['chat', 'messages', sessionId, JSON.stringify(messagesParams), messagesParams],
+            queryFn: () => chatApiRequest.listMessages(sessionId, messagesParams),
+            staleTime: 30000
+          })
+        } catch (error) {
+          console.error('Failed to fetch messages:', error)
+        }
+      }
+      // Fetch immediately without delay
+      fetchMessages()
+    }
+  }, [sessionId, isAuth, messagesParams, queryClient])
+
+  // Also fetch messages when activeSession is available (even before sessionId is set)
+  useEffect(() => {
+    if (isAuth && activeSession?._id && activeSession._id !== sessionId) {
+      const fetchMessages = async () => {
+        try {
+          await queryClient.fetchQuery({
+            queryKey: ['chat', 'messages', activeSession._id, JSON.stringify(messagesParams), messagesParams],
+            queryFn: () => chatApiRequest.listMessages(activeSession._id, messagesParams),
+            staleTime: 30000
+          })
+        } catch (error) {
+          console.error('Failed to fetch messages from activeSession:', error)
+        }
+      }
+      fetchMessages()
+    }
+  }, [activeSession?._id, isAuth, messagesParams, queryClient, sessionId])
+
+  // Force fetch messages immediately when sessionId changes (e.g., after reload)
+  useEffect(() => {
+    if (isAuth && sessionId && refetch) {
+      // Use fetchQuery to ensure immediate fetch, then refetch to sync with React Query
+      const forceFetch = async () => {
+        try {
+          await queryClient.fetchQuery({
+            queryKey: ['chat', 'messages', sessionId, JSON.stringify(messagesParams), messagesParams],
+            queryFn: () => chatApiRequest.listMessages(sessionId, messagesParams),
+            staleTime: 30000
+          })
+        } catch (error) {
+          console.error('Failed to force fetch messages:', error)
+        }
+        // Also trigger refetch to sync with React Query state
+        refetch()
+      }
+      forceFetch()
+    }
+  }, [sessionId, isAuth, refetch, queryClient, messagesParams])
+
+  // Also refetch when activeSession changes to ensure messages are loaded
+  useEffect(() => {
+    if (isAuth && activeSession?._id && refetch) {
+      // Refetch immediately when session is available
+      refetch()
+    }
+  }, [activeSession?._id, isAuth, refetch])
+
+  // Clear optimistic messages that are now in serverMessages
+  useEffect(() => {
+    if (isAuth && serverMessages && serverMessages.length > 0) {
+      setOptimisticMessages((prev) => {
+        const serverMessageIds = new Set(serverMessages.map((m: ChatMessage) => m._id))
+        return prev.filter((m) => !serverMessageIds.has(m._id))
+      })
+    }
+  }, [serverMessages, isAuth])
+
   // Auto scroll to bottom
   useEffect(() => {
     if (!isLoadingMore) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [localMessages, serverMessages, isLoadingMore])
+  }, [localMessages, serverMessages, optimisticMessages, isLoadingMore])
 
   // Socket listeners cho authenticated users
   useEffect(() => {
@@ -543,15 +654,64 @@ export default function ChatWidget() {
       }
 
       if (isAuth && activeSession) {
-        // Authenticated user - use socket or mutation
-        if (socket) {
-          socket.emit('chat:send', {
-            sessionId: activeSession._id,
+        // Authenticated user - use HTTP API for immediate response (like anonymous users)
+        // Socket will still receive updates for real-time messages from staff/bot
+        
+        // Optimistic update: add temp message immediately to local state
+        const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        const tempMessage: ChatMessage = {
+          _id: tempId,
+          session_id: activeSession._id,
+          sender_type: 'user',
+          message: content,
+          created_at: new Date().toISOString()
+        }
+
+        // Add optimistic message immediately
+        setOptimisticMessages((prev) => [...prev, tempMessage])
+
+        // Show GPT typing indicator
+        setIsGPTTyping(true)
+        if (gptTypingTimeoutRef.current) {
+          clearTimeout(gptTypingTimeoutRef.current)
+        }
+        gptTypingTimeoutRef.current = setTimeout(() => {
+          setIsGPTTyping(false)
+        }, 15000) // Max 15s
+
+        try {
+          const response = await chatApiRequest.sendMessage(activeSession._id, {
             message: content,
             sender: 'user'
           })
-        } else {
-          sendMessage(content)
+
+          // Remove temp message and add real message + bot response
+          setOptimisticMessages((prev) => {
+            let updated = prev.filter((m) => m._id !== tempId)
+            // Add real message
+            updated = [...updated, response.payload.result]
+            // Add bot message if exists
+            if (response.payload.botMessage) {
+              updated = [...updated, response.payload.botMessage]
+              setIsGPTTyping(false)
+              if (gptTypingTimeoutRef.current) {
+                clearTimeout(gptTypingTimeoutRef.current)
+              }
+            }
+            return updated
+          })
+
+          // Refetch to sync with server (optimistic messages will be cleared by useEffect)
+          refetch()
+        } catch (error) {
+          console.error('Failed to send message:', error)
+          // Remove temp message on error
+          setOptimisticMessages((prev) => prev.filter((m) => m._id !== tempId))
+          setText(content) // Restore text
+          setIsGPTTyping(false)
+          if (gptTypingTimeoutRef.current) {
+            clearTimeout(gptTypingTimeoutRef.current)
+          }
         }
       } else {
         // Anonymous user
@@ -566,33 +726,14 @@ export default function ChatWidget() {
 
         setLocalMessages((prev) => [...prev, tempMessage])
 
-        // Check if should trigger GPT
-        const shouldTriggerGPT =
-          content.toLowerCase().includes('món') ||
-          content.toLowerCase().includes('thực đơn') ||
-          content.toLowerCase().includes('menu') ||
-          content.toLowerCase().includes('giá') ||
-          content.toLowerCase().includes('đặt bàn') ||
-          content.toLowerCase().includes('đặt món') ||
-          content.toLowerCase().includes('có gì') ||
-          content.toLowerCase().includes('ăn gì') ||
-          content.toLowerCase().includes('nên ăn') ||
-          content.toLowerCase().includes('khuyến nghị') ||
-          content.toLowerCase().includes('tư vấn') ||
-          content.toLowerCase().includes('giờ mở') ||
-          content.toLowerCase().includes('địa chỉ') ||
-          content.toLowerCase().includes('số điện thoại') ||
-          content.toLowerCase().includes('thông tin')
-
-        if (shouldTriggerGPT) {
-          setIsGPTTyping(true)
-          if (gptTypingTimeoutRef.current) {
-            clearTimeout(gptTypingTimeoutRef.current)
-          }
-          gptTypingTimeoutRef.current = setTimeout(() => {
-            setIsGPTTyping(false)
-          }, 15000) // Max 15s
+        // Luôn hiển thị typing indicator vì bot sẽ luôn trả lời (trừ tin nhắn quá ngắn)
+        setIsGPTTyping(true)
+        if (gptTypingTimeoutRef.current) {
+          clearTimeout(gptTypingTimeoutRef.current)
         }
+        gptTypingTimeoutRef.current = setTimeout(() => {
+          setIsGPTTyping(false)
+        }, 15000) // Max 15s
 
         try {
           const response = await chatApiRequest.sendMessage(currentSessionId, {
@@ -601,12 +742,29 @@ export default function ChatWidget() {
           })
 
           // Replace temp message with real message
-          setLocalMessages((prev) => prev.map((m) => (m._id === tempId ? response.payload.result : m)))
+          setLocalMessages((prev) => {
+            let updated = prev.map((m) => (m._id === tempId ? response.payload.result : m))
+            
+            // Nếu có bot message từ response, thêm vào ngay lập tức
+            if (response.payload.botMessage) {
+              updated = [...updated, response.payload.botMessage]
+              setIsGPTTyping(false)
+              if (gptTypingTimeoutRef.current) {
+                clearTimeout(gptTypingTimeoutRef.current)
+              }
+            }
+            
+            return updated
+          })
         } catch (error) {
           console.error('Failed to send message:', error)
           // Remove temp message on error
           setLocalMessages((prev) => prev.filter((m) => m._id !== tempId))
           setText(content) // Restore text
+          setIsGPTTyping(false)
+          if (gptTypingTimeoutRef.current) {
+            clearTimeout(gptTypingTimeoutRef.current)
+          }
         }
       }
     } catch (error) {
@@ -628,15 +786,38 @@ export default function ChatWidget() {
     setOpen(willOpen)
     if (willOpen) {
       setUnreadCount(0)
+      // Refetch messages when opening chat widget to ensure latest messages are loaded
+      if (isAuth && sessionId && refetch) {
+        refetch()
+      }
     }
   }
+
+  // Hiển thị messages: authenticated users dùng serverMessages + optimisticMessages, anonymous dùng localMessages
+  // Remove duplicates based on _id and sort by created_at
+  // NOTE: This must be before early return to maintain hook order
+  const displayMessages = React.useMemo(() => {
+    if (isAuth) {
+      const serverIds = new Set((serverMessages || []).map((m: ChatMessage) => m._id))
+      const uniqueOptimistic = optimisticMessages.filter((m) => !serverIds.has(m._id))
+      const allMessages = [...(serverMessages || []), ...uniqueOptimistic]
+      // Sort by created_at to ensure correct order
+      return allMessages.sort((a, b) => {
+        const timeA = new Date(a.created_at).getTime()
+        const timeB = new Date(b.created_at).getTime()
+        return timeA - timeB
+      })
+    }
+    return localMessages.sort((a, b) => {
+      const timeA = new Date(a.created_at).getTime()
+      const timeB = new Date(b.created_at).getTime()
+      return timeA - timeB
+    })
+  }, [isAuth, serverMessages, optimisticMessages, localMessages])
 
   if (!shouldRender) {
     return null
   }
-
-  // Hiển thị messages: authenticated users dùng serverMessages, anonymous dùng localMessages
-  const displayMessages = isAuth ? serverMessages : localMessages
 
   return (
     <div className='fixed bottom-4 right-4 z-50'>
@@ -688,6 +869,15 @@ export default function ChatWidget() {
             {isLoadingMore && (
               <div className='flex justify-center py-2'>
                 <Loader2 className='h-5 w-5 animate-spin text-blue-600' />
+              </div>
+            )}
+
+            {isLoadingMessages && displayMessages.length === 0 && (
+              <div className='flex justify-center items-center h-full'>
+                <div className='flex flex-col items-center gap-2'>
+                  <Loader2 className='h-6 w-6 animate-spin text-blue-600' />
+                  <p className='text-sm text-gray-500 dark:text-gray-400'>Đang tải tin nhắn...</p>
+                </div>
               </div>
             )}
 

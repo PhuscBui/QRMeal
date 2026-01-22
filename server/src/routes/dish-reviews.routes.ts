@@ -2,6 +2,7 @@ import { Router } from 'express'
 import {
   createDishReviewController,
   deleteDishReviewController,
+  getAllDishReviewsController,
   getDishReviewByIdController,
   getDishReviewsByDishController,
   getDishReviewsByMeController,
@@ -20,8 +21,16 @@ import { wrapRequestHandler } from '~/utils/handlers'
 const dishReviewsRouter = Router()
 
 /**
- * Description. Get all dish reviews
+ * Description. Get all dish reviews (for management)
  * Path:  /
+ * Method: GET
+ * Response: { reviews: DishReview[], total: number }
+ */
+dishReviewsRouter.get('/', accessTokenValidator, wrapRequestHandler(getAllDishReviewsController))
+
+/**
+ * Description. Get all dish reviews by dish
+ * Path:  /dish/:dishId
  * Method: GET
  * Response: { reviews: DishReview[] }
  */

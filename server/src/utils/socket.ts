@@ -109,7 +109,10 @@ class SocketService {
         'chat:send',
         async (payload: { sessionId: string; message: string; sender?: 'user' | 'staff'; anonymousId?: string }) => {
           try {
-            const doc = await chatService.addMessage(payload.sessionId, payload.sender || 'user', payload.message)
+            const senderType = payload.sender || 'user'
+            
+            // Sử dụng addMessageWithGPT để tự động tạo bot response nếu cần
+            const result = await chatService.addMessageWithGPT(payload.sessionId, senderType, payload.message)
 
             // Find the session
             const session = await databaseService.chatSessions.findOne({
@@ -122,7 +125,12 @@ class SocketService {
             }
 
             // ALWAYS broadcast to manager room for ALL message types
-            this.getIO().to(ManagerRoom).emit('chat:new-message', doc)
+            this.getIO().to(ManagerRoom).emit('chat:new-message', result.userMessage)
+
+            // Nếu có bot message, cũng broadcast đến manager room
+            if (result.botMessage) {
+              this.getIO().to(ManagerRoom).emit('chat:new-message', result.botMessage)
+            }
 
             // Route message to specific participants
             if (session.guest_id) {
@@ -130,20 +138,29 @@ class SocketService {
                 guest_id: session.guest_id
               })
               if (guestSocket && guestSocket.socketId !== socket.id) {
-                this.getIO().to(guestSocket.socketId).emit('chat:new-message', doc)
+                this.getIO().to(guestSocket.socketId).emit('chat:new-message', result.userMessage)
+                if (result.botMessage) {
+                  this.getIO().to(guestSocket.socketId).emit('chat:new-message', result.botMessage)
+                }
               }
             } else if (session.customer_id) {
               const customerSocket = await databaseService.sockets.findOne({
                 customer_id: session.customer_id
               })
               if (customerSocket && customerSocket.socketId !== socket.id) {
-                this.getIO().to(customerSocket.socketId).emit('chat:new-message', doc)
+                this.getIO().to(customerSocket.socketId).emit('chat:new-message', result.userMessage)
+                if (result.botMessage) {
+                  this.getIO().to(customerSocket.socketId).emit('chat:new-message', result.botMessage)
+                }
               }
             }
             // For anonymous sessions, managers will get notification via broadcast above
 
             // Echo back to sender
-            socket.emit('chat:new-message', doc)
+            socket.emit('chat:new-message', result.userMessage)
+            if (result.botMessage) {
+              socket.emit('chat:new-message', result.botMessage)
+            }
           } catch (error) {
             socket.emit('chat:error', { message: (error as Error).message })
           }
@@ -221,9 +238,20 @@ class SocketService {
   }
 
   public emitToRoom(room: string, event: string, data: unknown): void {
-    if (this.io) {
-      this.io.to(room).emit(event, data)
+    if (!this.io) {
+      console.error('Socket.IO not initialized, cannot emit to room:', room)
+      return
     }
+    
+    const roomSize = this.io.sockets.adapter.rooms.get(room)?.size || 0
+    console.log(`Emitting ${event} to room ${room}, room size: ${roomSize}`)
+    
+    this.io.to(room).emit(event, data)
+  }
+
+  public getRoomSize(room: string): number {
+    if (!this.io) return 0
+    return this.io.sockets.adapter.rooms.get(room)?.size || 0
   }
 
   public emitToSocket(socketId: string, event: string, data: unknown): void {

@@ -5,7 +5,10 @@ export const CreateTableBody = z.object({
   number: z.coerce.number().positive(),
   capacity: z.coerce.number().positive(),
   status: z.enum(TableStatusValues).optional(),
-  location: z.string()
+  location: z.string(),
+  x: z.coerce.number().optional(),
+  y: z.coerce.number().optional(),
+  shape: z.enum(['circle', 'rect']).optional()
 })
 
 export type CreateTableBodyType = z.TypeOf<typeof CreateTableBody>
@@ -27,6 +30,9 @@ export const TableSchema = z.object({
   location: z.string(),
   reservation: ReservationSchema,
   current_customer_id: z.string().nullable().optional(),
+  x: z.coerce.number().optional(),
+  y: z.coerce.number().optional(),
+  shape: z.enum(['circle', 'rect']).optional(),
   created_at: z.date(),
   updated_at: z.date()
 })
@@ -49,7 +55,10 @@ export const UpdateTableBody = z.object({
   changeToken: z.boolean(),
   capacity: z.coerce.number().positive(),
   status: z.enum(TableStatusValues).optional(),
-  location: z.string()
+  location: z.string(),
+  x: z.coerce.number().optional(),
+  y: z.coerce.number().optional(),
+  shape: z.enum(['circle', 'rect']).optional()
 })
 export type UpdateTableBodyType = z.TypeOf<typeof UpdateTableBody>
 export const TableParams = z.object({
