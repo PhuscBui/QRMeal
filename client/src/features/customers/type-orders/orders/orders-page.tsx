@@ -36,13 +36,13 @@ import { useCustomerUsedPromotionMutation, useGetCustomerPromotionQuery } from '
 import { calculateFinalAmount, calculateTotalDiscount } from '@/lib/promotion-utils'
 import { PromotionResType } from '@/schemaValidations/promotion.schema'
 import { useCreateRevenueMutation } from '@/queries/useRevenue'
-import { OrderGroupForPayment, orderTypeConfig, PaymentOrders, statusConfig } from '@/app/customer/[type]/orders/type'
 import { useGetDishReviewsByMeQuery } from '@/queries/useDishReview'
 import DishReviewForm from '@/components/dish-review-form'
 import ExistingReview from '@/components/existing-review'
 import { useCreatePaymentLinkMutation } from '@/queries/usePayment'
 import SepayPaymentDialog from '@/components/payment-qr-dialog'
 import { useTranslations } from 'next-intl'
+import { OrderGroupForPayment, orderTypeConfig, PaymentOrders, statusConfig } from '@/types/orders.type'
 
 export default function OrdersPage() {
   const t = useTranslations('customerOrders')

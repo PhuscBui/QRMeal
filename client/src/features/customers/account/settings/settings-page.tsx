@@ -17,7 +17,7 @@ import { Form, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import ChangePasswordForm from '@/app/customer/account/settings/change-password-form'
+import ChangePasswordForm from '@/features/customers/account/settings/change-password-form'
 import { useTranslations } from 'next-intl'
 
 export default function SettingsPage() {
