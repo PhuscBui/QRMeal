@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
-import LoginForm from '@/app/(public)/(auth)/login/login-form'
+import LoginForm from '@/features/accounts/login/login-form'
 import { QrCode } from 'lucide-react'
 import { Suspense } from 'react'
 
