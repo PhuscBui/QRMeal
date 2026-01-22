@@ -106,13 +106,13 @@ export default function NavItems({ className }: { className?: string }) {
       })
     }
   }
+
   return (
     <>
       {menuItems.map((item) => {
-        // Trường hợp đăng nhập thì chỉ hiển thị menu đăng nhập
         const isAuth = item.role && role && item.role.includes(role)
-        // Trường hợp menu item có thể hiển thị dù cho đã đăng nhập hay chưa
         const canShow = (item.role === undefined && !item.hideWhenLogin) || (!role && item.hideWhenLogin)
+
         if (isAuth || canShow) {
           return (
             <Link href={item.href} key={item.href} className={className}>
@@ -142,4 +142,3 @@ export default function NavItems({ className }: { className?: string }) {
     </>
   )
 }
-

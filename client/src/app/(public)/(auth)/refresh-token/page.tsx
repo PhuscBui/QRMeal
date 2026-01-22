@@ -1,4 +1,4 @@
-import RefreshTokenPage from '@/features/accounts/refresh-token/refresh-token-page'
+import RefreshTokenPage from '@/features/auth/system/refresh-token/refresh-token-page'
 
 export default function Page() {
   return <RefreshTokenPage />

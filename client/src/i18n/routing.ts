@@ -14,18 +14,8 @@ export const routing = defineRouting({
   // Prefix cho locale trong URL
   // 'always' => luôn hiển thị locale trong URL (/vi/home, /en/home)
   // 'as-needed' => chỉ hiển thị locale khi không phải default locale
-  localePrefix: 'as-needed',
-
-  // Các path không cần prefix locale
-  pathnames: {
-    '/': '/',
-    '/login': '/login',
-    '/customer/login': '/customer/login',
-    '/customer/register': '/customer/register'
-  }
+  localePrefix: 'as-needed'
 })
 
 // Tạo navigation helpers với i18n
 export const { Link, redirect, usePathname, useRouter } = createNavigation(routing)
-
-

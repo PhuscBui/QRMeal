@@ -1,10 +1,5 @@
-import CustomerRegisterForm from '@/app/[locale]/(public)/customer/register/customer-register-form'
+import CustomerRegisterPage from '@/features/auth/customer/register/customer-register-page'
 
-export default function CustomerRegisterPage() {
-  return (
-    <div className='flex items-center justify-center min-h-[calc(100vh-200px)]'>
-      <CustomerRegisterForm />
-    </div>
-  )
+export default function Page() {
+  return <CustomerRegisterPage />
 }
-

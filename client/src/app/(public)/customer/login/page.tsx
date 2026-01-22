@@ -1,5 +1,5 @@
-import CustomerLoginForm from '@/app/(public)/customer/login/customer-login-form'
+import CustomerLoginPage from '@/features/auth/customer/login/customer-login-page'
 
 export default function Page() {
-  return <CustomerLoginForm />
+  return <CustomerLoginPage />
 }
