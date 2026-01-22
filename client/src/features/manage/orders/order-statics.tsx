@@ -6,10 +6,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { OrderStatus, OrderStatusValues } from '@/constants/type'
 import { TableListResType } from '@/schemaValidations/table.schema'
 import { Badge } from '@/components/ui/badge'
-import { ServingGuestByTableNumber, Statics, StatusCountObject } from '@/app/manage/orders/order-table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useTranslations } from 'next-intl'
 import OrderDetail from '@/features/manage/orders/order-detail'
+import { ServingGuestByTableNumber, Statics, StatusCountObject } from '@/features/manage/orders/order-table'
 
 export default function OrderStatics({
   statics,
