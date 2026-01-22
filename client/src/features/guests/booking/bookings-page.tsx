@@ -1,4 +1,4 @@
-import BookingDetails from '@/app/guest/booking/booking-details'
+import BookingDetails from '@/features/guests/booking/booking-details'
 import { useTranslations } from 'next-intl'
 
 export default function BookingsPage() {
